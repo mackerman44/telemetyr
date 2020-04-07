@@ -1,11 +1,25 @@
 Package: telemetyr
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Tools for processing, analysis, and visualization of telemetry data
 Version: 0.1.0
-Author: Who wrote it
+Date: 2020-04-07
+Author: Mike Ackerman, Kevin See, and Nick Porter
+Authors@R: as.person(c(
+    "Mike Ackerman <mike.ackerman@merck.com> [aut, cre]",
+    "Kevin See <kevin.see@merck.com> [aut]",
+    "Nick Porter <nick.porter@merck.com> [ctb]"
+))
 Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: An R package for reading, cleaning, reducing, analysis, and 
+    visualization of telemetry observation data. The package is being 
+    initially build using radio telemetry data from a project to characterize
+    the distribution, movement, and survival of juvenile Chinook salmon in 
+    the Lemhi and Salmon rivers, Idaho, during winter months. Tools 
+    include the cleaning and reduction of data to prepare capture histories 
+    for a Cormack-Jolly-Seber model and also to evaluate the habitat 
+    availability and use to describe preferred or target habitat conditions. 
+    Our hope is to build the package with functions and tools that can be 
+    applied elsewhere to telemetry or similar observational datasets.
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
