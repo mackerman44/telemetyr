@@ -26,7 +26,7 @@ get.file.nms = function(path = ".") {
     map(.f = function(x) {
       list.files(paste(path, x[1], sep = "/"))
     }) %>%
-    stack() %>% # from utils?
+    stack() %>%
     select(receiver = ind,
            nm = values) %>%
     tbl_df() %>%
