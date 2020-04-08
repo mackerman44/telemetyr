@@ -15,33 +15,9 @@
 # read in pilot study data from NAS
 #-------------------------
 path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018/"
+file_df = get.file.nms(path = path)
 
-# list the folders each with a receiver name
-receiver_nms = list.files(path)
 
-# keep only those folders with 3 characters i.e. get rid of any hidden or misc folders we don't want to read
-receiver_nms = site_nms[nchar(site_nms) == 3]
-
-if(length(receiver_nms) == 0) stop("No folders were found in path")
-folders = as.list(receiver_nms)
-names(folders) = receiver_nms
-
-library(dplyr)
-library(purrr)
-file_df = folders %>%
-  map(.f = function(x) {
-    list.files(paste(path, x[1], sep = "/"))
-  }) %>%
-  stack() %>%
-  select(receiver = ind,
-         nm = values) %>%
-  tbl_df() %>%
-  mutate(file_name = paste(receiver, nm, sep = "/"))
-
-getFileNms = function(path = '.') {
-
-  return(file_df)
-}
 
 ########################################
 # deal with data that had been missing #
