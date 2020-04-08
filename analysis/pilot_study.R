@@ -14,10 +14,16 @@
 #-------------------------
 # read in pilot study data from NAS
 #-------------------------
-path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018/"
-file_df = get.file.nms(path = path)
 
+# create df of file names
+pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018/"
+file_df = get.file.nms(path = pilot_path)
 
+# read in csv format data
+csv_df = read.csv.data(path = pilot_path)
+
+# this function reads in the "raw" text files
+txt_df = read.txt.data(path = pilot_path)
 
 ########################################
 # deal with data that had been missing #
