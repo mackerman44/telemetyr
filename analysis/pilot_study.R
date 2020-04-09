@@ -32,7 +32,6 @@ save(pilot_txt_df, file = "data/raw/pilot_txt_df.rda")
 #-------------------------
 miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
 
-
 #-------------------------
 # read in 2018-2019 season data from NAS
 #-------------------------
@@ -52,6 +51,7 @@ ssn_1819_txt_df = read.txt.data(path = ssn_1819_path)
 save(ssn_1819_txt_df, file = "data/raw/ssn_1819_txt_df.rda")
 
 #-------------------------
-# read in pilot study on/off data from NAS
+# read in pilot study on/off and volt/temp data from NAS
 #-------------------------
-on_off_df = read.on.off.data(path = pilot_path)
+pilot_on_off_df = read.on.off.data(path = pilot_path)
+pilot_volt_temp_df = read.volt.temp.data(path = pilot_path)

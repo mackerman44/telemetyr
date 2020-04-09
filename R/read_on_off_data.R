@@ -1,8 +1,8 @@
-#' @title Read in .csv Format Tracker Data
+#' @title Read in Receiver On/Off Times from Tracker Software
 #'
-#' @description Reads in informatio on receiver on/off times from the Tracker software
+#' @description Reads in information on receiver on/off times from the Tracker software
 #'
-#' @author Kevin See and Mike Ackerman
+#' @author Mike Ackerman and Kevin See
 #'
 #' @param path the directory containing the folders with observation data for each telemetry receiver for a study season
 #'

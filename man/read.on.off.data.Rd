@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_on_off_data.R
 \name{read.on.off.data}
 \alias{read.on.off.data}
-\title{Read in .csv Format Tracker Data}
+\title{Read in Receiver On/Off Times from Tracker Software}
 \usage{
 read.on.off.data(path = ".")
 }
@@ -13,8 +13,8 @@ read.on.off.data(path = ".")
 a data frame containing receiver on/off information
 }
 \description{
-Reads in informatio on receiver on/off times from the Tracker software
+Reads in information on receiver on/off times from the Tracker software
 }
 \author{
-Kevin See and Mike Ackerman
+Mike Ackerman and Kevin See
 }
