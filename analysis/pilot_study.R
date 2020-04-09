@@ -38,11 +38,11 @@ ssn_1819_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
 file_df = get.file.nms(path = ssn_1819_path)
 
 # read in csv format data
-ssn_1819_csv_df = read.csv.data(path = pilot_path)
+ssn_1819_csv_df = read.csv.data(path = ssn_1819_path)
 save(ssn_1819_csv_df, file = "data/raw/ssn_1819_csv_df.rda")
 
 # this function reads in the "raw" text files
-ssn_1819_txt_df = read.txt.data(path = pilot_path)
+ssn_1819_txt_df = read.txt.data(path = ssn_1819_path)
 save(ssn_1819_txt_df, file = "data/raw/ssn_1819_txt_df.rda")
 
 
