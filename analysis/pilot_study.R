@@ -45,7 +45,11 @@ save(ssn_1819_csv_df, file = "data/raw/ssn_1819_csv_df.rda")
 ssn_1819_txt_df = read.txt.data(path = ssn_1819_path)
 save(ssn_1819_txt_df, file = "data/raw/ssn_1819_txt_df.rda")
 
-
+#-------------------------
+# deal with data that had previously been missing in the pilot study due to errors when resetting receiver
+# timers after downloading data
+#-------------------------
+miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
 
 ########################################
 # deal with data that had been missing #
@@ -53,7 +57,7 @@ save(ssn_1819_txt_df, file = "data/raw/ssn_1819_txt_df.rda")
 
 # Path to previously missing data
 missPath = '../Data/missingAdata/2017-2018'
-#
+
 # missDataList = compress.txt.to.csv(missPath)
 
 # compress the txt files that contain the missing data to csv files. save as csv file if one doesn't exist

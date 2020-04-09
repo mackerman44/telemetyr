@@ -4,3 +4,5 @@
 .Ruserdata
 data/raw/pilot_txt_df.rda
 data/raw/pilot_csv_df.rda
+data/raw/ssn_1819_txt_df.rda
+data/raw/ssn_1819_csv_df.rda
