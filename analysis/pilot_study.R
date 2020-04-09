@@ -16,14 +16,36 @@
 #-------------------------
 
 # create df of file names
-pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018/"
+pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018"
 file_df = get.file.nms(path = pilot_path)
 
 # read in csv format data
-csv_df = read.csv.data(path = pilot_path)
+pilot_csv_df = read.csv.data(path = pilot_path)
+save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
 
 # this function reads in the "raw" text files
-txt_df = read.txt.data(path = pilot_path)
+pilot_txt_df = read.txt.data(path = pilot_path)
+save(pilot_txt_df, file = "data/raw/pilot_txt_df.rda")
+
+#-------------------------
+# read in 2018-2019 season data from NAS
+#-------------------------
+# NOTE: This should probably be moved to a script for that season at a later time. I just wanted to read in that data
+# and save it to the repo so that it was available for testing.
+
+# create df of file names
+ssn_1819_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
+file_df = get.file.nms(path = ssn_1819_path)
+
+# read in csv format data
+ssn_1819_csv_df = read.csv.data(path = pilot_path)
+save(ssn_1819_csv_df, file = "data/raw/ssn_1819_csv_df.rda")
+
+# this function reads in the "raw" text files
+ssn_1819_txt_df = read.txt.data(path = pilot_path)
+save(ssn_1819_txt_df, file = "data/raw/ssn_1819_txt_df.rda")
+
+
 
 ########################################
 # deal with data that had been missing #

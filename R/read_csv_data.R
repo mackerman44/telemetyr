@@ -12,7 +12,7 @@
 
 read.csv.data = function(path = ".") {
 
-  # list all of the .csv files
+  # df of the .csv files
   file_df = get.file.nms(path) %>%
     filter(grepl(".csv$", nm))
 
