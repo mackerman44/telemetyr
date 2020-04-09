@@ -89,9 +89,16 @@ read.txt.data = function(path = ".",
   # raw_df = map_df(raw_file, .f = identity)
 
   raw_df = file_df %>%
-    split(list(.$nm)) %>%
-    map_df(.id = 'file',
+    group_by(receiver) %>%
+    mutate(file_num = 1:n(),
+           n_files = n()) %>%
+    ungroup() %>%
+    split(list(.$file_name)) %>%
+    map_df(.id = 'file_name',
            .f = function(x) {
+
+             cat(paste('Reading file', x$file_num, 'of', x$n_files, 'from receiver', x$receiver, '\n'))
+
              # read in each .txt file and assign col_names
              tmp = try(suppressWarnings(read_table2(paste(path, x$file_name, sep = "/"),
                                                     skip = 3,
@@ -111,10 +118,14 @@ read.txt.data = function(path = ".",
                return(NULL)
              }
 
+             tmp = tmp %>%
+               mutate(file = x$nm) %>%
+               select(file, everything())
+
              return(tmp)
 
-           })
-
+           }) %>%
+    arrange(receiver, file)
 
   return(raw_df)
 
