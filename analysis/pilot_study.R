@@ -13,10 +13,16 @@
 
 #-------------------------
 # read in pilot study data from NAS
+# be sure to be connected to Biomark VPN
 #-------------------------
 # create df of file names
+# for Mike
 pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018"
-file_df = get.file.nms(path = pilot_path)
+# for Kevin
+pilot_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018"
+pilot_path_missing = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
+
+# file_df = get.file.nms(path = pilot_path)
 
 # read in csv format data
 pilot_csv_df = read.csv.data(path = pilot_path)
@@ -24,6 +30,15 @@ save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
 
 # this function reads in the "raw" text files
 pilot_txt_df = read.txt.data(path = pilot_path)
+pilot_raw = read.txt.data(path = pilot_path)
+# clean raw data a little bit
+pilot_clean = clean.raw.data(pilot_raw)
+# fix tag codes
+pilot_round = round.tag.codes(pilot_clean,
+                              round_to = 5)
+
+
+
 save(pilot_txt_df, file = "data/raw/pilot_txt_df.rda")
 
 #-------------------------

@@ -4,9 +4,7 @@
 \name{ssn_1819_txt_df}
 \alias{ssn_1819_txt_df}
 \title{Raw Receiver Data from 2018/2019 Season - .txt format}
-\format{
-txt exports from Tracker software
-}
+\format{txt exports from Tracker software}
 \usage{
 ssn_1819_txt_df
 }
