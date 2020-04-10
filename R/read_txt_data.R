@@ -14,7 +14,7 @@ read_txt_data = function(path = ".",
                          receiver_codes = NULL) {
 
   # df of the .txt files
-  file_df = get.file.nms(path,
+  file_df = get_file_nms(path,
                          receiver_codes) %>%
     filter(grepl(".txt$", nm),
            !grepl("\\$", nm))
