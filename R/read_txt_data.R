@@ -47,7 +47,7 @@ read.txt.data = function(path = ".",
              # in nrow of tmp (a single txt file) is 0 or class(tmp) is error or first item is <END>...
              # return error message and nothing
              if(nrow(tmp) == 0 | class(tmp)[1] == "try-error" | tmp[1,1] == "<END>") {
-               cat(paste("Problem reading in receiver", x$receiver, ", file", x$nm))
+               cat(paste("Problem reading in receiver", x$receiver, ", file", x$nm, "\n"))
                return(NULL)
              }
 
