@@ -7,7 +7,7 @@
 summarise_txt_data(data_df = NULL, max_min = 5)
 }
 \arguments{
-\item{data_df}{data.frame containing all valid observations, output from \code{read.txt.data()}, followed by \code{clean.raw.data()}, followed by \code{round.tag.codes()}}
+\item{data_df}{data.frame containing all valid observations, output from \code{read_txt_data()}, followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}}
 
 \item{max_min}{maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 5.}
 }

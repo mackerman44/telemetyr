@@ -7,7 +7,7 @@
 clean_raw_data(raw_data = NULL, filter_valid = T)
 }
 \arguments{
-\item{raw_data}{data.frame containing raw data, output from \code{read.txt.data()}}
+\item{raw_data}{data.frame containing raw data, output from \code{read_txt_data()}}
 
 \item{filter_valid}{should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}}
 }

@@ -4,10 +4,10 @@
 #'
 #' @author Kevin See and Mike Ackerman
 #'
-#' @param data_df data.frame containing all valid observations, output from \code{read.txt.data()}, followed by \code{clean.raw.data()}, followed by \code{round.tag.codes()}
+#' @param data_df data.frame containing all valid observations, output from \code{read_txt_data()}, followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}
 #' @param max_min maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 5.
 #'
-#' @import dplyr purrr readr stringr lubridate tidyr
+#' @import dplyr lubridate tidyr
 #' @export
 #' @return a data.frame containing a summary of the raw data
 

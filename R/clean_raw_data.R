@@ -4,7 +4,7 @@
 #'
 #' @author Kevin See and Mike Ackerman
 #'
-#' @param raw_data data.frame containing raw data, output from \code{read.txt.data()}
+#' @param raw_data data.frame containing raw data, output from \code{read_txt_data()}
 #' @param filter_valid should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}
 #'
 #' @import dplyr purrr readr stringr lubridate
