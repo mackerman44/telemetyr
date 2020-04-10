@@ -4,7 +4,9 @@
 \name{pilot_csv_df}
 \alias{pilot_csv_df}
 \title{Pilot Study Raw Receiver Data - .csv format}
-\format{csv exports from Tracker software}
+\format{
+csv exports from Tracker software
+}
 \usage{
 pilot_csv_df
 }
