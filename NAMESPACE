@@ -3,6 +3,7 @@
 export(clean_raw_data)
 export(get_file_nms)
 export(parse_noise)
+export(parse_tag_list)
 export(parse_timer)
 export(read_csv_data)
 export(read_on_off_data)
