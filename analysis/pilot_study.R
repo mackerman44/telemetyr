@@ -18,28 +18,12 @@ library(telemetyr)
 # read in pilot study data from NAS
 # be sure to be connected to Biomark VPN
 #-------------------------
+# create df of file names
 # for Mike
 pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018"
 # for Kevin
 pilot_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018"
 
-<<<<<<< HEAD
-# read in the "raw" text files
-pilot_raw = read_txt_data(path = pilot_path)
-
-#-------------------------
-# start data cleaning
-#-------------------------
-# fix one receiver (poor coding in file)
-pilot_raw %<>%
-  mutate(receiver = if_else(receiver == "039",
-                            "TT1",
-                            receiver))
-
-# clean raw data a little bit
-pilot_clean = clean_raw_data(pilot_raw)
-
-=======
 #-------------------------
 # deal with data that had previously been missing in the pilot study due to errors when resetting receiver
 # timers after downloading data
@@ -76,20 +60,13 @@ pilot_raw %<>%
                            '039' = 'TT1'))     # recode 039 to TT1
 # clean raw data a little bit
 pilot_clean = clean_raw_data(pilot_raw)
->>>>>>> 654604b9508625741999f11edfde7fcab5f61b86
 # fix tag codes
 pilot_round = round_tag_codes(pilot_clean,
                               round_to = 5)
-
 # summarise data to make it more like csv output
 pilot_summ = summarise_txt_data(pilot_round)
-<<<<<<< HEAD
 
-#-------------------------
-# read in pilot study on/off and volt/temp data from NAS
-#-------------------------
-pilot_on_off_df = read_on_off_data(path = pilot_path)
-pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
+save(pilot_summ, file = "data/prepped/pilot_summ.rda")
 
 #-----------------------------------------
 # following instructions from Nick
@@ -97,24 +74,17 @@ pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 # get tag ids for tags that were released
 library(readxl)
 tag_df = read_excel('data/raw/tag_release/TagReleases2017.xlsx',
-                      'RTs') %>%
+                    'RTs') %>%
   mutate(tag_id = str_extract_all(RadioTag))
 
 #-------------------------
-# deal with data that had previously been missing in the pilot study due to errors when resetting receiver
-# timers after downloading data
+# read in pilot study on/off and volt/temp data from NAS
 #-------------------------
-# for Mike
-miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
-# for Kevin
-miss_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
+pilot_on_off_df = read_on_off_data(path = pilot_path)
+pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 
 # operation times
 timer_df = parse_timer(pilot_summ)
-=======
-
-save(pilot_summ, file = "data/prepped/pilot_summ.rda")
->>>>>>> 654604b9508625741999f11edfde7fcab5f61b86
 
 # receiver names
 receiver_nms = c('LH1','LH2',
