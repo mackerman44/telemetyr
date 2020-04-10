@@ -11,6 +11,7 @@
 # load necessary libraries
 #-------------------------
 library(tidyverse)
+library(magrittr)
 library(telemetyr)
 
 #-------------------------
@@ -63,9 +64,9 @@ pilot_clean = clean_raw_data(pilot_raw)
 pilot_round = round_tag_codes(pilot_clean,
                               round_to = 5)
 # summarise data to make it more like csv output
-pilot_summ = summarise.txt.data(pilot_round)
+pilot_summ = summarise_txt_data(pilot_round)
 
-save(pilot_summ, file = "data/raw/pilot_summary.rda")
+save(pilot_summ, file = "data/prepped/pilot_summ.rda")
 
 #-------------------------
 # read in 2018-2019 season data from NAS
