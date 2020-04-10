@@ -10,6 +10,9 @@
 #-------------------------
 # load necessary libraries
 #-------------------------
+library(tidyverse)
+library(magrittr)
+library(telemetyr)
 
 #-------------------------
 # read in pilot study data from NAS
@@ -20,7 +23,6 @@
 pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018"
 # for Kevin
 pilot_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018"
-pilot_path_missing = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
 
 # file_df = get.file.nms(path = pilot_path)
 
@@ -29,15 +31,20 @@ pilot_csv_df = read.csv.data(path = pilot_path)
 save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
 
 # this function reads in the "raw" text files
-pilot_txt_df = read.txt.data(path = pilot_path)
+# pilot_txt_df = read.txt.data(path = pilot_path)
 pilot_raw = read.txt.data(path = pilot_path)
+# fix one receiver (poor coding in file)
+pilot_raw %<>%
+  mutate(receiver = if_else(receiver == "039",
+                            "TT1",
+                            receiver))
 # clean raw data a little bit
 pilot_clean = clean.raw.data(pilot_raw)
 # fix tag codes
 pilot_round = round.tag.codes(pilot_clean,
                               round_to = 5)
-
-
+# summarise data to make it more like csv output
+pilot_summ = summarise.txt.data(pilot_round)
 
 save(pilot_txt_df, file = "data/raw/pilot_txt_df.rda")
 
@@ -45,7 +52,12 @@ save(pilot_txt_df, file = "data/raw/pilot_txt_df.rda")
 # deal with data that had previously been missing in the pilot study due to errors when resetting receiver
 # timers after downloading data
 #-------------------------
+# for Mike
 miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
+# for Kevin
+miss_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
+
+file_df = get.file.nms(path = miss_path)
 
 #-------------------------
 # read in 2018-2019 season data from NAS
