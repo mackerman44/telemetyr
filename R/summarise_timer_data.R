@@ -50,7 +50,6 @@ summarise_timer_data = function(timer_data = NULL,
                  funs(max)) %>%
     mutate(operational = ifelse(operational == 1, T, F)) %>%
     ungroup() %>%
-    select(-start_hr) %>%
     mutate(receiver = factor(receiver,
                              levels = receiver_nms))
 
