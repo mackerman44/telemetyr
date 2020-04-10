@@ -5,12 +5,14 @@
 #' @author Kevin See
 #'
 #' @param data data.frame containing all valid observations, output from \code{read.txt.data()}, followed by \code{clean.raw.data()}, followed by \code{round.tag.codes()}
+#' @param max_min maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 5.
 #'
 #' @import dplyr purrr readr stringr lubridate
 #' @export
 #' @return a data frame containing a summary of the raw data
 
-summarise.txt.data = function(data = NULL) {
+summarise.txt.data = function(data = NULL,
+                              max_min = 5) {
 
   stopifnot(!is.null(data))
 
@@ -19,7 +21,7 @@ summarise.txt.data = function(data = NULL) {
     group_by(tag_id) %>%
     mutate(prev_time = lag(date_time),
            diff = as.numeric(difftime(date_time, prev_time, units = 'mins')),
-           new_grp = if_else(diff > 5 | is.na(diff),
+           new_grp = if_else(diff > max_min | is.na(diff),
                              T, F)) %>%
     select(receiver:tag_id, prev_time,
            obs_time = date_time,
@@ -36,6 +38,16 @@ summarise.txt.data = function(data = NULL) {
     fill(grp_num)
 
 
+  summ_data = prep_data %>%
+    group_by(receiver, tag_id, grp_num) %>%
+    summarise(start = min(obs_time),
+              end = max(obs_time),
+              n = n()) %>%
+    ungroup() %>%
+    select(-grp_num) %>%
+    mutate(valid = as.integer(1)) %>%
+    select(receiver, valid, tag_id, start:n)
 
+  return(summ_data)
 
 }

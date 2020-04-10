@@ -4,10 +4,12 @@
 \alias{summarise.txt.data}
 \title{Summarise raw RT observations}
 \usage{
-\method{summarise}{txt.data}(data = NULL)
+\method{summarise}{txt.data}(data = NULL, max_min = 5)
 }
 \arguments{
 \item{data}{data.frame containing all valid observations, output from \code{read.txt.data()}, followed by \code{clean.raw.data()}, followed by \code{round.tag.codes()}}
+
+\item{max_min}{maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 5.}
 }
 \value{
 a data frame containing a summary of the raw data
