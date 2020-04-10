@@ -10,7 +10,7 @@
 #' @export
 #' @return a data frame containing receiver volt and temperature information
 
-read.volt.temp.data = function(path = ".") {
+read_volt_temp_data = function(path = ".") {
 
   # list all of the files with name ending with double $$
   file_df = get.file.nms(path) %>%

@@ -10,7 +10,7 @@
 #' @export
 #' @return a data frame containing receiver on/off information
 
-read.on.off.data = function(path = ".") {
+read_on_off_data = function(path = ".") {
 
   # list all of the files with name ending with a single $
   file_df = get.file.nms(path) %>%

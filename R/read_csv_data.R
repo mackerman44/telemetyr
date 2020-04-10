@@ -10,7 +10,7 @@
 #' @export
 #' @return a data frame containing all of the .csv data
 
-read.csv.data = function(path = ".",
+read_csv_data = function(path = ".",
                          receiver_codes = NULL) {
 
   # df of the .csv files

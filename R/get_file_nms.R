@@ -11,7 +11,7 @@
 #' @export
 #' @return a data frame containing all the files within each telemetry receiver's folder
 
-get.file.nms = function(path = ".",
+get_file_nms = function(path = ".",
                         receiver_codes = NULL) {
 
   # list the folders in path, each with a receiver name

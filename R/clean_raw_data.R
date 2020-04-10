@@ -11,7 +11,7 @@
 #' @export
 #' @return a data frame containing a summary of the raw data
 
-clean.raw.data = function(raw_data = NULL,
+clean_raw_data = function(raw_data = NULL,
                           filter_valid = T) {
 
   stopifnot(!is.null(raw_data))

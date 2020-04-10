@@ -10,7 +10,7 @@
 #' @export
 #' @return a data frame containing all of the .txt data
 
-read.txt.data = function(path = ".",
+read_txt_data = function(path = ".",
                          receiver_codes = NULL) {
 
   # df of the .txt files
