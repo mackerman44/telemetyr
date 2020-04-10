@@ -12,7 +12,7 @@
 #' @return a data frame of T/F summarizing operational times for each receiver
 
 summarise_timer_data = function(timer_data = NULL,
-                            receiver_codes = NULL) {
+                                receiver_codes = NULL) {
 
   # range of time among timer tags
   hr_range = lubridate::floor_date(range(timer_data$start), unit = "hours")
