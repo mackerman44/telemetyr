@@ -2,7 +2,7 @@
 #'
 #' @description Reads in raw telemetry observation data stored in the .txt format from the Tracker software
 #'
-#' @author Kevin See
+#' @author Kevin See and Mike Ackerman
 #'
 #' @inheritParams get.file.nms
 #'

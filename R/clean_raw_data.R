@@ -2,7 +2,7 @@
 #'
 #' @description Clean up raw data, including formating dates, deleting invalid rows, etc.
 #'
-#' @author Kevin See
+#' @author Kevin See and Mike Ackerman
 #'
 #' @param raw_data data.frame containing raw data, output from \code{read.txt.data()}
 #' @param filter_valid should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}
