@@ -13,7 +13,7 @@
 read_on_off_data = function(path = ".") {
 
   # list all of the files with name ending with a single $
-  file_df = get.file.nms(path) %>%
+  file_df = get_file_nms(path) %>%
     filter(grepl("\\$", file_name),
            !grepl("\\$\\$", file_name)) %>%
     select(receiver, file_name)
