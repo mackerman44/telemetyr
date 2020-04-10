@@ -19,40 +19,23 @@ summarise.txt.data = function(data = NULL) {
     group_by(tag_id) %>%
     mutate(prev_time = lag(date_time),
            diff = as.numeric(difftime(date_time, prev_time, units = 'mins')),
-           same_grp = if_else(diff > 5 | is.na(diff),
-                             F, T)) %>%
+           new_grp = if_else(diff > 5 | is.na(diff),
+                             T, F)) %>%
     select(receiver:tag_id, prev_time,
            obs_time = date_time,
-           diff, same_grp) %>%
-    mutate(next_grp = lead(same_grp),
-           grp = NA) %>%
+           diff, new_grp) %>%
     ungroup()
 
-  tmp = prep_data
-  # prep_data = tmp
+  grp_df = prep_data %>%
+    filter(new_grp) %>%
+    group_by(tag_id) %>%
+    mutate(grp_num = 1:n())
 
-  test = prep_data %>%
-    mutate(lag_tag = lag(tag_id)) %>%
-    mutate(grp = if_else(is.na(lag_tag) | lag_tag != tag_id,
-                         1,
-                         NA_real_)) %>%
-    slice(1:9) %>%
-    mutate(grp = if_else((tag_id == lag_tag | is.na(lag_tag)) & is.na(grp),
-                         if_else(!same_grp,
-                                 lead(grp),
-                                 grp),
-                         NA_real_))
-    select(-lag_tag)
+  prep_data = prep_data %>%
+    left_join(grp_df) %>%
+    fill(grp_num)
 
 
-    # for(i in 2:nrow(prep_data)) {
-    #   if(prep_data$tag_id[i] == prep_data$tag_id[i - 1] ) {
-    #     prep_data$grp[i] = if_else(prep_data$same_grp[i],
-    #                                prep_data$grp[i - 1],
-    #                                prep_data$grp[i - 1] + 1)
-    #
-    #   }
-    # } goal_df = prep_data
 
 
 }
