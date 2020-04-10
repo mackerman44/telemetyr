@@ -68,6 +68,15 @@ pilot_summ = summarise_txt_data(pilot_round)
 
 save(pilot_summ, file = "data/prepped/pilot_summ.rda")
 
+#-----------------------------------------
+# following instructions from Nick
+#-----------------------------------------
+# get tag ids for tags that were released
+library(readxl)
+tag_df = read_excel('data/raw/tag_release/TagReleases2017.xlsx',
+                      'RTs') %>%
+  mutate(tag_id = str_extract_all(RadioTag))
+
 #-------------------------
 # read in 2018-2019 season data from NAS
 #-------------------------

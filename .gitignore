@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# this ignores temporary files that show up on my computer when I open a document
+~$*
