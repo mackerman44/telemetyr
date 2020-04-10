@@ -4,23 +4,23 @@
 #'
 #' @author Kevin See and Mike Ackerman
 #'
-#' @param data data.frame with column named \code{tag_code}
+#' @param data_df data.frame with column named \code{tag_code}
 #' @param round_to integer that the tag codes should be rounded to, currently supports either 10 or 5 (default is 10)
 #'
-#' @import dplyr stringr
+#' @import dplyr stringr tidyr
 #' @export
-#' @return a data frame containing all the original columns, plus one called \code{tag_id}
+#' @return a data.frame containing all the original columns, plus one called \code{tag_id}
 
-round.tag.codes = function(data = NULL,
+round_tag_codes = function(data_df = NULL,
                            round_to = 10) {
 
-  stopifnot(!is.null(data))
+  stopifnot(!is.null(data_df))
 
   if(!round_to %in% c(10, 5)) {
     stop('Currently only designed to round to 10 or 5.')
   }
 
-  prep_data = data %>%
+  prep_data = data_df %>%
     mutate(tag_code = stringr::str_pad(tag_code,
                                        width = 3,
                                        pad = '0'),
