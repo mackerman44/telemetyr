@@ -6,6 +6,11 @@
 \usage{
 read_csv_data(path = ".", receiver_codes = NULL)
 }
+\arguments{
+\item{path}{the directory containing the folders with observation data for each telemetry receiver for a study season}
+
+\item{receiver_codes}{character vector of receiver codes to query for. Default is \code{NULL} which will keep all receiver codes found in the path folder}
+}
 \value{
 a data frame containing all of the .csv data
 }

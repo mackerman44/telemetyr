@@ -4,7 +4,7 @@
 #'
 #' @author Kevin See
 #'
-#' @inheritParams get.file.nms
+#' @inheritParams get_file_nms
 #'
 #' @import dplyr purrr readr stringr lubridate
 #' @export
