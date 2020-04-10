@@ -2,21 +2,21 @@
 #'
 #' @description Summarises cleaned detections, showing the first and last detection on each receiver for each tag, and how many times it was detected on that receiver in that window.
 #'
-#' @author Kevin See
+#' @author Kevin See and Mike Ackerman
 #'
-#' @param data data.frame containing all valid observations, output from \code{read.txt.data()}, followed by \code{clean.raw.data()}, followed by \code{round.tag.codes()}
+#' @param data_df data.frame containing all valid observations, output from \code{read.txt.data()}, followed by \code{clean.raw.data()}, followed by \code{round.tag.codes()}
 #' @param max_min maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 5.
 #'
-#' @import dplyr purrr readr stringr lubridate
+#' @import dplyr purrr readr stringr lubridate tidyr
 #' @export
-#' @return a data frame containing a summary of the raw data
+#' @return a data.frame containing a summary of the raw data
 
-summarise.txt.data = function(data = NULL,
+summarise_txt_data = function(data_df = NULL,
                               max_min = 5) {
 
-  stopifnot(!is.null(data))
+  stopifnot(!is.null(data_df))
 
-  prep_data = data %>%
+  prep_data = data_df %>%
     arrange(tag_id, date_time) %>%
     group_by(tag_id) %>%
     mutate(prev_time = lag(date_time),
@@ -35,7 +35,7 @@ summarise.txt.data = function(data = NULL,
 
   prep_data = prep_data %>%
     left_join(grp_df) %>%
-    fill(grp_num)
+    tidyr::fill(grp_num)
 
 
   summ_data = prep_data %>%
