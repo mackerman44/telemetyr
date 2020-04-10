@@ -4,7 +4,9 @@
 \name{pilot_summ}
 \alias{pilot_summ}
 \title{Pilot Study summarised Receiver Data - .txt format}
-\format{data.frame from summarise_txt_data}
+\format{
+data.frame from summarise_txt_data
+}
 \usage{
 pilot_summ
 }

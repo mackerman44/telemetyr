@@ -11,7 +11,7 @@
 #' @export
 #' @return a data frame of T/F summarizing operational times for each receiver
 
-rcvr_ops_summary = function(timer_data = NULL,
+summarise_timer_data = function(timer_data = NULL,
                             receiver_codes = NULL) {
 
   # range of time among timer tags

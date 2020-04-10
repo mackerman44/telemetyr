@@ -4,7 +4,9 @@
 \name{pilot_txt_df}
 \alias{pilot_txt_df}
 \title{Pilot Study Raw Receiver Data - .txt format}
-\format{txt exports from Tracker software}
+\format{
+txt exports from Tracker software
+}
 \usage{
 pilot_txt_df
 }
