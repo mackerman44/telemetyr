@@ -44,8 +44,24 @@ save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
 #-------------------------
 # this function reads in the "raw" text files
 # pilot_txt_df = read.txt.data(path = pilot_path)
-pilot_raw = read_txt_data(path = pilot_path) %>%
-  bind_rows(read_txt_data(path = miss_path))
+pilot_raw = read_txt_data(path = pilot_path)
+
+miss_raw = read_txt_data(path = miss_path) %>%
+  # add characteres corresponding to the year to the file name, to make it consistent
+  mutate(file_char = nchar(file)) %>%
+  mutate(jday = str_sub(file, 1, 3),
+         jday = as.numeric(jday),
+         yr = if_else(jday < 100,
+                      18,
+                      17)) %>%
+  mutate(file = if_else(file_char == 11,
+                        paste0(yr, file),
+                        file)) %>%
+  select(-c(file_char:yr))
+
+pilot_raw %<>%
+  bind_rows(miss_raw)
+
 # save as .rda object
 pilot_txt_df = pilot_raw %>%
   select(-file_name,
