@@ -11,8 +11,8 @@
 #' @export
 #' @return a data frame of T/F summarizing operational times for each receiver
 
-rcvr_ops_summary = function(timer_data = NULL,
-                            receiver_codes = NULL) {
+summarise_timer_data = function(timer_data = NULL,
+                                receiver_codes = NULL) {
 
   # range of time among timer tags
   hr_range = lubridate::floor_date(range(timer_data$start), unit = "hours")
@@ -50,7 +50,6 @@ rcvr_ops_summary = function(timer_data = NULL,
                  funs(max)) %>%
     mutate(operational = ifelse(operational == 1, T, F)) %>%
     ungroup() %>%
-    select(-start_hr) %>%
     mutate(receiver = factor(receiver,
                              levels = receiver_nms))
 
