@@ -44,8 +44,25 @@ pilot_csv_df = read_csv_data(path = pilot_path) %>%
 save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
 
 # read in the "raw" .txt format data
-pilot_raw = read_txt_data(path = pilot_path) %>%
-  bind_rows(read_txt_data(path = miss_path)) %>%
+pilot_raw = read_txt_data(path = pilot_path)
+
+miss_raw = read_txt_data(path = miss_path) %>%
+  # add characteres corresponding to the year to the file name, to make it consistent
+  mutate(file_char = nchar(file)) %>%
+  mutate(jday = str_sub(file, 1, 3),
+         jday = as.numeric(jday),
+         yr = if_else(jday < 100,
+                      18,
+                      17)) %>%
+  mutate(file = if_else(file_char == 11,
+                        paste0(yr, file),
+                        file)) %>%
+  select(-c(file_char:yr))
+
+pilot_raw %<>%
+  bind_rows(miss_raw)
+
+pilot_raw = pilot_raw %>%
   select(-file_name,
          -file)
 
@@ -56,6 +73,9 @@ pilot_raw %<>%
                            'BR2' = 'TB2',      # recode BR2 to TB2
                            '039' = 'TT1'))     # recode 039 to TT1
 
-
 # save as a .rda object
 save(pilot_raw, file = "data/raw/pilot_raw.rda")
+
+#-------------------------
+# 2018-2019 SEASON
+#-------------------------
