@@ -1,0 +1,14 @@
+model {
+  phi ~ dbeta(1, 1)
+  p ~ dbeta(1, 1)
+  for (i in 1:n) {
+    for (j in 2:J) {
+      z[i, j] ~ dbern(phi * z[i, j - 1])
+      y[i, j] ~ dbern(p * z[i, j])
+    }
+  }
+  survship[1] <- 1
+  for (j in 2:J) {
+    survship[j] <- survship[j - 1] * phi
+  }
+}
