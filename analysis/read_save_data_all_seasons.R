@@ -47,7 +47,7 @@ save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
 pilot_raw = read_txt_data(path = pilot_path)
 
 miss_raw = read_txt_data(path = miss_path) %>%
-  # add characteres corresponding to the year to the file name, to make it consistent
+  # add characters corresponding to the year of the file name, to make it consistent
   mutate(file_char = nchar(file)) %>%
   mutate(jday = str_sub(file, 1, 3),
          jday = as.numeric(jday),
@@ -62,11 +62,11 @@ miss_raw = read_txt_data(path = miss_path) %>%
 pilot_raw %<>%
   bind_rows(miss_raw)
 
-pilot_raw = pilot_raw %>%
+pilot_raw %<>%
   select(-file_name,
          -file)
 
-# rix a few receiver cods
+# fix a few receiver codes
 pilot_raw %<>%
   mutate(receiver = recode(receiver,
                            'BR1' = 'TB1',      # recode BR1 to TB1
