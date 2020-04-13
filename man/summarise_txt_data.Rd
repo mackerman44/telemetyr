@@ -6,7 +6,7 @@
 \usage{
 summarise_txt_data(
   data_df = NULL,
-  max_min = 5,
+  max_min = 2,
   assign_week = T,
   week_base = "0901",
   append_week = c("first", "last")
@@ -15,7 +15,7 @@ summarise_txt_data(
 \arguments{
 \item{data_df}{data.frame containing all valid observations, output from \code{read_txt_data()}, followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}}
 
-\item{max_min}{maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 5.}
+\item{max_min}{maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 2.}
 
 \item{assign_week}{Should this function assign a week number to the output? Default is \code{TRUE}}
 

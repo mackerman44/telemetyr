@@ -5,7 +5,7 @@
 #' @author Kevin See and Mike Ackerman
 #'
 #' @param data_df data.frame containing all valid observations, output from \code{read_txt_data()}, followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}
-#' @param max_min maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 5.
+#' @param max_min maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 2.
 #' @param assign_week Should this function assign a week number to the output? Default is \code{TRUE}
 #' @param week_base If assigning week numbers, the date when the numbering should start in MMDD format
 #' @param append_week If assigning weeks, should the week be assigned based on the \code{first} or \code{last} time a tag was detected on that receiver? Default value is \code{first}.
@@ -17,7 +17,7 @@
 #' @return a data.frame containing a summary of the raw data
 
 summarise_txt_data = function(data_df = NULL,
-                              max_min = 5,
+                              max_min = 2,
                               assign_week = T,
                               week_base = "0901",
                               append_week = c('first', 'last')) {
