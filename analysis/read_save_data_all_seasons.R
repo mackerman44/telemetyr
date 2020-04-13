@@ -79,3 +79,14 @@ save(pilot_raw, file = "data/raw/pilot_raw.rda")
 #-------------------------
 # 2018-2019 SEASON
 #-------------------------
+# path to the folder on Biomark NAS
+# be sure to be connected to the Biomark VPN
+# for Mike
+pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
+# for Kevin
+pilot_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
+
+
+#-------------------------
+# 2019-2020 SEASON
+#-------------------------

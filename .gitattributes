@@ -1,2 +1,2 @@
 data/raw/pilot_raw.rda filter=lfs diff=lfs merge=lfs -text
-data/raw/ssn_1819_txt_df.rda filter=lfs diff=lfs merge=lfs -text
+data/raw/ssn_1819_raw.rda filter=lfs diff=lfs merge=lfs -text
