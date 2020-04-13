@@ -6,15 +6,25 @@
 #'
 #' @param data_df data.frame containing all valid observations, output from \code{read_txt_data()}, followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}
 #' @param max_min maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 5.
+#' @param assign_week Should this function assign a week number to the output? Default is \code{TRUE}
+#' @param week_base If assigning week numbers, the date when the numbering should start in MMDD format
+#' @param append_week If assigning weeks, should the week be assigned based on the \code{first} or \code{last} time a tag was detected on that receiver? Default value is \code{first}.
+#'
 #'
 #' @import dplyr lubridate tidyr
+#' @importFrom magrittr %<>%
 #' @export
 #' @return a data.frame containing a summary of the raw data
 
 summarise_txt_data = function(data_df = NULL,
-                              max_min = 5) {
+                              max_min = 5,
+                              assign_week = T,
+                              week_base = "0901",
+                              append_week = c('first', 'last')) {
 
   stopifnot(!is.null(data_df))
+
+  append_week = match.arg(append_week)
 
   prep_data = data_df %>%
     arrange(tag_id, date_time) %>%
@@ -33,7 +43,7 @@ summarise_txt_data = function(data_df = NULL,
     group_by(tag_id) %>%
     mutate(grp_num = 1:n())
 
-  prep_data = prep_data %>%
+  prep_data %<>%
     left_join(grp_df) %>%
     tidyr::fill(grp_num)
 
@@ -47,6 +57,23 @@ summarise_txt_data = function(data_df = NULL,
     select(-grp_num) %>%
     mutate(valid = as.integer(1)) %>%
     select(receiver, valid, tag_id, start:n)
+
+  if(assign_week) {
+    start_date = ymd(paste(year(min(summ_data$start)), week_base))
+    if(append_week == 'first') {
+      summ_data %<>%
+        mutate(week = difftime(start, start_date, units = 'weeks'),
+               week = as.numeric(week),
+               week = floor(week) + 1)
+    }
+    if(append_week == 'last') {
+      summ_data %<>%
+        mutate(week = difftime(end, start_date, units = 'weeks'),
+               week = as.numeric(week),
+               week = floor(week) + 1)
+    }
+  }
+
 
   return(summ_data)
 
