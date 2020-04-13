@@ -79,14 +79,41 @@ save(pilot_raw, file = "data/raw/pilot_raw.rda")
 #-------------------------
 # 2018-2019 SEASON
 #-------------------------
-# path to the folder on Biomark NAS
-# be sure to be connected to the Biomark VPN
+# path to the folder on Biomark NAS; be sure to be connected to the Biomark VPN
 # for Mike
-pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
+ssn_1819_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
 # for Kevin
-pilot_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
+ssn_1819_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
 
+# read in and save the csv format data
+ssn_1819_csv_df = read_csv_data(path = ssn_1819_path) %>%
+  arrange(receiver, tag_id, start)
+# save as .rda object
+save(ssn_1819_csv_df, file = "data/raw/ssn_1819_csv_df.rda")
+
+# read in the "raw" .txt format data
+ssn_1819_raw = read_txt_data(path = ssn_1819_path)
+
+# save as a .rda object
+save(ssn_1819_raw, file = "data/raw/ssn_1819_raw.rda")
 
 #-------------------------
 # 2019-2020 SEASON
 #-------------------------
+# path to the folder on Biomark NAS; be sure to be connected to the Biomark VPN
+# for Mike
+ssn_1920_path = "S:/telemetry/lemhi/fixed_site_downloads/2019_2020"
+# for Kevin
+ssn_1920_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2019_2020"
+
+# read in and save the csv format data
+ssn_1920_csv_df = read_csv_data(path = ssn_1920_path) %>%
+  arrange(receiver, tag_id, start)
+# save as .rda object
+save(ssn_1920_csv_df, file = "data/raw/ssn_1920_csv_df.rda")
+
+# read in the "raw" .txt format data
+ssn_1920_raw = read_txt_data(path = ssn_1920_path)
+
+# save as a .rda object
+save(ssn_1920_raw, file = "data/raw/ssn_1920_raw.rda")
