@@ -1,0 +1,61 @@
+#-----------------------------------------------
+#
+# A script for reading in and saving observation data,
+# both .txt and .csv format, from the Tracker software
+# for the fixed site antennas and receiver and for the
+# Lemhi River juvenile Chinook salmon winter radio
+# telemetry study.
+#
+# Created by: Mike Ackerman & Kevin See
+# Date created:
+# Last modified:
+#
+#-----------------------------------------------
+
+#-------------------------
+# load necessary libraries
+#-------------------------
+library(tidyverse)
+library(magrittr)
+library(telemetyr)
+
+#-------------------------
+# PILOT STUDY
+#-------------------------
+# path to the folder on Biomark NAS
+# be sure to be connected to the Biomark VPN
+# for Mike
+pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018"
+# for Kevin
+pilot_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018"
+
+# deal with data that had previously been missing in the pilot study due to errors when resetting receiver
+# timers after downloading data
+# for Mike
+miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
+# for Kevin
+miss_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
+
+# read in and save the csv format data
+pilot_csv_df = read_csv_data(path = pilot_path) %>%
+  bind_rows(read_csv_data(path = miss_path)) %>%
+  arrange(receiver, tag_id, start)
+# save as .rda object
+save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
+
+# read in the "raw" .txt format data
+pilot_raw = read_txt_data(path = pilot_path) %>%
+  bind_rows(read_txt_data(path = miss_path)) %>%
+  select(-file_name,
+         -file)
+
+# rix a few receiver cods
+pilot_raw %<>%
+  mutate(receiver = recode(receiver,
+                           'BR1' = 'TB1',      # recode BR1 to TB1
+                           'BR2' = 'TB2',      # recode BR2 to TB2
+                           '039' = 'TT1'))     # recode 039 to TT1
+
+
+# save as a .rda object
+save(pilot_raw, file = "data/raw/pilot_raw.rda")

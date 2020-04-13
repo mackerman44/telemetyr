@@ -1,10 +1,14 @@
 #-----------------------------------------------
+#
 # A script for the Lemhi River radio telemetry pilot study.
-# Includes reading, cleaning, reduction, analysis, and visualization of data
+# Includes cleaning, reduction, analysis, and visualization of data
 # and roughly based on the original pilotStudy.R script used to generate the
 # original report
 #
-# Created by Mike Ackerman on 4/8/2020
+# Created by: Mike Ackerman & Kevin See on 4/8/2020
+# Date created: 4/8/2020
+# Last modified:
+#
 #-----------------------------------------------
 
 #-------------------------
@@ -15,49 +19,9 @@ library(magrittr)
 library(telemetyr)
 
 #-------------------------
-# read in pilot study data from NAS
-# be sure to be connected to Biomark VPN
-#-------------------------
-# create df of file names
-# for Mike
-pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018"
-# for Kevin
-pilot_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018"
+# load pilot_raw.rda
+load("data/raw/pilot_raw.rda")
 
-#-------------------------
-# deal with data that had previously been missing in the pilot study due to errors when resetting receiver
-# timers after downloading data
-#-------------------------
-# for Mike
-miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
-# for Kevin
-miss_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
-
-
-# read in csv format data
-pilot_csv_df = read_csv_data(path = pilot_path) %>%
-  bind_rows(read_csv_data(path = miss_path)) %>%
-  arrange(receiver, tag_id, start)
-# save as .rda object
-save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
-
-#-------------------------
-# this function reads in the "raw" text files
-# pilot_txt_df = read.txt.data(path = pilot_path)
-pilot_raw = read_txt_data(path = pilot_path) %>%
-  bind_rows(read_txt_data(path = miss_path))
-# save as .rda object
-pilot_txt_df = pilot_raw %>%
-  select(-file_name,
-         -file)
-save(pilot_txt_df, file = "data/raw/pilot_txt_df.rda")
-
-# fix a couple receiver codes
-pilot_raw %<>%
-  mutate(receiver = recode(receiver,
-                           'BR1' = 'TB1',      # recode BR1 to TB1
-                           'BR2' = 'TB2',      # recode BR2 to TB2
-                           '039' = 'TT1'))     # recode 039 to TT1
 # clean raw data a little bit
 pilot_clean = clean_raw_data(pilot_raw)
 # fix tag codes
@@ -100,10 +64,13 @@ tag_df = parse_tag_list(pilot_round,
 pilot_on_off_df = read_on_off_data(path = pilot_path)
 pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 
-# operation times
+#-------------------------
+# receiver operation times
+#-------------------------
+# parse out timer data
 timer_df = parse_timer(pilot_summ)
 
-# receiver names
+# list of the receiver names for pilot study
 receiver_nms = c('LH1','LH2',
                  'DC1','DC2',
                  'MB1','MB2',
@@ -119,47 +86,69 @@ receiver_nms = c('LH1','LH2',
                  'SB1','SB2',
                  'TB1','TB2')
 
-ops = rcvr_ops_summary(timer_df)
+# summarise pilot study timer data - all receiver codes in timer_df
+timer_summ = summarise_timer_data(timer_data = timer_df,
+                                  receiver_codes = NULL)
+
+# summarise pilot study timer data - only receiver codes in receiver_nms
+timer_summ = summarise_timer_data(timer_data = timer_df,
+                                  receiver_codes = receiver_nms)
+
+# ADD THE BELOW AS A FUNC
+# plot operational times for each of the receivers
+# timer_p = timer_summ %>%
+#   ggplot(aes(x = hr,
+#              y = fct_rev(receiver),
+#              color = operational)) +
+#   geom_line(size = 2,
+#             color = 'black') +
+#   geom_point(data = timer_summ %>%
+#                filter(!operational),
+#              size = 1.5, color = 'orange') +
+#   theme_bw() +
+#   labs(x = 'Date - Hour',
+#        y = 'Receiver') +
+#   theme(axis.text.x = element_text(color = 'black', size = 12),
+#         axis.text.y = element_text(color = 'black', size = 12),
+#         axis.title.x = element_text(color = 'black', size = 14),
+#         axis.title.y = element_text(color = 'black', size = 14))
+# timer_p
 
 # Calculate the proportion of time that each receiver was operation from the time it first came online to the final time the
 # timer tag was observed
-p_time_df = op_plot_df %>%
-  mutate(site = substr(receiver, 1, 2)) %>%
-  left_join(op_plot_df %>%
-              filter(operational == T) %>%
-              group_by(receiver) %>%
-              summarise(end_hr = max(floor_date(hr, unit = 'hours'), na.rm = T)) %>%
-              ungroup()) %>%
-  filter(hr >= start_hr) %>%
-  filter(hr <= end_hr) %>%
-  group_by(receiver) %>%
-  summarise(p_op = sum(operational == T) / length(operational)) %>%
-  ungroup()
-p_time_df
+# timer_p = timer_summ %>%
+#   mutate(site = substr(receiver, 1, 2)) %>%
+#   left_join(timer_summ %>%
+#               dplyr::filter(operational == T) %>%
+#               dplyr::group_by(receiver) %>%
+#               summarise(end_hr = max(lubridate::floor_date(hr,
+#                                                            unit = "hours"),
+#                                      na.rm = T)) %>%
+#               ungroup()) %>%
+#   filter(hr >= start_hr) %>%
+#   filter(hr <= end_hr) %>%
+#   group_by(receiver) %>%
+#   summarise(p_operational = sum(operational == T) / length(operational)) %>%
+#   ungroup()
+# timer_p
 
-# plot operational times for each of the receivers
-p_time_p = op_plot_df %>%
-  ggplot(aes(x = hr,
-             y = fct_rev(receiver),
-             color = operational)) +
-  geom_line(size = 2,
-            color = 'black') +
-  geom_point(data = op_plot_df %>%
-               filter(!operational),
-             size = 1.5, color = 'orange') +
-  theme_bw() +
-  labs(x = 'Date - Hour',
-       y = 'Receiver') +
-  theme(axis.text.x = element_text(color = 'black', size = 12),
-        axis.text.y = element_text(color = 'black', size = 12),
-        axis.title.x = element_text(color = 'black', size = 14),
-        axis.title.y = element_text(color = 'black', size = 14))
-p_time_p
+#-------------------------
+# noise data
+#-------------------------
+# parse out noise data
+noise_df = parse_noise(pilot_summ)
 
-# save a copy of operations plot
-ggsave('figures/operationalPlot.pdf',
-       p_time_p,
-       width = 16,
-       height = 6,
-       units = 'in')
+# summarise_noise_data - all receivers in noise_data, raw noise observations
+noise_summ = summarise_noise_data(noise_data = noise_df,
+                                  receiver_codes = NULL,
+                                  operations_summary = NULL)
 
+# summarise_noise_data - only receivers in receiver_nm, raw noise observations
+noise_summ = summarise_noise_data(noise_data = noise_df,
+                                  receiver_codes = receiver_nms,
+                                  operations_summary = NULL)
+
+# summarise_noise_data - only receivers in receiver_nm, noise converted to a rate (noise per hour)
+noise_summ = summarise_noise_data(noise_data = noise_df,
+                                  receiver_codes = receiver_nms,
+                                  operations_summary = timer_summ)
