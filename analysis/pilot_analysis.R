@@ -108,24 +108,21 @@ timer_plot = timer_summ %>%
        y = "Receiver")
 timer_plot
 
-
 # Calculate the proportion of time that each receiver was operation from the time it first came online to the final time the
 # timer tag was observed
-# timer_p = timer_summ %>%
-#   mutate(site = substr(receiver, 1, 2)) %>%
-#   left_join(timer_summ %>%
-#               dplyr::filter(operational == T) %>%
-#               dplyr::group_by(receiver) %>%
-#               summarise(end_hr = max(lubridate::floor_date(hr,
-#                                                            unit = "hours"),
-#                                      na.rm = T)) %>%
-#               ungroup()) %>%
-#   filter(hr >= start_hr) %>%
-#   filter(hr <= end_hr) %>%
-#   group_by(receiver) %>%
-#   summarise(p_operational = sum(operational == T) / length(operational)) %>%
-#   ungroup()
-# timer_p
+timer_p_op = timer_summ %>%
+  mutate(site = substr(receiver, 1, 2)) %>%
+  left_join(timer_summ %>%
+              dplyr::filter(operational == T) %>%
+              dplyr::group_by(receiver) %>%
+              dplyr::summarise(receiver_end_hr = max(lubridate::floor_date(hr,
+                                                                           unit = "hours"),
+                                                     na.rm = T)) %>%
+              ungroup()) %>%
+  filter(hr >= receiver_start_hr & hr <= receiver_end_hr) %>%
+  group_by(receiver) %>%
+  summarise(p_operational = sum(operational == T) / length(operational)) %>%
+  ungroup()
 
 #-------------------------
 # noise data
