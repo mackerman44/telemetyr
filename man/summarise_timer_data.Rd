@@ -4,15 +4,24 @@
 \alias{summarise_timer_data}
 \title{Summarize Receiver Operation Times}
 \usage{
-summarise_timer_data(timer_data = NULL, receiver_codes = NULL)
+summarise_timer_data(
+  timer_data = NULL,
+  receiver_codes = NULL,
+  season_start = NULL,
+  season_end = NULL
+)
 }
 \arguments{
 \item{timer_data}{the data frame containing the timer tag data e.g., from parse_timer()}
 
 \item{receiver_codes}{character vector of receiver codes to query for. Default is \code{NULL} which will keep all receiver codes found in the path folder}
+
+\item{season_start}{format "%Y-%m-%d" the first day of the season that the receivers were considered turned on}
+
+\item{season_end}{format "%Y-%m-%d" the final day of the season that the receivers were all turned off}
 }
 \value{
-a data frame of T/F summarizing operational times for each receiver
+a data frame with T/F summarizing operational times for each receiver
 }
 \description{
 Summarize receiver operational times using data from the timer tags at each site

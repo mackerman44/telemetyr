@@ -4,10 +4,12 @@
 \alias{read_on_off_data}
 \title{Read in Receiver On/Off Times from Tracker Software}
 \usage{
-read_on_off_data(path = ".")
+read_on_off_data(path = ".", receiver_codes = NULL)
 }
 \arguments{
 \item{path}{the directory containing the folders with observation data for each telemetry receiver for a study season}
+
+\item{receiver_codes}{character vector of receiver codes to query for. Default is \code{NULL} which will keep all receiver codes found in the path folder}
 }
 \value{
 a data frame containing receiver on/off information
