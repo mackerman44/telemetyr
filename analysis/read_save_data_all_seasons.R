@@ -36,17 +36,11 @@ miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
 # for Kevin
 miss_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
 
-# read in and save the csv format data
-pilot_csv_df = read_csv_data(path = pilot_path) %>%
-  bind_rows(read_csv_data(path = miss_path)) %>%
-  arrange(receiver, tag_id, start)
-# save as .rda object
-save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
-
 # read in the "raw" .txt format data
-pilot_raw = read_txt_data(path = pilot_path)
+raw_df = read_txt_data(path = pilot_path)
 
-miss_raw = read_txt_data(path = miss_path) %>%
+# for the pilot year, we have to add this "missing" data
+miss_df = read_txt_data(path = miss_path) %>%
   # add characters corresponding to the year of the file name, to make it consistent
   mutate(file_char = nchar(file)) %>%
   mutate(jday = str_sub(file, 1, 3),
@@ -59,18 +53,34 @@ miss_raw = read_txt_data(path = miss_path) %>%
                         file)) %>%
   select(-c(file_char:yr))
 
-pilot_raw %<>%
-  bind_rows(miss_raw)
+raw_df %<>%
+  bind_rows(miss_df)
 
 # fix a few receiver codes
-pilot_raw %<>%
+raw_df %<>%
   mutate(receiver = recode(receiver,
                            'BR1' = 'TB1',      # recode BR1 to TB1
                            'BR2' = 'TB2',      # recode BR2 to TB2
                            '039' = 'TT1'))     # recode 039 to TT1
 
-# save as a .rda object
-save(pilot_raw, file = "data/raw/pilot_raw.rda")
+# clean, round and compress data
+compress_df = compress_raw_data(raw_df)
+
+#--------------------------
+# save a couple objects
+save_path = "data/prepped/pilot/"
+
+write_rds(raw_df, paste0(save_path, "raw.rds"))
+write_rds(compress_df, paste0(save_path, "compressed.rds"))
+
+#--------------------------
+# read in and save the csv format data
+pilot_csv_df = read_csv_data(path = pilot_path) %>%
+  bind_rows(read_csv_data(path = miss_path)) %>%
+  arrange(receiver, tag_id, start)
+# save as .rda object
+save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
+
 
 # read in pilot study receiver on/off and volt/temp data from NAS
 pilot_on_off_df = read_on_off_data(path = pilot_path)
