@@ -14,6 +14,9 @@ summarise_noise_data(
 \item{noise_data}{the data frame containing the noise data e.g., from \code{parse_noise()}}
 
 \item{receiver_codes}{character vector of receiver codes to query for. Default is \code{NULL} which will keep all receiver codes found in the path folder}
+
+\item{operations_summary}{an optional summary of receiver operation times typically the \code{operations_summ} object
+from \code{summarise_timer_data()}}
 }
 \value{
 a data frame summarising the noise information

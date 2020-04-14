@@ -9,7 +9,7 @@
 #' @param season_start format "%Y-%m-%d" the first day of the season that the receivers were considered turned on
 #' @param season_end format "%Y-%m-%d" the final day of the season that the receivers were all turned off
 #'
-#' @import dplyr lubridate
+#' @import dplyr lubridate ggplot2
 #' @export
 #' @return a data frame with T/F summarizing operational times for each receiver
 

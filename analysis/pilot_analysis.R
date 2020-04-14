@@ -117,4 +117,4 @@ noise_summ = summarise_noise_data(noise_data = noise_df,
 # summarise_noise_data - only receivers in receiver_nm, noise converted to a rate (noise per hour)
 noise_summ = summarise_noise_data(noise_data = noise_df,
                                   receiver_codes = receiver_nms,
-                                  operations_summary = timer_summ)
+                                  operations_summary = timer_summ$operations_summ)
