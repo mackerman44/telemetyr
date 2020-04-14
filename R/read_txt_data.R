@@ -58,6 +58,8 @@ read_txt_data = function(path = ".",
              return(tmp)
 
            }) %>%
+    # filter out rows that aren't actually data
+    filter(!is.na(valid)) %>%
     arrange(receiver, file)
 
   return(raw_df)

@@ -17,12 +17,10 @@ clean_raw_data = function(raw_data = NULL,
   stopifnot(!is.null(raw_data))
 
   clean_data = raw_data %>%
-    filter(!is.na(valid)) %>%
     rename(orig_date = date) %>%
     filter(orig_date != "00/00/00") %>%
     mutate(date = lubridate::dmy(orig_date)) %>%
     bind_rows(raw_data %>%
-                filter(!is.na(valid)) %>%
                 rename(orig_date = date) %>%
                 filter(orig_date == "00/00/00") %>%
                 mutate(nums = stringr::str_extract(file, "[:digit:]+"),
