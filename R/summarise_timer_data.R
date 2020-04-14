@@ -37,6 +37,7 @@ summarise_timer_data = function(timer_data = NULL,
     receiver_nms = receiver_nms[receiver_nms %in% receiver_codes]
   }
 
+  # data frame summarizing timer_data
   tmp = timer_data %>%
     mutate(hr = lubridate::floor_date(start,
                                       unit = "hours")) %>%
@@ -64,6 +65,40 @@ summarise_timer_data = function(timer_data = NULL,
     mutate(receiver = factor(receiver,
                              levels = receiver_nms))
 
-  return(tmp)
+  # receiver operations time plot
+  tmp_plot = tmp %>%
+    ggplot2::ggplot(aes(x = hr,
+                        y = fct_rev(receiver),
+                        color = operational)) +
+    geom_line(size = 2,
+              color = "black") +
+    geom_point(data = tmp %>%
+                 filter(!operational),
+               size = 1.5,
+               color = "palegreen2") +
+    theme_bw() +
+    labs(x = "Time",
+         y = "Receiver")
+
+  # calculate the proportion of time from season_start (min_hr) to season_end (max_hr) that each receiver
+  # was operational
+  tmp_p_op = tmp %>%
+    mutate(site = substr(receiver, 1, 2)) %>%
+    left_join(tmp %>%
+                dplyr::filter(operational == T) %>%
+                dplyr::group_by(receiver) %>%
+                dplyr::summarise(receiver_end_hr = max(lubridate::floor_date(hr,
+                                                                             unit = "hours"),
+                                                       na.rm = T)) %>%
+                ungroup()) %>%
+    filter(hr >= receiver_start_hr & hr <= receiver_end_hr) %>%
+    group_by(receiver) %>%
+    summarise(p_operational = sum(operational == T) / length(operational)) %>%
+    ungroup()
+
+  tmp_list = list(operations_summ = tmp,
+                  operations_plot = tmp_plot,
+                  p_operational = tmp_p_op)
+  return(tmp_list)
 
 } # end rcvr_ops_summary()

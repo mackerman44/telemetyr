@@ -92,37 +92,11 @@ timer_summ = summarise_timer_data(timer_data = timer_df,
                                   season_start = "2017-09-12",
                                   season_end = "2018-02-15")
 
-# ADD THE BELOW AS A FUNC
-#plot operational times for each of the receivers
-timer_plot = timer_summ %>%
-  ggplot(aes(x = hr,
-             y = fct_rev(receiver),
-             color = operational)) +
-  geom_line(size = 2,
-            color = "black") +
-  geom_point(data = timer_summ %>%
-               filter(!operational),
-             size = 1.5, color = "palegreen2") +
-  theme_bw() +
-  labs(x = "Time",
-       y = "Receiver")
-timer_plot
+# objects from timer_summ
+head(timer_summ$operations_summ)
+timer_summ$operations_plot
+timer_summ$p_operational
 
-# Calculate the proportion of time that each receiver was operation from the time it first came online to the final time the
-# timer tag was observed
-timer_p_op = timer_summ %>%
-  mutate(site = substr(receiver, 1, 2)) %>%
-  left_join(timer_summ %>%
-              dplyr::filter(operational == T) %>%
-              dplyr::group_by(receiver) %>%
-              dplyr::summarise(receiver_end_hr = max(lubridate::floor_date(hr,
-                                                                           unit = "hours"),
-                                                     na.rm = T)) %>%
-              ungroup()) %>%
-  filter(hr >= receiver_start_hr & hr <= receiver_end_hr) %>%
-  group_by(receiver) %>%
-  summarise(p_operational = sum(operational == T) / length(operational)) %>%
-  ungroup()
 
 #-------------------------
 # noise data
