@@ -17,10 +17,10 @@
 #' @return a data.frame containing a summary of the raw data
 
 compress_txt_data = function(data_df = NULL,
-                              max_min = 2,
-                              assign_week = T,
-                              week_base = "0901",
-                              append_week = c('first', 'last')) {
+                             max_min = 2,
+                             assign_week = T,
+                             week_base = "0901",
+                             append_week = c('first', 'last')) {
 
   stopifnot(!is.null(data_df))
 
