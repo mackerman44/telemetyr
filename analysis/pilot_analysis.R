@@ -24,13 +24,14 @@ load("data/raw/pilot_raw.rda")
 
 # clean raw data a little bit
 pilot_clean = clean_raw_data(pilot_raw)
+
 # fix tag codes
 pilot_round = round_tag_codes(pilot_clean,
                               round_to = 5)
+
 # summarise data to make it more like csv output
 pilot_summ = summarise_txt_data(pilot_round)
-
-save(pilot_summ, file = "data/prepped/pilot_summ.rda")
+#save(pilot_summ, file = "data/prepped/pilot_summ.rda")
 
 #-----------------------------------------
 # following instructions from Nick
@@ -58,11 +59,6 @@ tag_df = parse_tag_list(pilot_round,
                         tags = tag_list) %>%
   summarise_txt_data(max_min = 2)
 
-#-------------------------
-# read in pilot study on/off and volt/temp data from NAS
-#-------------------------
-pilot_on_off_df = read_on_off_data(path = pilot_path)
-pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 
 #-------------------------
 # receiver operation times
@@ -92,27 +88,26 @@ timer_summ = summarise_timer_data(timer_data = timer_df,
 
 # summarise pilot study timer data - only receiver codes in receiver_nms
 timer_summ = summarise_timer_data(timer_data = timer_df,
-                                  receiver_codes = receiver_nms)
+                                  receiver_codes = receiver_nms,
+                                  season_start = "2017-09-12",
+                                  season_end = "2018-02-15")
 
 # ADD THE BELOW AS A FUNC
-# plot operational times for each of the receivers
-# timer_p = timer_summ %>%
-#   ggplot(aes(x = hr,
-#              y = fct_rev(receiver),
-#              color = operational)) +
-#   geom_line(size = 2,
-#             color = 'black') +
-#   geom_point(data = timer_summ %>%
-#                filter(!operational),
-#              size = 1.5, color = 'orange') +
-#   theme_bw() +
-#   labs(x = 'Date - Hour',
-#        y = 'Receiver') +
-#   theme(axis.text.x = element_text(color = 'black', size = 12),
-#         axis.text.y = element_text(color = 'black', size = 12),
-#         axis.title.x = element_text(color = 'black', size = 14),
-#         axis.title.y = element_text(color = 'black', size = 14))
-# timer_p
+#plot operational times for each of the receivers
+timer_plot = timer_summ %>%
+  ggplot(aes(x = hr,
+             y = fct_rev(receiver),
+             color = operational)) +
+  geom_line(size = 2,
+            color = "black") +
+  geom_point(data = timer_summ %>%
+               filter(!operational),
+             size = 1.5, color = "palegreen2") +
+  theme_bw() +
+  labs(x = "Time",
+       y = "Receiver")
+timer_plot
+
 
 # Calculate the proportion of time that each receiver was operation from the time it first came online to the final time the
 # timer tag was observed

@@ -40,6 +40,7 @@ summarise_timer_data = function(timer_data = NULL,
   tmp = timer_data %>%
     mutate(hr = lubridate::floor_date(start,
                                       unit = "hours")) %>%
+    filter(hr >= hr_range[1] & hr <= hr_range[2]) %>%
     # include all hours in the hr_range. This adds a record to timer_data for each instance that no timer
     # tag data exists for a receiver i.e. adds a record for each hour that a receiver was not operational
     dplyr::full_join(expand.grid(list(receiver = receiver_nms,
