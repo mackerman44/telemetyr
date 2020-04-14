@@ -7,7 +7,7 @@
 #' @param raw_data data.frame containing raw data, output from \code{read_txt_data()}
 #' @param filter_valid should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}
 #'
-#' @import dplyr purrr readr stringr lubridate
+#' @import dplyr stringr lubridate
 #' @export
 #' @return a data frame containing a summary of the raw data
 
