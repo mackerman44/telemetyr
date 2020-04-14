@@ -53,6 +53,7 @@ miss_df = read_txt_data(path = miss_path) %>%
                         file)) %>%
   select(-c(file_char:yr))
 
+# note that both raw_df and miss_df have some dates with date == "00/00/00"
 raw_df %<>%
   bind_rows(miss_df)
 
@@ -70,8 +71,10 @@ compress_df = compress_raw_data(raw_df)
 # save a couple objects
 save_path = "data/prepped/pilot/"
 
-write_rds(raw_df, paste0(save_path, "raw.rds"))
-write_rds(compress_df, paste0(save_path, "compressed.rds"))
+save(raw_df,
+     file = paste0(save_path, "raw.rda"))
+save(compress_df,
+     file = paste0(save_path, "compressed.rda"))
 
 #--------------------------
 # read in and save the csv format data
