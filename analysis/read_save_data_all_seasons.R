@@ -62,10 +62,6 @@ miss_raw = read_txt_data(path = miss_path) %>%
 pilot_raw %<>%
   bind_rows(miss_raw)
 
-pilot_raw %<>%
-  select(-file_name,
-         -file)
-
 # fix a few receiver codes
 pilot_raw %<>%
   mutate(receiver = recode(receiver,
@@ -75,6 +71,10 @@ pilot_raw %<>%
 
 # save as a .rda object
 save(pilot_raw, file = "data/raw/pilot_raw.rda")
+
+# read in pilot study receiver on/off and volt/temp data from NAS
+pilot_on_off_df = read_on_off_data(path = pilot_path)
+pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 
 #-------------------------
 # 2018-2019 SEASON
