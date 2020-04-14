@@ -14,17 +14,20 @@
 #' @return a data.frame containing a summary of the raw data
 
 compress_raw_data = function(data_df = NULL,
-                             filter_valid,
-                             round_to,
-                             max_min,
-                             assign_week,
-                             week_base,
-                             append_week) {
+                             filter_valid = T,
+                             round_to = 10,
+                             max_min = 2,
+                             assign_week = T,
+                             week_base = "0901",
+                             append_week = c('first', 'last')) {
 
   compress_df = data_df %>%
     clean_raw_data(filter_valid = filter_valid) %>%
     round_tag_codes(round_to = round_to) %>%
-    summarise_txt_data()
+    compress_txt_data(max_min = max_min,
+                      assign_week = assign_week,
+                      week_base = week_base,
+                      append_week = append_week)
 
   return(compress_df)
 }
