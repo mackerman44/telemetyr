@@ -1,6 +1,6 @@
-#' @title Summarise raw RT observations
+#' @title Compress rounded RT observations
 #'
-#' @description Summarises cleaned detections, showing the first and last detection on each receiver for each tag, and how many times it was detected on that receiver in that window.
+#' @description Compresses cleaned detections, showing the first and last detection on each receiver for each tag, and how many times it was detected on that receiver in that window.
 #'
 #' @author Kevin See and Mike Ackerman
 #'
@@ -16,7 +16,7 @@
 #' @export
 #' @return a data.frame containing a summary of the raw data
 
-summarise_txt_data = function(data_df = NULL,
+compress_txt_data = function(data_df = NULL,
                               max_min = 2,
                               assign_week = T,
                               week_base = "0901",
