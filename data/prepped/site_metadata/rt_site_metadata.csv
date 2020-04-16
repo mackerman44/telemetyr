@@ -1,4 +1,4 @@
-site_name,site_code,site_type,rt_site_type,contact_agency,point_x,point_y,use17_18,use18_19,use19_20,rkm
+site_name,site_code,site_type,rt_site_type,contact_agency,point_y,point_x,use17_18,use18_19,use19_20,rkm
 Upper Lemhi RST,LEMTRP,release,NA,IDFG,44.869203,-113.625139,FALSE,FALSE,TRUE,
 Hayden RST,HYDTRP,release,NA,IDFG,44.861395,-113.632059,FALSE,FALSE,TRUE,
 Lower Lemhi RST,LLRTP,release,NA,IDFG,45.1595,-113.8331,TRUE,TRUE,TRUE,
@@ -23,7 +23,7 @@ Red Rock,RR,observation,pod,IDFG,45.34618,-113.92242,TRUE,TRUE,FALSE,
 Bobcat Gulch,BG,observation,pod,IDFG,45.36096,-113.96332,TRUE,FALSE,FALSE,
 North Fork,NF,observation,trailer,Private,45.39552,-113.97883,TRUE,TRUE,TRUE,
 Below Deadwater,DW,observation,pod,Salmon Challis NF,45.37977,-114.07088,TRUE,TRUE,TRUE,
-Salmon River Ranch,LR,observation,trailer,Private,45.40380,-114.21582,TRUE,TRUE,TRUE,
+Salmon River Ranch,LR,observation,trailer,Private,45.4038,-114.21582,TRUE,TRUE,TRUE,
 Colson Creek,SR,observation,trailer,Private,45.30064,-114.53441,TRUE,TRUE,TRUE,
 Corn Creek,CC,observation,trailer,Salmon Challis NF,45.36977,-114.68715,TRUE,TRUE,TRUE,
 Yellowpine Bar,YP,observation,pod,Private,45.54372,-115.24997,FALSE,TRUE,TRUE,
