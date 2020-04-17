@@ -28,7 +28,8 @@ clean_raw_data = function(raw_data = NULL,
     filter(n_obs == n_0_date)
 
   raw_data = raw_data %>%
-    anti_join(bad_files)
+    anti_join(bad_files,
+              by = c('file_name', 'file'))
 
   clean_data = raw_data %>%
     filter(!is.na(time)) %>%
