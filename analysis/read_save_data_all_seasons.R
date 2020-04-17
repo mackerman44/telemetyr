@@ -83,13 +83,13 @@ save(raw_df,
 save(compress_df,
      file = paste0(save_path, "compressed.rda"))
 
-#--------------------------
-# read in and save the csv format data
-pilot_csv_df = read_csv_data(path = pilot_path) %>%
-  bind_rows(read_csv_data(path = miss_path)) %>%
-  arrange(receiver, tag_id, start)
-# save as .rda object
-save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
+# #--------------------------
+# # read in and save the csv format data
+# pilot_csv_df = read_csv_data(path = pilot_path) %>%
+#   bind_rows(read_csv_data(path = miss_path)) %>%
+#   arrange(receiver, tag_id, start)
+# # save as .rda object
+# save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
 
 
 # read in pilot study receiver on/off and volt/temp data from NAS
@@ -105,11 +105,11 @@ ssn_1819_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
 # for Kevin
 ssn_1819_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
 
-# read in and save the csv format data
-ssn_1819_csv_df = read_csv_data(path = ssn_1819_path) %>%
-  arrange(receiver, tag_id, start)
-# save as .rda object
-save(ssn_1819_csv_df, file = "data/raw/ssn_1819_csv_df.rda")
+# # read in and save the csv format data
+# ssn_1819_csv_df = read_csv_data(path = ssn_1819_path) %>%
+#   arrange(receiver, tag_id, start)
+# # save as .rda object
+# save(ssn_1819_csv_df, file = "data/raw/ssn_1819_csv_df.rda")
 
 # read in the "raw" .txt format data
 raw_df = read_txt_data(path = ssn_1819_path)
@@ -157,14 +157,23 @@ ssn_1920_path = "S:/telemetry/lemhi/fixed_site_downloads/2019_2020"
 # for Kevin
 ssn_1920_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2019_2020"
 
-# read in and save the csv format data
-ssn_1920_csv_df = read_csv_data(path = ssn_1920_path) %>%
-  arrange(receiver, tag_id, start)
-# save as .rda object
-save(ssn_1920_csv_df, file = "data/raw/ssn_1920_csv_df.rda")
+# # read in and save the csv format data
+# ssn_1920_csv_df = read_csv_data(path = ssn_1920_path) %>%
+#   arrange(receiver, tag_id, start)
+# # save as .rda object
+# save(ssn_1920_csv_df, file = "data/raw/ssn_1920_csv_df.rda")
 
 # read in the "raw" .txt format data
 raw_df = read_txt_data(path = ssn_1920_path)
 
-# save as a .rda object
-save(ssn_1920_raw, file = "data/raw/ssn_1920_raw.rda")
+# clean, round and compress data
+compress_df = compress_raw_data(raw_df)
+
+#--------------------------
+# save a couple objects
+save_path = "data/prepped/2019_2020/"
+
+save(raw_df,
+     file = paste0(save_path, "raw.rda"))
+save(compress_df,
+     file = paste0(save_path, "compressed.rda"))
