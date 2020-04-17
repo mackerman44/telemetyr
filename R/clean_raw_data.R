@@ -16,6 +16,20 @@ clean_raw_data = function(raw_data = NULL,
 
   stopifnot(!is.null(raw_data))
 
+  # drop records from files with all bad dates
+  bad_files = raw_data %>%
+    mutate(date = lubridate::parse_date_time2(date,
+                                              orders = "dmy",
+                                              tz = "")) %>%
+    group_by(file_name, file) %>%
+    summarise(n_obs = n(),
+              n_0_date = sum(is.na(date))) %>%
+    ungroup() %>%
+    filter(n_obs == n_0_date)
+
+  raw_data = raw_data %>%
+    anti_join(bad_files)
+
   clean_data = raw_data %>%
     filter(!is.na(time)) %>%
     split(list(.$file_name)) %>%
@@ -26,29 +40,6 @@ clean_raw_data = function(raw_data = NULL,
              }
              return(res)
            })
-
-  # clean_data = raw_data %>%
-  #   rename(orig_date = date) %>%
-  #   filter(orig_date != "00/00/00") %>%
-  #   mutate(date = lubridate::dmy(orig_date))
-  #
-  # if(sum(raw_data$date == "00/00/00") > 0) {
-  #   clean_data = clean_data %>%
-  #     bind_rows(raw_data %>%
-  #                 rename(orig_date = date) %>%
-  #                 filter(orig_date == "00/00/00") %>%
-  #                 mutate(nums = stringr::str_extract(file, "[:digit:]+"),
-  #                        jday = if_else(nchar(nums) == 3,
-  #                                       nums,
-  #                                       stringr::str_sub(nums, 3, 5)),
-  #                        jday = as.integer(jday),
-  #                        yr = if_else(nchar(nums) == 5,
-  #                                     stringr::str_sub(nums, 1, 2),
-  #                                     NA_character_),
-  #                        file_date = lubridate::ymd(paste0("20", yr, "0101")) + lubridate::days(jday - 1)) %>%
-  #                 mutate(date = file_date) %>%
-  #                 select(orig_date, one_of(names(raw_data))))
-  # }
 
   clean_data = clean_data %>%
     arrange(date, time) %>%

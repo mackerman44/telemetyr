@@ -36,15 +36,19 @@ compress_txt_data = function(data_df = NULL,
     select(receiver:tag_id, prev_time,
            obs_time = date_time,
            diff, new_grp) %>%
-    ungroup()
+    ungroup() %>%
+    mutate(obs_id = 1:n())
 
   grp_df = prep_data %>%
     filter(new_grp) %>%
     group_by(tag_id) %>%
-    mutate(grp_num = 1:n())
+    mutate(grp_num = 1:n()) %>%
+    ungroup() %>%
+    select(obs_id, grp_num)
 
   prep_data %<>%
-    left_join(grp_df) %>%
+    left_join(grp_df,
+              by = c("obs_id")) %>%
     tidyr::fill(grp_num)
 
 
@@ -59,7 +63,7 @@ compress_txt_data = function(data_df = NULL,
     select(receiver, valid, tag_id, start:n)
 
   if(assign_week) {
-    start_date = ymd(paste(year(min(summ_data$start)), week_base))
+    start_date = lubridate::ymd(paste(lubridate::year(min(summ_data$start, na.rm = T)), week_base))
     if(append_week == 'first') {
       summ_data %<>%
         mutate(week = difftime(start, start_date, units = 'weeks'),

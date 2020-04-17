@@ -40,8 +40,10 @@ miss_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_
 raw_df = read_txt_data(path = pilot_path)
 
 # for the pilot year, we have to add this "missing" data
-miss_df = read_txt_data(path = miss_path) %>%
-  # add characters corresponding to the year of the file name, to make it consistent
+miss_df = read_txt_data(path = miss_path)
+
+# add characters corresponding to the year of the file name, to make it consistent with raw_df
+miss_df %<>%
   mutate(file_char = nchar(file)) %>%
   mutate(jday = str_sub(file, 1, 3),
          jday = as.numeric(jday),
@@ -55,7 +57,10 @@ miss_df = read_txt_data(path = miss_path) %>%
 
 # note that both raw_df and miss_df have some dates with date == "00/00/00"
 raw_df %<>%
-  bind_rows(miss_df)
+  mutate(source = 'reg') %>%
+  select(source, everything()) %>%
+  bind_rows(miss_df %>%
+              mutate(source = 'miss'))
 
 # fix a few receiver codes
 raw_df %<>%
@@ -65,7 +70,9 @@ raw_df %<>%
                            '039' = 'TT1'))     # recode 039 to TT1
 
 # clean, round and compress data
-compress_df = compress_raw_data(raw_df)
+compress_df = compress_raw_data(raw_df,
+                                round_to = 5,
+                                assign_week = F)
 
 #--------------------------
 # save a couple objects
@@ -105,10 +112,41 @@ ssn_1819_csv_df = read_csv_data(path = ssn_1819_path) %>%
 save(ssn_1819_csv_df, file = "data/raw/ssn_1819_csv_df.rda")
 
 # read in the "raw" .txt format data
-ssn_1819_raw = read_txt_data(path = ssn_1819_path)
+raw_df = read_txt_data(path = ssn_1819_path)
 
-# save as a .rda object
-save(ssn_1819_raw, file = "data/raw/ssn_1819_raw.rda")
+
+test_raw = read_txt_data(path = ssn_1819_path,
+                       receiver_codes = c('DC1'))
+test_comp = test_raw %>%
+  inner_join(test_raw %>%
+              filter(date == "00/00/00") %>%
+              select(file_name) %>%
+              distinct()) %>%
+  clean_raw_data() %>%
+  round_tag_codes(round_to = 5) %>%
+  compress_txt_data() %>%
+  arrange(receiver, tag_id, start)
+
+test_csv = read_csv_data(path = ssn_1819_path,
+                         receiver_codes = c('DC1')) %>%
+  arrange(receiver, tag_id, start)
+
+
+# clean, round and compress data
+compress_df = compress_raw_data(raw_df)
+
+#--------------------------
+# save a couple objects
+save_path = "data/prepped/2018_2019/"
+
+save(raw_df,
+     file = paste0(save_path, "raw.rda"))
+save(compress_df,
+     file = paste0(save_path, "compressed.rda"))
+
+
+# # save as a .rda object
+# save(ssn_1819_raw, file = "data/raw/ssn_1819_raw.rda")
 
 #-------------------------
 # 2019-2020 SEASON
@@ -126,7 +164,7 @@ ssn_1920_csv_df = read_csv_data(path = ssn_1920_path) %>%
 save(ssn_1920_csv_df, file = "data/raw/ssn_1920_csv_df.rda")
 
 # read in the "raw" .txt format data
-ssn_1920_raw = read_txt_data(path = ssn_1920_path)
+raw_df = read_txt_data(path = ssn_1920_path)
 
 # save as a .rda object
 save(ssn_1920_raw, file = "data/raw/ssn_1920_raw.rda")

@@ -16,26 +16,37 @@ fix_bad_dates = function(detect_df = NULL) {
 
   detect_fix = suppressWarnings(detect_df %>%
                                   mutate(orig_date = date,
-                                         date = dmy(date)) %>%
+                                         # used this function to force the parsing, even when almost all the dates are incorrect format
+                                         date = lubridate::parse_date_time2(date,
+                                                                           orders = "dmy",
+                                                                           tz = ""),
+                                         date = as.Date(date)) %>%
                                   # deal with dates like "01/01/00", or some that are from the 80's
-                                  mutate(date = if_else(year(date) < 2017, NA, date)) %>%
+                                  mutate(date = if_else(lubridate::year(date) < 2017, as.Date(NA), date)) %>%
                                   select(file_name, file, orig_date,
                                          everything()) %>%
-                                  mutate(hr = hour(time),
+                                  mutate(hr = lubridate::hour(time),
                                          lead_hr = lead(hr),
                                          lead_date = lead(date),
-                                         lead_date_prev = lead_date - ddays(1)))
+                                         lead_date_prev = lead_date - lubridate::ddays(1)))
 
-  if(sum(is.na(detect_fix$date)) > 0) {
+  # how many times has clock crossed midnight when dates are missing?
+  n_new_days = detect_fix %>%
+    filter(is.na(date),
+           lead_hr < hr) %>%
+    nrow()
 
-    for(i in rev(seq_along(which(is.na(detect_fix$date))))) {
-      detect_fix$date[i] = if_else(detect_fix$lead_hr[i] < detect_fix$hr[i],
-                                   detect_fix$lead_date_prev[i],
-                                   detect_fix$lead_date[i])
-      detect_fix$lead_date[i-1] = detect_fix$date[i]
-      detect_fix$lead_date_prev[i-1] = detect_fix$lead_date[i-1] - ddays(1)
-    }
-
+  if(n_new_days <= 1) {
+    detect_fix = detect_fix %>%
+      mutate(new_day = if_else(lead_hr >= hr | is.na(lead_hr),
+                               F, T)) %>%
+      mutate(date = if_else(new_day,
+                            lead_date_prev,
+                            if_else(is.na(lead_date),
+                                    date,
+                                    lead_date))) %>%
+      tidyr::fill(date, .direction = "up") %>%
+      select(-new_day)
   }
 
   detect_fix = detect_fix %>%
