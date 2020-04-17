@@ -114,24 +114,6 @@ ssn_1819_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2
 # read in the "raw" .txt format data
 raw_df = read_txt_data(path = ssn_1819_path)
 
-
-test_raw = read_txt_data(path = ssn_1819_path,
-                       receiver_codes = c('DC1'))
-test_comp = test_raw %>%
-  inner_join(test_raw %>%
-              filter(date == "00/00/00") %>%
-              select(file_name) %>%
-              distinct()) %>%
-  clean_raw_data() %>%
-  round_tag_codes(round_to = 5) %>%
-  compress_txt_data() %>%
-  arrange(receiver, tag_id, start)
-
-test_csv = read_csv_data(path = ssn_1819_path,
-                         receiver_codes = c('DC1')) %>%
-  arrange(receiver, tag_id, start)
-
-
 # clean, round and compress data
 compress_df = compress_raw_data(raw_df)
 
