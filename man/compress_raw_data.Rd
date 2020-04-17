@@ -6,12 +6,12 @@
 \usage{
 compress_raw_data(
   data_df = NULL,
-  filter_valid,
-  round_to,
-  max_min,
-  assign_week,
-  week_base,
-  append_week
+  filter_valid = T,
+  round_to = 10,
+  max_min = 2,
+  assign_week = T,
+  week_base = "0901",
+  append_week = c("first", "last")
 )
 }
 \arguments{

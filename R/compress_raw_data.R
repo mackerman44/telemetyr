@@ -21,9 +21,19 @@ compress_raw_data = function(data_df = NULL,
                              week_base = "0901",
                              append_week = c('first', 'last')) {
 
-  compress_df = data_df %>%
-    clean_raw_data(filter_valid = filter_valid) %>%
-    round_tag_codes(round_to = round_to) %>%
+  cat("Cleaning data and fixing dates.\n")
+
+  clean_df = data_df %>%
+    clean_raw_data(filter_valid = filter_valid)
+
+  cat('Rounding tag codes.\n')
+
+  round_df = clean_df %>%
+    round_tag_codes(round_to = round_to)
+
+  cat("Compressing observations.\n")
+
+  compress_df = round_df %>%
     compress_txt_data(max_min = max_min,
                       assign_week = assign_week,
                       week_base = week_base,
