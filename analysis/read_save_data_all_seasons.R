@@ -42,19 +42,6 @@ raw_df = read_txt_data(path = pilot_path)
 # for the pilot year, we have to add this "missing" data
 miss_df = read_txt_data(path = miss_path)
 
-# add characters corresponding to the year of the file name, to make it consistent with raw_df
-miss_df %<>%
-  mutate(file_char = nchar(file)) %>%
-  mutate(jday = str_sub(file, 1, 3),
-         jday = as.numeric(jday),
-         yr = if_else(jday < 100,
-                      18,
-                      17)) %>%
-  mutate(file = if_else(file_char == 11,
-                        paste0(yr, file),
-                        file)) %>%
-  select(-c(file_char:yr))
-
 # note that both raw_df and miss_df have some dates with date == "00/00/00"
 raw_df %<>%
   mutate(source = 'reg') %>%
@@ -71,8 +58,7 @@ raw_df %<>%
 
 # clean, round and compress data
 compress_df = compress_raw_data(raw_df,
-                                round_to = 5,
-                                assign_week = F)
+                                round_to = 5)
 
 #--------------------------
 # save a couple objects
@@ -101,7 +87,7 @@ pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 #-------------------------
 # path to the folder on Biomark NAS; be sure to be connected to the Biomark VPN
 # for Mike
-ssn_1819_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
+# ssn_1819_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
 # for Kevin
 ssn_1819_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
 
@@ -115,7 +101,8 @@ ssn_1819_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2
 raw_df = read_txt_data(path = ssn_1819_path)
 
 # clean, round and compress data
-compress_df = compress_raw_data(raw_df)
+compress_df = compress_raw_data(raw_df,
+                                round_to = 5)
 
 #--------------------------
 # save a couple objects
@@ -135,7 +122,7 @@ save(compress_df,
 #-------------------------
 # path to the folder on Biomark NAS; be sure to be connected to the Biomark VPN
 # for Mike
-ssn_1920_path = "S:/telemetry/lemhi/fixed_site_downloads/2019_2020"
+# ssn_1920_path = "S:/telemetry/lemhi/fixed_site_downloads/2019_2020"
 # for Kevin
 ssn_1920_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2019_2020"
 
@@ -149,7 +136,8 @@ ssn_1920_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2019_2
 raw_df = read_txt_data(path = ssn_1920_path)
 
 # clean, round and compress data
-compress_df = compress_raw_data(raw_df)
+compress_df = compress_raw_data(raw_df,
+                                round_to = 10)
 
 #--------------------------
 # save a couple objects
