@@ -51,6 +51,25 @@ timer_summ$operations_plot
 timer_summ$p_operational
 
 #-------------------------
+# noise data
+#-------------------------
+# summarise_noise_data - all receivers in noise_data, raw noise observations
+noise_summ = summarise_noise_data(compress_df,
+                                  receiver_codes = NULL,
+                                  operations_summary = NULL)
+
+# summarise_noise_data - only receivers in receiver_nm, raw noise observations
+noise_summ = summarise_noise_data(compress_df,
+                                  receiver_codes = receiver_nms,
+                                  operations_summary = NULL)
+
+# summarise_noise_data - only receivers in receiver_nm, noise converted to a rate (noise per hour)
+noise_summ = summarise_noise_data(compress_df,
+                                  receiver_codes = receiver_nms,
+                                  operations_summary = timer_summ$operations_summ)
+
+
+#-------------------------
 # load pilot_raw.rda
 load("data/raw/pilot_raw.rda")
 
@@ -95,23 +114,3 @@ tag_df = parse_tag_list(pilot_round,
 
 
 
-#-------------------------
-# noise data
-#-------------------------
-# parse out noise data
-noise_df = parse_noise(pilot_summ)
-
-# summarise_noise_data - all receivers in noise_data, raw noise observations
-noise_summ = summarise_noise_data(noise_data = noise_df,
-                                  receiver_codes = NULL,
-                                  operations_summary = NULL)
-
-# summarise_noise_data - only receivers in receiver_nm, raw noise observations
-noise_summ = summarise_noise_data(noise_data = noise_df,
-                                  receiver_codes = receiver_nms,
-                                  operations_summary = NULL)
-
-# summarise_noise_data - only receivers in receiver_nm, noise converted to a rate (noise per hour)
-noise_summ = summarise_noise_data(noise_data = noise_df,
-                                  receiver_codes = receiver_nms,
-                                  operations_summary = timer_summ$operations_summ)
