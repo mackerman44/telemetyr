@@ -58,6 +58,8 @@ raw_df %<>%
 
 # clean, round and compress data
 compress_df = compress_raw_data(raw_df,
+                                min_yr = 2017,
+                                max_yr = 2018,
                                 round_to = 5)
 
 #--------------------------
@@ -102,6 +104,8 @@ raw_df = read_txt_data(path = ssn_1819_path)
 
 # clean, round and compress data
 compress_df = compress_raw_data(raw_df,
+                                min_yr = 2018,
+                                max_yr = 2019,
                                 round_to = 5)
 
 #--------------------------
@@ -137,6 +141,8 @@ raw_df = read_txt_data(path = ssn_1920_path)
 
 # clean, round and compress data
 compress_df = compress_raw_data(raw_df,
+                                min_yr = 2019,
+                                max_yr = 2020,
                                 round_to = 10)
 
 #--------------------------

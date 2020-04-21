@@ -14,6 +14,8 @@
 #' @return a data.frame containing a summary of the raw data
 
 compress_raw_data = function(data_df = NULL,
+                             min_yr = 2017,
+                             max_yr = NA,
                              filter_valid = T,
                              round_to = 10,
                              max_min = 2,
@@ -21,10 +23,12 @@ compress_raw_data = function(data_df = NULL,
                              week_base = "0901",
                              append_week = c('first', 'last')) {
 
-  cat("Cleaning data and fixing dates.\n")
+  # cat("Cleaning data and fixing dates.\n")
 
   clean_df = data_df %>%
-    clean_raw_data(filter_valid = filter_valid)
+    clean_raw_data(min_yr = min_yr,
+                   max_yr = max_yr,
+                   filter_valid = filter_valid)
 
   cat('Rounding tag codes.\n')
 

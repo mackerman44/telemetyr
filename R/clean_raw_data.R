@@ -5,6 +5,8 @@
 #' @author Kevin See and Mike Ackerman
 #'
 #' @param raw_data data.frame containing raw data, output from \code{read_txt_data()}
+#' @param min_yr minimum acceptable year (e.g. 2018)
+#' @param max_yr maximum acceptable year (e.g. 2018)
 #' @param filter_valid should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}
 #'
 #' @import dplyr stringr lubridate
@@ -12,35 +14,66 @@
 #' @return a data frame containing a summary of the raw data
 
 clean_raw_data = function(raw_data = NULL,
+                          min_yr = 2017,
+                          max_yr = NA,
                           filter_valid = T) {
 
   stopifnot(!is.null(raw_data))
 
+  cat("Formating dates \n")
+
+  raw_data = suppressWarnings(raw_data %>%
+                                mutate(orig_date = date,
+                                       # used this function to force the parsing, even when almost all the dates are incorrect format
+                                       date = lubridate::parse_date_time2(date,
+                                                                          orders = "dmy",
+                                                                          tz = ""),
+                                       date = as.Date(date)) %>%
+                                # deal with dates like "01/01/00", or some that are from the 80's
+                                rowwise() %>%
+                                mutate(date = if_else(lubridate::year(date) < min_yr | lubridate::year(date) > max_yr | is.na(date),
+                                                      as.Date(NA),
+                                                      date)) %>%
+                                ungroup() %>%
+                                # mutate(date = if_else(lubridate::year(date) < 2017, as.Date(NA), date)) %>%
+                                select(file_name, file, orig_date,
+                                       everything()))
+
+  cat("Removing files with all bad dates \n")
+
   # drop records from files with all bad dates
   bad_files = raw_data %>%
-    mutate(date = lubridate::parse_date_time2(date,
-                                              orders = "dmy",
-                                              tz = "")) %>%
     group_by(file_name, file) %>%
     summarise(n_obs = n(),
+              n_bad_date = sum(lubridate::year(date) < min_yr |
+                                 lubridate::year(date) > max_yr,
+                               na.rm = T),
               n_0_date = sum(is.na(date))) %>%
     ungroup() %>%
-    filter(n_obs == n_0_date)
+    filter(n_obs == n_0_date |
+             n_obs == n_bad_date)
 
   raw_data = raw_data %>%
     anti_join(bad_files,
               by = c('file_name', 'file'))
 
+  cat("Fixing incorrect dates \n")
+
+  # fix incorrect dates when possible
   clean_data = raw_data %>%
     filter(!is.na(time)) %>%
     split(list(.$file_name)) %>%
     map_df(.f = function(x) {
              res = try(fix_bad_dates(x))
              if(class(res)[1] == 'try-error') {
+               cat(paste('Something went wrong with file', unique(x$file), '.\n'))
                return(NULL)
              }
              return(res)
            })
+
+
+  cat("Finishing up")
 
   clean_data = clean_data %>%
     arrange(date, time) %>%

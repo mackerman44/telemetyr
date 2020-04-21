@@ -4,10 +4,14 @@
 \alias{clean_raw_data}
 \title{Clean raw RT observations}
 \usage{
-clean_raw_data(raw_data = NULL, filter_valid = T)
+clean_raw_data(raw_data = NULL, min_yr = NULL, max_yr = NULL, filter_valid = T)
 }
 \arguments{
 \item{raw_data}{data.frame containing raw data, output from \code{read_txt_data()}}
+
+\item{min_yr}{minimum acceptable year (e.g. 2018)}
+
+\item{max_yr}{maximum acceptable year (e.g. 2018)}
 
 \item{filter_valid}{should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}}
 }

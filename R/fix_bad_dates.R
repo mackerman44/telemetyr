@@ -15,16 +15,6 @@ fix_bad_dates = function(detect_df = NULL) {
   stopifnot(!is.null(detect_df))
 
   detect_fix = suppressWarnings(detect_df %>%
-                                  mutate(orig_date = date,
-                                         # used this function to force the parsing, even when almost all the dates are incorrect format
-                                         date = lubridate::parse_date_time2(date,
-                                                                           orders = "dmy",
-                                                                           tz = ""),
-                                         date = as.Date(date)) %>%
-                                  # deal with dates like "01/01/00", or some that are from the 80's
-                                  mutate(date = if_else(lubridate::year(date) < 2017, as.Date(NA), date)) %>%
-                                  select(file_name, file, orig_date,
-                                         everything()) %>%
                                   mutate(hr = lubridate::hour(time),
                                          lead_hr = lead(hr),
                                          lead_date = lead(date),
