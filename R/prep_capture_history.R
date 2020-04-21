@@ -29,10 +29,9 @@ prep_capture_history = function(compress_df = NULL,
   output_format = match.arg(output_format)
 
   # what season?
-  yr_label = paste(lubridate::year(min(compress_df$start, na.rm = T)),
-                   lubridate::year(max(compress_df$end, na.rm = T)),
-                   sep = "_") %>%
-    str_remove_all("20")
+  yr_label = paste(str_sub(lubridate::year(min(compress_df$start, na.rm = T)), -2),
+                   str_sub(lubridate::year(max(compress_df$start, na.rm = T)), -2),
+                   sep = "_")
 
   # get data about each released tag, including code
   tag_df = read_excel(tag_data_path) %>%
