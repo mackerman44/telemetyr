@@ -19,6 +19,57 @@ library(magrittr)
 library(telemetyr)
 
 #-------------------------
+# load compressed data
+#-------------------------
+load("data/prepped/pilot/compressed.rda")
+
+#-------------------------
+# receiver operation times
+#-------------------------
+# summarise pilot study timer data - all receiver codes
+timer_summ = summarise_timer_data(compress_df)
+
+# a list of the receiver names
+receiver_nms = c('LH1','LH2',
+                 'DC1','DC2',
+                 'MB1','MB2',
+                 'TR1','TR2')
+
+# summarise pilot study timer data - only receiver codes in receiver_nms
+timer_summ = summarise_timer_data(compress_df,
+                                  receiver_codes = receiver_nms)
+
+# summarise pilot study timer data - only receiver codes in receiver_nms and use season start and end
+timer_summ = summarise_timer_data(compress_df,
+                                  receiver_codes = receiver_nms,
+                                  season_start = "2017-09-12",
+                                  season_end = "2018-02-15")
+
+# objects from timer_summ
+head(timer_summ$operations_summ)
+timer_summ$operations_plot
+timer_summ$p_operational
+
+#-------------------------
+# noise data
+#-------------------------
+# summarise_noise_data - all receivers in noise_data, raw noise observations
+noise_summ = summarise_noise_data(compress_df,
+                                  receiver_codes = NULL,
+                                  operations_summary = NULL)
+
+# summarise_noise_data - only receivers in receiver_nm, raw noise observations
+noise_summ = summarise_noise_data(compress_df,
+                                  receiver_codes = receiver_nms,
+                                  operations_summary = NULL)
+
+# summarise_noise_data - only receivers in receiver_nm, noise converted to a rate (noise per hour)
+noise_summ = summarise_noise_data(compress_df,
+                                  receiver_codes = receiver_nms,
+                                  operations_summary = timer_summ$operations_summ)
+
+
+#-------------------------
 # load pilot_raw.rda
 load("data/raw/pilot_raw.rda")
 
@@ -60,61 +111,6 @@ tag_df = parse_tag_list(pilot_round,
   summarise_txt_data(max_min = 2)
 
 
-#-------------------------
-# receiver operation times
-#-------------------------
-# parse out timer data
-timer_df = parse_timer(pilot_summ)
-
-# list of the receiver names for pilot study
-receiver_nms = c('LH1','LH2',
-                 'DC1','DC2',
-                 'MB1','MB2',
-                 'TR1','TR2',
-                 'RR1','RR2',
-                 'BG1','BG2',
-                 'NF1','NF2',
-                 'DW1','DW2',
-                 'LR1','LR2',
-                 'SR1','SR2',
-                 'CC1','CC2',
-                 'VC1','VC2',
-                 'SB1','SB2',
-                 'TB1','TB2')
-
-# summarise pilot study timer data - all receiver codes in timer_df
-timer_summ = summarise_timer_data(timer_data = timer_df,
-                                  receiver_codes = NULL)
-
-# summarise pilot study timer data - only receiver codes in receiver_nms
-timer_summ = summarise_timer_data(timer_data = timer_df,
-                                  receiver_codes = receiver_nms,
-                                  season_start = "2017-09-12",
-                                  season_end = "2018-02-15")
-
-# objects from timer_summ
-head(timer_summ$operations_summ)
-timer_summ$operations_plot
-timer_summ$p_operational
 
 
-#-------------------------
-# noise data
-#-------------------------
-# parse out noise data
-noise_df = parse_noise(pilot_summ)
 
-# summarise_noise_data - all receivers in noise_data, raw noise observations
-noise_summ = summarise_noise_data(noise_data = noise_df,
-                                  receiver_codes = NULL,
-                                  operations_summary = NULL)
-
-# summarise_noise_data - only receivers in receiver_nm, raw noise observations
-noise_summ = summarise_noise_data(noise_data = noise_df,
-                                  receiver_codes = receiver_nms,
-                                  operations_summary = NULL)
-
-# summarise_noise_data - only receivers in receiver_nm, noise converted to a rate (noise per hour)
-noise_summ = summarise_noise_data(noise_data = noise_df,
-                                  receiver_codes = receiver_nms,
-                                  operations_summary = timer_summ$operations_summ)

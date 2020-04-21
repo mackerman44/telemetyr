@@ -2,16 +2,16 @@
 % Please edit documentation in R/summarise_noise_data.R
 \name{summarise_noise_data}
 \alias{summarise_noise_data}
-\title{Summarize Receiver Noise}
+\title{Summarize Receiver Noise Information}
 \usage{
 summarise_noise_data(
-  noise_data = NULL,
+  summ_data = NULL,
   receiver_codes = NULL,
   operations_summary = NULL
 )
 }
 \arguments{
-\item{noise_data}{the data frame containing the noise data e.g., from \code{parse_noise()}}
+\item{summ_data}{data.frame containing summarised data, output from \code{summarise_txt_data()}}
 
 \item{receiver_codes}{character vector of receiver codes to query for. Default is \code{NULL} which will keep all receiver codes found in the path folder}
 
@@ -19,11 +19,8 @@ summarise_noise_data(
 from \code{summarise_timer_data()}}
 }
 \value{
-a data frame summarising the noise information
+summaries of noise information
 }
 \description{
-Summarise receiver noise in observation data
-}
-\author{
-Mike Ackerman and Kevin See
+Summarize receiver noise records in observation data
 }

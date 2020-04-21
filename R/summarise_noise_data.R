@@ -1,31 +1,38 @@
-#' @title Summarize Receiver Noise
+#' @title Summarize Receiver Noise Information
 #'
-#' @description Summarise receiver noise in observation data
+#' @description Summarize receiver noise records in observation data
 #'
-#' @author Mike Ackerman and Kevin See
+#' @inheritParams parse_code_ending
+#' @inheritParams get_file_nms
 #'
-#' @param noise_data the data frame containing the noise data e.g., from \code{parse_noise()}
-#' @param receiver_codes character vector of receiver codes to query for. Default is \code{NULL} which will keep all receiver codes found in the path folder
 #' @param operations_summary an optional summary of receiver operation times typically the \code{operations_summ} object
 #' from \code{summarise_timer_data()}
 #'
 #' @import dplyr ggplot2 viridis
 #' @export
-#' @return a data frame summarising the noise information
+#' @return summaries of noise information
 
-summarise_noise_data = function(noise_data = NULL,
+summarise_noise_data = function(summ_data = NULL,
                                 receiver_codes = NULL,
                                 operations_summary = NULL) {
 
-  # get list of all unique receivers in noise_data
-  receiver_nms = sort(unique(noise_data$receiver))
+  cat("Parsing out noise records.\n")
+
+  noise_df = summ_data %>%
+    parse_code_ending(code_ending = "575$")
+
+  # get list of all unique receivers in noise_df
+  receiver_nms = sort(unique(noise_df$receiver))
 
   # if user provides a list of receiver codes
   if(!is.null(receiver_codes)) {
     receiver_nms = receiver_nms[receiver_nms %in% receiver_codes]
   }
 
-  tmp = noise_data %>%
+  cat("Summarizing noise by receiver and channel.\n")
+
+  # summarizing # of noise records by receiver and channel
+  tmp = noise_df %>%
     filter(receiver %in% receiver_nms) %>%
     mutate(channel = as.numeric(substr(tag_id, 1, 1))) %>%
     group_by(receiver, channel) %>%
@@ -35,6 +42,8 @@ summarise_noise_data = function(noise_data = NULL,
 
   # if operations_summary is provided, convert number of noise observations to a rate
   if(!is.null(operations_summary)) {
+
+    cat("Converting noise records to rates.\n")
 
     tmp = tmp %>%
       left_join(operations_summary %>%

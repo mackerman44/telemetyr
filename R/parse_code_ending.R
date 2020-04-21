@@ -5,7 +5,7 @@
 #' @author Kevin See and Mike Ackerman
 #'
 #' @param summ_data data.frame containing summarised data, output from \code{summarise_txt_data()}
-#' @param code_ending the ending of the tag code to filter for. Some examples include: "575$" for timer tags, "925$" for noise tags or "525$" for sentinel tags
+#' @param code_ending the ending of the tag code to filter for. Some examples include: "575$" for timer tags, "995$" for noise tags or "525$" for sentinel tags
 #'
 #' @import dplyr
 #' @export
