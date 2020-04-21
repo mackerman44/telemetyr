@@ -9,7 +9,7 @@ parse_code_ending(summ_data = NULL, code_ending = NULL)
 \arguments{
 \item{summ_data}{data.frame containing summarised data, output from \code{summarise_txt_data()}}
 
-\item{code_ending}{the ending of the tag code to filter for. Some examples include: "575$" for timer tags, "925$" for noise tags or "525$" for sentinel tags}
+\item{code_ending}{the ending of the tag code to filter for. Some examples include: "575$" for timer tags, "995$" for noise tags or "525$" for sentinel tags}
 }
 \value{
 a data.frame containing a only records with the desired code ending
