@@ -1,20 +1,23 @@
-#' @title Compress rounded RT observations
+#' @title Compress Rounded Telemetry Records
 #'
-#' @description Compresses cleaned detections, showing the first and last detection on each receiver for each tag, and how many times it was detected on that receiver in that window.
+#' @description Compresses cleaned records, showing the first and last detection on each receiver for each tag,
+#' and how many times it was detected on that receiver in that window.
 #'
 #' @author Kevin See and Mike Ackerman
 #'
-#' @param data_df data.frame containing all valid observations, output from \code{read_txt_data()}, followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}
-#' @param max_min maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 2.
+#' @param data_df data.frame containing all valid observations, output from \code{read_txt_data()},
+#' followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}
+#' @param max_min maximum number of minutes between detections of a tag before it's considered a
+#' different "group" of detections. Default is 2.
 #' @param assign_week Should this function assign a week number to the output? Default is \code{TRUE}
-#' @param week_base If assigning week numbers, the date when the numbering should start in MMDD format
-#' @param append_week If assigning weeks, should the week be assigned based on the \code{first} or \code{last} time a tag was detected on that receiver? Default value is \code{first}.
-#'
+#' @param week_base If assigning week numbers, the date when the numbering should start in "MMDD" format
+#' @param append_week If assigning weeks, should the week be assigned based on the \code{first}
+#' or \code{last} time a tag was detected on that receiver? Default value is \code{first}.
 #'
 #' @import dplyr lubridate tidyr
 #' @importFrom magrittr %<>%
 #' @export
-#' @return a data.frame containing a summary of the raw data
+#' @return a data frame containing a compressed format of the telemetry receiver records
 
 compress_txt_data = function(data_df = NULL,
                              max_min = 2,
