@@ -11,8 +11,6 @@ summarise_test_data(
 }
 \arguments{
 \item{compress_df}{compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.}
-
-\item{tag_data_path}{file path to the file containing all the metadata for all tags.}
 }
 \value{
 summaries of test tag data

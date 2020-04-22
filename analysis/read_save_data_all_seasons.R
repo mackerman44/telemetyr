@@ -18,6 +18,56 @@
 library(tidyverse)
 library(magrittr)
 library(telemetyr)
+library(readxl)
+library(janitor)
+
+
+#-------------------------
+# Metadata about receivers
+#-------------------------
+
+# read in some metadata associated with the receivers
+rec_meta = read_excel('data/prepped/site_metadata/rt_site_metadata.xlsx')
+
+# which receivers were used each year?
+rec_site_list = rec_meta %>%
+  gather(season, use, starts_with("use")) %>%
+  mutate(season = str_remove(season, "use")) %>%
+  filter(use) %>%
+  select(-use) %>%
+  split(list(.$season)) %>%
+  map(.f = function(x) {
+    x %>%
+      filter(site_type == 'rt_fixed') %>%
+      select(site = site_code,
+             receivers) %>%
+      group_by(site) %>%
+      nest() %>%
+      ungroup() %>%
+      mutate(receiver = map(data,
+                            .f = function(x) {
+                              str_split(x, "\\,") %>%
+                                extract2(1) %>%
+                                str_trim()
+                            })) %>%
+      select(-data) %>%
+      unnest(cols = receiver) %>%
+      mutate_at(vars(site, receiver),
+                list(~ factor(., levels = unique(.))))
+  })
+
+# metadata about each tag, split by year
+# get data about each released tag, including code
+tag_df_list = read_excel('data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx') %>%
+  mutate(tag_id = str_extract(radio_tag_id, "[:digit:]*"),
+         tag_id = as.numeric(tag_id)) %>%
+  mutate_at(vars(activation_time, release_time),
+            list(as.numeric)) %>%
+  mutate_at(vars(activation_time, release_time),
+            list(excel_numeric_to_date),
+            include_time = T) %>%
+  split(list(.$season))
+
 
 #-------------------------
 # PILOT STUDY
@@ -62,6 +112,20 @@ compress_df = compress_raw_data(raw_df,
                                 max_yr = 2018,
                                 round_to = 5)
 
+
+#------------------------------------
+# prep some fish capture history data
+yr_label = "17_18"
+
+# list with wide, long capture histories and tag info
+cap_hist_list = prep_capture_history(compress_df,
+                                     tag_data = tag_df_list[[yr_label]],
+                                     n_obs_valid = 3,
+                                     rec_site = rec_site_list[[yr_label]],
+                                     delete_upstream = T,
+                                     location = 'site',
+                                     output_format = 'all')
+
 #--------------------------
 # save a couple objects
 save_path = "data/prepped/pilot/"
@@ -70,6 +134,8 @@ save(raw_df,
      file = paste0(save_path, "raw.rda"))
 save(compress_df,
      file = paste0(save_path, "compressed.rda"))
+save(cap_hist_list,
+     file = paste0(save_path, "cap_hist.rda"))
 
 # #--------------------------
 # # read in and save the csv format data
@@ -108,6 +174,20 @@ compress_df = compress_raw_data(raw_df,
                                 max_yr = 2019,
                                 round_to = 5)
 
+#------------------------------------
+# prep some fish capture history data
+yr_label = "18_19"
+
+# list with wide, long capture histories and tag info
+cap_hist_list = prep_capture_history(compress_df %>%
+                                       filter(!is.na(start)),
+                                     tag_data = tag_df_list[[yr_label]],
+                                     n_obs_valid = 3,
+                                     rec_site = rec_site_list[[yr_label]],
+                                     delete_upstream = T,
+                                     location = 'site',
+                                     output_format = 'all')
+
 #--------------------------
 # save a couple objects
 save_path = "data/prepped/2018_2019/"
@@ -116,6 +196,8 @@ save(raw_df,
      file = paste0(save_path, "raw.rda"))
 save(compress_df,
      file = paste0(save_path, "compressed.rda"))
+save(cap_hist_list,
+     file = paste0(save_path, "cap_hist.rda"))
 
 
 # # save as a .rda object
@@ -145,6 +227,23 @@ compress_df = compress_raw_data(raw_df,
                                 max_yr = 2020,
                                 round_to = 10)
 
+# 370,451 rows have NAs for start and end. All from receivers TT1 and TT2
+
+#------------------------------------
+# prep some fish capture history data
+yr_label = "19_20"
+
+# list with wide, long capture histories and tag info
+cap_hist_list = prep_capture_history(compress_df %>%
+                                       filter(!is.na(start)),
+                                     tag_data = tag_df_list[[yr_label]],
+                                     n_obs_valid = 3,
+                                     rec_site = rec_site_list[[yr_label]],
+                                     delete_upstream = T,
+                                     location = 'site',
+                                     output_format = 'all')
+
+
 #--------------------------
 # save a couple objects
 save_path = "data/prepped/2019_2020/"
@@ -153,3 +252,5 @@ save(raw_df,
      file = paste0(save_path, "raw.rda"))
 save(compress_df,
      file = paste0(save_path, "compressed.rda"))
+save(cap_hist_list,
+     file = paste0(save_path, "cap_hist.rda"))

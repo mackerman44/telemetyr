@@ -5,47 +5,37 @@
 #' @author Kevin See and Mike Ackerman
 #'
 #' @param compress_df compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.
-#' @param tag_data_path file path to the file containing all the metadata for all tags.
+#' @param tag_data dataframe with metadata for each tag, including columns named \code{tag_id}, \code{tag_purpose} (with some tags having "\code{fish}" in this column), and \code{release_time}.
 #' @param n_obs_valid minumum number of observations made at a location to be considered valid.
-#' @param receiver_nms character vector of receiver names, in order, to be used in the capture histories.
+#' @param rec_site data.frame with 2 columns, \code{site} and \code{receiver}, with sites and and receivers as factors with levels in order.
 #' @param delete_upstream should detections that indicate upstream movement be deleted?
-#' @param output_format Either wide or long format
+#' @param location should detections be grouped by site or receiver?
+#' @param output_format return either wide or long format, or both plus tag metadata
 #'
 #' @import dplyr tidyr readxl lubridate
+#' @importFrom janitor excel_numeric_to_date
+#' @importFrom magrittr %<>%
 #' @export
-#' @return a dataframe to be used as capture histories
+#' @return a list containing a capture history in wide format, one in long format, and metadata for each tag
 
 prep_capture_history = function(compress_df = NULL,
-                                tag_data_path = 'data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx',
+                                tag_data = NULL,
                                 n_obs_valid = 3,
                                 # remove_sites = c('MT','AC','TT'),
-                                receiver_nms,
+                                rec_site = NULL,
                                 delete_upstream = T,
-                                output_format = c('wide', 'long')) {
+                                location = c('site', 'receiver'),
+                                output_format = c('all', 'wide', 'long')) {
 
   stopifnot(!is.null(compress_df),
-            !is.null(tag_data_path))
+            !is.null(tag_data),
+            !is.null(rec_site))
 
+  location = match.arg(location)
   output_format = match.arg(output_format)
 
-  # what season?
-  yr_label = paste(str_sub(lubridate::year(min(compress_df$start, na.rm = T)), -2),
-                   str_sub(lubridate::year(max(compress_df$start, na.rm = T)), -2),
-                   sep = "_")
-
-  # get data about each released tag, including code
-  tag_df = read_excel(tag_data_path) %>%
-    filter(season == yr_label) %>%
-    mutate(tag_id = str_extract(radio_tag_id, "[:digit:]*"),
-           tag_id = as.numeric(tag_id)) %>%
-    mutate_at(vars(activation_time, release_time),
-              list(as.numeric)) %>%
-    mutate_at(vars(activation_time, release_time),
-              list(excel_numeric_to_date),
-              include_time = T)
-
   # pull out tags that were put in fish
-  fish_tags = tag_df %>%
+  fish_tags = tag_data %>%
     filter(tag_purpose == 'fish') %>%
     pull(tag_id)
 
@@ -54,15 +44,11 @@ prep_capture_history = function(compress_df = NULL,
     mutate(site = str_sub(receiver, 1, 2)) %>%
     select(site, everything()) %>%
     # filter out observations prior to release date
-    left_join(tag_df %>%
+    left_join(tag_data %>%
                 filter(tag_purpose == 'fish') %>%
                 select(tag_id, release_time)) %>%
     filter(start >= release_time) %>%
-    select(-release_time)
-
-  # remove aberrent sites (mobile, activation, test)
-  fish_df %<>%
-    # filter(!site %in% remove_sites) %>%
+    select(-release_time) %>%
     arrange(tag_id, start)
 
   # only keep observations with a minimum number of detections within the maximum minute period
@@ -74,98 +60,118 @@ prep_capture_history = function(compress_df = NULL,
     pull(receiver) %>%
     unique()
 
-  if(sum(!obs_rec %in% receiver_nms) > 0) {
-    cat(paste(paste(obs_rec[!obs_rec %in% receiver_nms], collapse = ", "), "are not in the receiver_nms argument, and will be dropped.\n"))
+  if(sum(!obs_rec %in% rec_site$receiver) > 0) {
+    cat(paste(paste(obs_rec[!obs_rec %in% rec_site$receiver], collapse = ", "), "are not in the rec_site dataframe, and will be dropped.\n"))
   }
 
   # turn receivers and sites into factors
   fish_df %<>%
-    filter(receiver %in% receiver_nms) %>%
-    mutate(receiver = factor(receiver,
-                             levels = receiver_nms),
-           site = factor(site,
-                         levels = unique(str_sub(receiver_nms, 1, 2))))
+    inner_join(rec_site,
+               by = c('site', 'receiver')) %>%
+    mutate(site = factor(site,
+                         levels = levels(rec_site$site)),
+           receiver = factor(receiver,
+                             levels = levels(rec_site$receiver)))
 
-
-  # combine detections by receiver
-  rec_grp = fish_df %>%
-    full_join(fish_df %>%
-                mutate(nxt_tag = lead(tag_id),
-                       nxt_rec = lead(receiver),
-                       nxt_site = lead(site)) %>%
-                mutate(new_grp = if_else(tag_id != nxt_tag |
-                                           receiver != nxt_rec,
-                                         T, F)) %>%
-                filter(new_grp) %>%
-                mutate(grp = 1:n())) %>%
-    tidyr::fill(grp, .direction = 'up') %>%
-    group_by(tag_id, site, receiver, grp) %>%
-    summarise(first_obs = min(start),
-              last_obs = max(end),
-              n = sum(n)) %>%
-    ungroup() %>%
-    select(-grp) %>%
-    arrange(tag_id, first_obs)
-
-  # site_grp = fish_df %>%
-  #   full_join(fish_df %>%
-  #               mutate(nxt_tag = lead(tag_id),
-  #                      nxt_rec = lead(receiver),
-  #                      nxt_site = lead(site)) %>%
-  #               mutate(new_grp = if_else(tag_id != nxt_tag |
-  #                                          site != nxt_site,
-  #                                        T, F)) %>%
-  #               filter(new_grp) %>%
-  #               mutate(grp = 1:n())) %>%
-  #   tidyr::fill(grp, .direction = 'up') %>%
-  #   group_by(tag_id, site, grp) %>%
-  #   summarise(first_obs = min(start),
-  #             last_obs = max(end),
-  #             n = sum(n)) %>%
-  #   ungroup() %>%
-  #   select(-grp) %>%
-  #   arrange(tag_id, first_obs)
-
-  # remove detections that indicate upstream movement
-  if(delete_upstream) {
-    rec_grp = rec_grp %>%
-      group_by(tag_id) %>%
-      mutate(site_num = as.integer(site),
-             nxt_site = lead(site_num)) %>%
+  if(location == "receiver") {
+    # combine detections by receiver
+    first_last = fish_df %>%
+      full_join(fish_df %>%
+                  mutate(nxt_tag = lead(tag_id),
+                         nxt_rec = lead(receiver),
+                         nxt_site = lead(site)) %>%
+                  mutate(new_grp = if_else(tag_id != nxt_tag |
+                                             receiver != nxt_rec,
+                                           T, F)) %>%
+                  filter(new_grp) %>%
+                  mutate(grp = 1:n())) %>%
+      tidyr::fill(grp, .direction = 'up') %>%
+      group_by(tag_id, site, receiver, grp) %>%
+      summarise(first_obs = min(start),
+                last_obs = max(end),
+                n = sum(n)) %>%
       ungroup() %>%
-      filter(nxt_site >= site_num | is.na(nxt_site))
-      # filter(nxt_site < site_num) %>%
-      # select(tag_id) %>%
-      # distinct()
+      select(-grp) %>%
+      rename(loc = receiver) %>%
+      arrange(tag_id, first_obs)
 
-    # site_grp = site_grp %>%
-    #   group_by(tag_id) %>%
-    #   mutate(site_num = as.integer(site),
-    #          nxt_site = lead(site_num)) %>%
-    #   ungroup() %>%
-    #   filter(nxt_site >= site_num | is.na(nxt_site))
+    # remove detections that indicate upstream movement?
+    if(delete_upstream) {
+      first_last %<>%
+        group_by(tag_id) %>%
+        mutate(loc_num = as.integer(site),
+               next_loc = lead(loc_num)) %>%
+        ungroup() %>%
+        filter(next_loc >= loc_num | is.na(next_loc))
+    }
+
+  }
+
+  if(location == 'site') {
+    # combine detections by site
+    first_last = fish_df %>%
+      full_join(fish_df %>%
+                  mutate(nxt_tag = lead(tag_id),
+                         nxt_rec = lead(receiver),
+                         nxt_site = lead(site)) %>%
+                  mutate(new_grp = if_else(tag_id != nxt_tag |
+                                             site != nxt_site,
+                                           T, F)) %>%
+                  filter(new_grp) %>%
+                  mutate(grp = 1:n())) %>%
+      tidyr::fill(grp, .direction = 'up') %>%
+      group_by(tag_id, site, grp) %>%
+      summarise(first_obs = min(start),
+                last_obs = max(end),
+                n = sum(n)) %>%
+      ungroup() %>%
+      select(-grp) %>%
+      rename(loc = site) %>%
+      arrange(tag_id, first_obs)
+
+    # remove detections that indicate upstream movement?
+    if(delete_upstream) {
+      first_last %<>%
+        group_by(tag_id) %>%
+        mutate(loc_num = as.integer(loc),
+               next_loc = lead(loc_num)) %>%
+        ungroup() %>%
+        filter(next_loc >= loc_num | is.na(next_loc))
+    }
   }
 
   # wide format
-  if(output_format == 'wide') {
-    cap_hist = rec_grp %>%
-      select(tag_id, site) %>%
-      distinct() %>%
-      mutate(seen = 1) %>%
-      spread(site, seen,
-             fill = 0) %>%
-      unite(cap_hist,
-            -tag_id,
-            sep = "",
-            remove = F)
-  }
+  cap_hist_wide = first_last %>%
+    select(tag_id, loc) %>%
+    distinct() %>%
+    mutate(seen = 1) %>%
+    spread(loc, seen,
+           fill = 0) %>%
+    unite(cap_hist,
+          -tag_id,
+          sep = "",
+          remove = F)
 
   # long format
-  if(output_format == 'long') {
-    cap_hist = rec_grp %>%
-      select(-site_num, -nxt_site)
+  cap_hist_long = first_last %>%
+    select(-loc_num, -next_loc)
+
+  # what to return?
+  if(output_format == 'wide') {
+    return(cap_hist_wide)
   }
 
-  return(cap_hist)
+
+  if(output_format == 'long') {
+    return(cap_hist_long)
+  }
+
+  if(output_format == 'all') {
+    list(ch_wide = cap_hist_wide,
+         ch_long = cap_hist_long,
+         tag_df = tag_data %>%
+           filter(tag_id %in% fish_tags)) %>%
+      return()
+  }
 
 }

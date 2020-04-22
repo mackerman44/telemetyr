@@ -6,28 +6,31 @@
 \usage{
 prep_capture_history(
   compress_df = NULL,
-  tag_data_path = "data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx",
+  tag_data = NULL,
   n_obs_valid = 3,
-  receiver_nms,
+  rec_site = NULL,
   delete_upstream = T,
-  output_format = c("wide", "long")
+  location = c("site", "receiver"),
+  output_format = c("all", "wide", "long")
 )
 }
 \arguments{
 \item{compress_df}{compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.}
 
-\item{tag_data_path}{file path to the file containing all the metadata for all tags.}
+\item{tag_data}{dataframe with metadata for each tag, including columns named \code{tag_id}, \code{tag_purpose} (with some tags having "\code{fish}" in this column), and \code{release_time}.}
 
 \item{n_obs_valid}{minumum number of observations made at a location to be considered valid.}
 
-\item{receiver_nms}{character vector of receiver names, in order, to be used in the capture histories.}
+\item{rec_site}{data.frame with 2 columns, \code{site} and \code{receiver}, with sites and and receivers as factors with levels in order.}
 
 \item{delete_upstream}{should detections that indicate upstream movement be deleted?}
 
-\item{output_format}{Either wide or long format}
+\item{location}{should detections be grouped by site or receiver?}
+
+\item{output_format}{return either wide or long format, or both plus tag metadata}
 }
 \value{
-a dataframe to be used as capture histories
+a list containing a capture history in wide format, one in long format, and metadata for each tag
 }
 \description{
 Generates a data frame containing all the necessary information for capture histories of tagged fish
