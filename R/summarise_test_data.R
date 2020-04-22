@@ -11,10 +11,10 @@
 #' @return summaries of test tag data
 
 summarise_test_data = function(compress_df = NULL,
-                               tag_data_path = 'data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx') {
+                               tag_data = 'data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx') {
 
   stopifnot(!is.null(compress_df),
-            !is.null(tag_data_path))
+            !is.null(tag_data))
 
   cat("Parsing out test tag data.\n")
 
@@ -24,7 +24,7 @@ summarise_test_data = function(compress_df = NULL,
                    sep = "_")
 
   # get information about test tags including code and duty cycle
-  test_tag_ids = read_excel(tag_data_path) %>%
+  test_tag_ids = read_excel(tag_data) %>%
     filter(season == yr_label,
            tag_purpose == "test") %>%
     select(radio_tag_id, duty_cycle) %>%
