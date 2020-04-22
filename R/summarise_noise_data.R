@@ -2,7 +2,7 @@
 #'
 #' @description Summarize receiver noise records in observation data
 #'
-#' @inheritParams parse_code_ending
+#' @inheritParams prep_capture_history
 #' @inheritParams get_file_nms
 #'
 #' @param operations_summary an optional summary of receiver operation times typically the \code{operations_summ} object
@@ -12,13 +12,13 @@
 #' @export
 #' @return summaries of noise information
 
-summarise_noise_data = function(summ_data = NULL,
+summarise_noise_data = function(compress_df = NULL,
                                 receiver_codes = NULL,
                                 operations_summary = NULL) {
 
   cat("Parsing out noise records.\n")
 
-  noise_df = summ_data %>%
+  noise_df = compress_df %>%
     parse_code_ending(code_ending = "575$")
 
   # get list of all unique receivers in noise_df

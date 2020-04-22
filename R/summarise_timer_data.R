@@ -4,7 +4,7 @@
 #'
 #' @author Mike Ackerman and Kevin See
 #'
-#' @inheritParams parse_code_ending
+#' @inheritParams prep_capture_history
 #' @inheritParams get_file_nms
 #'
 #' @param season_start format "\%Y-\%m-\%d" the first day of the season that the receivers were considered turned on
@@ -14,14 +14,14 @@
 #' @export
 #' @return summaries of operational times for each receiver
 
-summarise_timer_data = function(summ_data = NULL,
+summarise_timer_data = function(compress_df = NULL,
                                 receiver_codes = NULL,
                                 season_start = NULL,
                                 season_end = NULL) {
 
   cat("Parsing out timer tag data.\n")
 
-  timer_df = summ_data %>%
+  timer_df = compress_df %>%
     parse_code_ending(code_ending = "575$")
 
   # range of time among timer tags in timer_df
