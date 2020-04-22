@@ -5,14 +5,14 @@
 \title{Summarize Receiver Operation Times}
 \usage{
 summarise_timer_data(
-  summ_data = NULL,
+  compress_df = NULL,
   receiver_codes = NULL,
   season_start = NULL,
   season_end = NULL
 )
 }
 \arguments{
-\item{summ_data}{data.frame containing summarised data, output from \code{summarise_txt_data()}}
+\item{compress_df}{compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.}
 
 \item{receiver_codes}{character vector of receiver codes to download files for.
 The default is \code{NULL}, which will keep all receiver codes found in the path folder.}
