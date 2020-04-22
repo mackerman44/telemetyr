@@ -74,3 +74,8 @@ noise_summ = summarise_noise_data(compress_df,
 #-------------------------
 test_summ = summarise_test_data(compress_df,
                                 tag_data_path = 'data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx')
+
+#-------------------------
+# volt & temp info
+#-------------------------
+vt_df = read_volt_temp_data(path)

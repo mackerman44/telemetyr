@@ -1,41 +1,64 @@
 #' @title Read in Receiver Volt and Temperature Info from Tracker Software
 #'
-#' @description Reads in volt and temperature receiver data from Tracker software
+#' @description Reads in volt and temperature data from the Tracker software
 #'
-#' @author Mike Ackerman and Kevin see
+#' @author Mike Ackerman and Kevin See
 #'
-#' @param path the directory containing the folders with observation data for each telemetry receiver for a study season
+#' @inheritParams get_file_nms
 #'
-#' @import dplyr readr
+#' @import dplyr purrr readr
 #' @export
 #' @return a data frame containing receiver volt and temperature information
 
-read_volt_temp_data = function(path = ".") {
+read_volt_temp_data = function(path = ".",
+                               receiver_codes = NULL) {
 
   # list all of the files with name ending with double $$
-  file_df = get_file_nms(path) %>%
-    filter(grepl("\\$\\$", file_name)) %>%
-    select(receiver, file_name)
+  file_df = get_file_nms(path,
+                         receiver_codes) %>%
+    filter(grepl("\\$\\$", nm))
 
-  volt_temp_df = NULL
-  for(i in 1:nrow(file_df)) {
+  vt_df = file_df %>%
+    # how many files for each receiver?
+    group_by(receiver) %>%
+    mutate(file_num = 1:n(),
+           n_files = n()) %>%
+    ungroup() %>%
+    # make a list of the file_name(s)
+    split(list(.$file_name)) %>%
+    map_df(.id = 'file_name',
+           .f = function(x) {
 
-    volt_temp_df = volt_temp_df %>%
-      bind_rows(readr::read_table(paste(path, file_df$file_name[i], sep = "/"),
-                                  col_names = T,
-                                  skip = 1) %>%
-                  dplyr::slice(-1) %>%
-                  dplyr::rename(date = DATE,
-                                time = TIME,
-                                volt_avg = AVG,
-                                volt_min = MIN,
-                                volt_max = MAX,
-                                temp_avg = AVG_1,
-                                temp_min = MIN_1,
-                                temp_max = MAX_1) %>%
-                  dplyr::mutate(receiver = file_df$receiver[i]) %>%
-                  dplyr::select(receiver, everything()))
+             cat(paste('Reading volt/temp file', x$file_num, 'of', x$n_files, 'from receiver', x$receiver, '\n'))
 
-  }
-  return(volt_temp_df)
-} # end read.volt.temp.data()
+             # read in each volt/temp file and assign col_names
+             tmp = try(suppressWarnings(read_table2(paste(path, x$file_name, sep = "/"),
+                                                    skip = 3,
+                                                    col_types = c("ctnnniii"),
+                                                    col_names = c("date",
+                                                                  "time",
+                                                                  "volt_avg",
+                                                                  "volt_min",
+                                                                  "volt_max",
+                                                                  "temp_avg",
+                                                                  "temp_min",
+                                                                  "temp_max"))))
+
+             # in nrow of tmp (a single txt file) is 0 or class(tmp) is error or first item is <END>...
+             # return error message and nothing
+             if(nrow(tmp) == 0 | class(tmp)[1] == "try-error") {
+               cat(paste("Problem reading volt/temp info from receiver", x$receiver, ", file", x$nm, "\n"))
+               return(NULL)
+             }
+
+             tmp = tmp %>%
+               mutate(file = x$nm) %>%
+               select(file, everything())
+
+             return(tmp)
+
+           })
+
+  return(vt_df)
+
+} # end read_volt_temp_data()
