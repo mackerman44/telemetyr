@@ -79,17 +79,10 @@ test_summ = summarise_test_data(compress_df,
 # volt & temp info
 #-------------------------
 vt_df = read_volt_temp_data(path)
-
-vt = vt_df  %>%
-  select(-file_name, -file) %>%
-  mutate(date_time = as.POSIXct(paste(date, time), format = "%d/%m/%y %H:%M")) %>%
-  select(-date, -time)
-
-vt_p = vt %>%
-  ggplot(aes(x = date_time)) +
-  geom_line(aes(y = temp_avg)) +
-  theme_bw() +
-  facet_wrap(~ receiver,
-             scales = "free")
+vt_p = plot_volt_temp_data(vt_df,
+                           column = "volt_avg")
+vt_p = plot_volt_temp_data(vt_df,
+                           column = "volt_avg",
+                           receiver_codes = receiver_nms)
 vt_p
 

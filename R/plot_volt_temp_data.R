@@ -18,14 +18,24 @@ plot_volt_temp_data = function(volt_temp_df,
                                column = "volt_avg",
                                receiver_codes = NULL) {
 
+  # get list of all unique receivers in volt_temp_df
+  receiver_nms = sort(unique(volt_temp_df$receiver))
+
+  # if user provides a list of receiver codes
+  if(!is.null(receiver_codes)) {
+    receiver_nms = receiver_nms[receiver_nms %in% receiver_codes]
+  }
+
   # still need to filter for receiver_codes
   vt_p = volt_temp_df %>%
     select(-file_name, -file) %>%
+    filter(receiver %in% receiver_nms) %>%
     mutate(date_time = as.POSIXct(paste(date, time), format = "%d/%m/%y %H:%M")) %>%
     select(-date, -time) %>%
     ggplot(aes(x = date_time)) +
     geom_line(aes(y = get(column))) +
     theme_bw() +
+    labs(y = column) +
     facet_wrap(~ receiver,
                scales = "free")
 
