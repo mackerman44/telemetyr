@@ -13,7 +13,8 @@ summarise_noise_data(
 \arguments{
 \item{summ_data}{data.frame containing summarised data, output from \code{summarise_txt_data()}}
 
-\item{receiver_codes}{character vector of receiver codes to query for. Default is \code{NULL} which will keep all receiver codes found in the path folder}
+\item{receiver_codes}{character vector of receiver codes to download files for.
+The default is \code{NULL}, which will keep all receiver codes found in the path folder.}
 
 \item{operations_summary}{an optional summary of receiver operation times typically the \code{operations_summ} object
 from \code{summarise_timer_data()}}

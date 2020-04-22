@@ -4,18 +4,21 @@
 \alias{round_tag_codes}
 \title{Round Tag Codes}
 \usage{
-round_tag_codes(data_df = NULL, round_to = 10)
+round_tag_codes(data_df = NULL, round_to = 5)
 }
 \arguments{
-\item{data_df}{data.frame with column named \code{tag_code}}
+\item{data_df}{any data frame with a column named \code{tag_code}}
 
-\item{round_to}{integer that the tag codes should be rounded to, currently supports either 10 or 5 (default is 10)}
+\item{round_to}{the integer that the user would like to round \code{tag_code} to. Currently supports
+either 5 or 10. If \code{round_to = 5}, will round to the nearest 5. If \code{round_to = 10}, will round
+to the nearest 0.}
 }
 \value{
-a data.frame containing all the original columns, plus one called \code{tag_id}
+a data frame containing all the original columns, plus an additional column \code{tag_id}
+containing the fixed tag IDs
 }
 \description{
-Round the tag IDs from the receiver to better match possible tag codes
+Round the tag IDs from a receiver to the nearest 5 or 0 to better match possible tag codes
 }
 \author{
 Kevin See and Mike Ackerman

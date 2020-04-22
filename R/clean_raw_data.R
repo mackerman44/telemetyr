@@ -1,17 +1,23 @@
-#' @title Clean raw RT observations
+#' @title Clean Raw Telemetry Data
 #'
-#' @description Clean up raw data, including formating dates, deleting invalid rows, etc.
+#' @description Perform initial cleaning of the raw telemetry data, typically an output from \code{read_txt_data()}
+#' including formatting and filtering dates and the option to delete invalid observations.
 #'
 #' @author Kevin See and Mike Ackerman
 #'
-#' @param raw_data data.frame containing raw data, output from \code{read_txt_data()}
-#' @param min_yr minimum acceptable year (e.g. 2018)
-#' @param max_yr maximum acceptable year (e.g. 2018)
-#' @param filter_valid should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}
+#' @param raw_data a data frame containing raw data from telemetry receivers and the Tracker software,
+#' typically an output from \code{read_txt_data()}
+#' @param min_yr the minimum acceptable year (e.g. 2017), likely the year at the start of a season. Used to filter
+#' errant dates that occur within the data pre-season.
+#' @param max_yr maximum acceptable year (e.g. 2018), likely the year at the end of a season. Used to filter errant
+#' dates that occur within the data post-season.
+#' @param filter_valid should only valid records in the \code{raw_data} be returned?
+#' Default is \code{TRUE} which only returns records where \code{valid == 1}. This uses the 4th column in the
+#' raw Tracker software .txt downloads.
 #'
 #' @import dplyr stringr lubridate
 #' @export
-#' @return a data frame containing a summary of the raw data
+#' @return a data frame similar to \code{raw_data} except cleaner
 
 clean_raw_data = function(raw_data = NULL,
                           min_yr = 2017,

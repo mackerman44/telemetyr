@@ -1,6 +1,7 @@
-#' @title Read in raw .txt Format Tracker Data
+#' @title Read in Raw .txt Format Tracker Data
 #'
-#' @description Reads in raw telemetry observation data stored in the .txt format from the Tracker software
+#' @description Reads in the raw records from telemetry receivers stored in the .txt
+#' format from the Tracker software
 #'
 #' @author Kevin See and Mike Ackerman
 #'
@@ -8,7 +9,7 @@
 #'
 #' @import dplyr purrr readr stringr lubridate
 #' @export
-#' @return a data frame containing all of the .txt data
+#' @return a data frame containing all records in the .txt receiver downloads in \code{path}
 
 read_txt_data = function(path = ".",
                          receiver_codes = NULL) {

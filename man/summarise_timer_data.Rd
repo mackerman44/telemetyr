@@ -14,7 +14,8 @@ summarise_timer_data(
 \arguments{
 \item{summ_data}{data.frame containing summarised data, output from \code{summarise_txt_data()}}
 
-\item{receiver_codes}{character vector of receiver codes to query for. Default is \code{NULL} which will keep all receiver codes found in the path folder}
+\item{receiver_codes}{character vector of receiver codes to download files for.
+The default is \code{NULL}, which will keep all receiver codes found in the path folder.}
 
 \item{season_start}{format "\%Y-\%m-\%d" the first day of the season that the receivers were considered turned on}
 

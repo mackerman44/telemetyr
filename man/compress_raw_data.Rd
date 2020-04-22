@@ -17,15 +17,21 @@ compress_raw_data(
 )
 }
 \arguments{
-\item{data_df}{data.frame with column named \code{tag_code}}
+\item{data_df}{any data frame with a column named \code{tag_code}}
 
-\item{min_yr}{minimum acceptable year (e.g. 2018)}
+\item{min_yr}{the minimum acceptable year (e.g. 2017), likely the year at the start of a season. Used to filter
+errant dates that occur within the data pre-season.}
 
-\item{max_yr}{maximum acceptable year (e.g. 2018)}
+\item{max_yr}{maximum acceptable year (e.g. 2018), likely the year at the end of a season. Used to filter errant
+dates that occur within the data post-season.}
 
-\item{filter_valid}{should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}}
+\item{filter_valid}{should only valid records in the \code{raw_data} be returned?
+Default is \code{TRUE} which only returns records where \code{valid == 1}. This uses the 4th column in the
+raw Tracker software .txt downloads.}
 
-\item{round_to}{integer that the tag codes should be rounded to, currently supports either 10 or 5 (default is 10)}
+\item{round_to}{the integer that the user would like to round \code{tag_code} to. Currently supports
+either 5 or 10. If \code{round_to = 5}, will round to the nearest 5. If \code{round_to = 10}, will round
+to the nearest 0.}
 
 \item{max_min}{maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 2.}
 
