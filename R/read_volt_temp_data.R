@@ -52,7 +52,8 @@ read_volt_temp_data = function(path = ".",
              }
 
              tmp = tmp %>%
-               mutate(file = x$nm) %>%
+               mutate(file = x$nm,
+                      receiver = x$receiver) %>%
                select(file, everything())
 
              return(tmp)
