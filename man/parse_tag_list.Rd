@@ -2,20 +2,20 @@
 % Please edit documentation in R/parse_tag_list.R
 \name{parse_tag_list}
 \alias{parse_tag_list}
-\title{Parse tag data}
+\title{Parse Data Using a Tag List}
 \usage{
-parse_tag_list(summ_data = NULL, tags = NULL)
+parse_tag_list(data_to_parse = NULL, tags = NULL)
 }
 \arguments{
-\item{summ_data}{data.frame containing summarised data, output from \code{summarise_txt_data()}}
+\item{data_to_parse}{a data frame to be "parsed" or filtered containing a column \code{tag_id}}
 
-\item{tags}{vector of tag IDs that the user would like to extract data for}
+\item{tags}{a vector of tag IDs that the user would like to extract data for}
 }
 \value{
-a data.frame containing a summary of the tag data for the listed tags
+a data frame containing only records with a \code{tag_id} \%in\% \code{tags}
 }
 \description{
-Filter the summarised data to extract observations related to tags, defined in a tag list
+Filter a data frame to extract observations for a list tags defined by \code{tags}
 }
 \author{
 Kevin See and Mike Ackerman

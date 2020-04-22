@@ -2,20 +2,22 @@
 % Please edit documentation in R/parse_code_ending.R
 \name{parse_code_ending}
 \alias{parse_code_ending}
-\title{Parse tags by tag code ending}
+\title{Parse Data Using a Code "Ending"}
 \usage{
-parse_code_ending(summ_data = NULL, code_ending = NULL)
+parse_code_ending(data_to_parse = NULL, code_ending = NULL)
 }
 \arguments{
-\item{summ_data}{data.frame containing summarised data, output from \code{summarise_txt_data()}}
+\item{data_to_parse}{a data frame to be "parsed" or filtered containing a column \code{tag_id}}
 
-\item{code_ending}{the ending of the tag code to filter for. Some examples include: "575$" for timer tags, "995$" for noise tags or "525$" for sentinel tags}
+\item{code_ending}{the ending of the tag code to filter for. Some examples include: "575$" for timer tags,
+"995$" for noise tags, or "525$" for sentinel tags}
 }
 \value{
-a data.frame containing a only records with the desired code ending
+a data frame containing only records for the desired \code{code_ending}
 }
 \description{
-Filter the summarised data to extract observations related to timer tags
+Filter a data frame to extract observations for tag codes ending in \code{code_ending};
+useful for extracting noise, timer, etc information.
 }
 \author{
 Kevin See and Mike Ackerman
