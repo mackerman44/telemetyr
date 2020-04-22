@@ -6,6 +6,8 @@
 \usage{
 compress_raw_data(
   data_df = NULL,
+  min_yr = 2017,
+  max_yr = NA,
   filter_valid = T,
   round_to = 10,
   max_min = 2,
@@ -16,6 +18,10 @@ compress_raw_data(
 }
 \arguments{
 \item{data_df}{data.frame with column named \code{tag_code}}
+
+\item{min_yr}{minimum acceptable year (e.g. 2018)}
+
+\item{max_yr}{maximum acceptable year (e.g. 2018)}
 
 \item{filter_valid}{should only valid records (\code{valid == 1}) be returned? Default is \code{TRUE}}
 

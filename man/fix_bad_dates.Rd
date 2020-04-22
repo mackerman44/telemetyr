@@ -4,14 +4,10 @@
 \alias{fix_bad_dates}
 \title{Fix bad dates}
 \usage{
-fix_bad_dates(detect_df = NULL, min_yr = 2017, max_yr = NA)
+fix_bad_dates(detect_df = NULL)
 }
 \arguments{
 \item{detect_df}{data.frame of raw text records, as returned by \code{read_txt_data()}.}
-
-\item{min_yr}{minimum acceptable year (e.g. 2018)}
-
-\item{max_yr}{maximum acceptable year (e.g. 2018)}
 }
 \value{
 a data frame matching the original, with corrected dates and a new column, \code{orig_date}, showing the original date (character) from the file.

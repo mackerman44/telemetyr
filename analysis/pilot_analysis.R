@@ -17,6 +17,7 @@
 library(tidyverse)
 library(magrittr)
 library(telemetyr)
+library(readxl)
 
 #-------------------------
 # load compressed data
@@ -68,49 +69,8 @@ noise_summ = summarise_noise_data(compress_df,
                                   receiver_codes = receiver_nms,
                                   operations_summary = timer_summ$operations_summ)
 
-
 #-------------------------
-# load pilot_raw.rda
-load("data/raw/pilot_raw.rda")
-
-# clean raw data a little bit
-pilot_clean = clean_raw_data(pilot_raw)
-
-# fix tag codes
-pilot_round = round_tag_codes(pilot_clean,
-                              round_to = 5)
-
-# summarise data to make it more like csv output
-pilot_summ = summarise_txt_data(pilot_round)
-#save(pilot_summ, file = "data/prepped/pilot_summ.rda")
-
-#-----------------------------------------
-# following instructions from Nick
-#-----------------------------------------
-# get tag ids for tags that were released
-library(readxl)
-tag_list = read_excel('data/raw/tag_release/TagReleases2017.xlsx',
-                    'RTs') %>%
-  mutate(tag_id = str_extract(RadioTag, "[:digit:]*")) %>%
-  pull(tag_id)
-
-# can parse out tag data in a couple ways
-tag_df_v1 = parse_tag_list(pilot_summ,
-                           tags = tag_list)
-
-tag_df_v2 = parse_tag_list(pilot_round,
-                           tags = tag_list) %>%
-  summarise_txt_data()
-
-identical(tag_df_v1,
-          tag_df_v2)
-
-# Nick says he'd like to make that max_min 2 min, so we can do that
-tag_df = parse_tag_list(pilot_round,
-                        tags = tag_list) %>%
-  summarise_txt_data(max_min = 2)
-
-
-
-
-
+# test tags
+#-------------------------
+test_summ = summarise_test_data(compress_df,
+                                tag_data_path = 'data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx')

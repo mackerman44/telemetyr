@@ -4,7 +4,7 @@
 \alias{clean_raw_data}
 \title{Clean raw RT observations}
 \usage{
-clean_raw_data(raw_data = NULL, min_yr = NULL, max_yr = NULL, filter_valid = T)
+clean_raw_data(raw_data = NULL, min_yr = 2017, max_yr = NA, filter_valid = T)
 }
 \arguments{
 \item{raw_data}{data.frame containing raw data, output from \code{read_txt_data()}}
