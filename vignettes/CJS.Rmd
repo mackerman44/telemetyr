@@ -1,0 +1,388 @@
+---
+title: "Fitting a CJS Model"
+output: 
+  rmarkdown::html_vignette:
+    fig_height: 6
+    fig_width: 6
+vignette: >
+  %\VignetteIndexEntry{Fitting a CJS Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+# setwd('vignettes')
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  comment = "#>"
+)
+```
+
+```{r setup, message=F}
+library(telemetyr)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(magrittr)
+library(janitor)
+library(rjags)
+library(postpack)
+```
+
+# Introduction
+
+We would like to estimate survival for each reach (between each RT site), using a Cormack Jolly-Seber (CJS) model. 
+
+# Data Prep
+
+The raw data is contained in .txt files, located in a folder named after the receiver it was collected from. Each receiver has a 3-digit code. So after setting the file path to the folder that contains all the receiver folders, the `read_txt_data()` function will read in each text file and combine them all into one long dataframe.
+
+```{r read-raw-data, eval = F}
+data_path = "ABS/telemetry/lemhi/fixed_site_downloads/2017_2018"
+raw_df = read_txt_data(path = data_path)
+```
+
+```{r load-raw-data, echo = F, eval = F}
+load("../data/prepped/pilot/raw.rda")
+```
+
+The next step is to clean up some of the dates. We noted that many files have incorrect dates at the beginning of the file, probaby because the timer has not reset after the last download. We built a function, `clean_raw_data()`, that fixes as many of those dates as possible, based on the valid dates within each file, fixes any file that lists the receiver as `000`, and has the option to filter out observations that are marked as invalid (`valid == 0`). This function includes parameters `min_yr` and `max_yr` to put bounds around the expected dates, to help determine which dates should be corrected. After that, we wanted to round the tag code that was detected, to the nearest possible code from a tag that was actually deployed. In some years, only tags ending in 0 or 5 were deployed, in others only tags ending in 0. So there is another function, `round_tag_codes`, that includes an input parameter as to whether to round detected tag codes to the nearest 5 or nearest 10, and rename it `tag_id`, after which we assume that matches up to a tag ID from a tag actually deployed. Finally, we compressed these detections into windows of time, such that for each tag, we record how many observations occurred within that window. The default time window is 2 minutes, but that can be changed by the user. All of the above functionality is wrapped into a single wrapper function, `compress_raw_data()`. This compressed data appears to match the format of the data provided by the .csv files that are also downloaded from the receivers. 
+
+```{r compress-data, eval = F}
+# clean, round and compress data
+compress_df = compress_raw_data(raw_df,
+                                min_yr = 2017,
+                                max_yr = 2018,
+                                round_to = 5)
+```
+
+```{r load-data, echo = F}
+load('../data/prepped/pilot/compressed.rda')
+```
+
+The compressed data looks like this:
+
+```{r}
+compress_df %>%
+  filter(receiver != 'ACT') %>%
+  head()
+```
+
+Next, we pulled in metadata related to the receivers used each year, and metadata related to the tags released each year. Combining this with the compressed detections, we put together a capture history for tags that were put into fish, using the function `prep_capture_history()`. One of the input parameters is whether to delete upstream detections, making the assumption that fish are only moving downstream. `prep_capture_history()` returns a list of 3 objects, a capture history in wide format (one row per tag, columns for each detection site), a capture history in long format (one row per tag / detection site combination) and a dataframe containing all the metadata for the tags implanted in fish that season. For CJS models, we are most interested in the capture history in wide format.
+
+```{r prep-cap-history, eval = F}
+# read in some metadata associated with the receivers
+rec_meta = read_excel('../data/prepped/site_metadata/rt_site_metadata.xlsx')
+
+# which receivers were used each year?
+rec_site_list = rec_meta %>%
+  gather(season, use, starts_with("use")) %>%
+  mutate(season = str_remove(season, "use")) %>%
+  filter(use) %>%
+  select(-use) %>%
+  split(list(.$season)) %>%
+  map(.f = function(x) {
+    x %>%
+      filter(site_type == 'rt_fixed') %>%
+      select(site = site_code,
+             receivers) %>%
+      group_by(site) %>%
+      nest() %>%
+      ungroup() %>%
+      mutate(receiver = map(data,
+                            .f = function(x) {
+                              str_split(x, "\\,") %>%
+                                extract2(1) %>%
+                                str_trim()
+                            })) %>%
+      select(-data) %>%
+      unnest(cols = receiver) %>%
+      mutate_at(vars(site, receiver),
+                list(~ factor(., levels = unique(.))))
+  })
+
+# metadata about each tag, split by year
+# get data about each released tag, including code
+tag_df_list = read_excel('../data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx') %>%
+  mutate(tag_id = str_extract(radio_tag_id, "[:digit:]*"),
+         tag_id = as.numeric(tag_id)) %>%
+  mutate_at(vars(activation_time, release_time),
+            list(as.numeric)) %>%
+  mutate_at(vars(activation_time, release_time),
+            list(excel_numeric_to_date),
+            include_time = T) %>%
+  split(list(.$season))
+
+yr_label = "17_18"
+
+cap_hist_list = prep_capture_history(compress_df,
+                                     tag_data = tag_df_list[[yr_label]],
+                                     n_obs_valid = 3,
+                                     rec_site = rec_site_list[[yr_label]],
+                                     delete_upstream = T,
+                                     location = 'site',
+                                     output_format = 'all')
+
+# pull out the wide capture history
+cap_hist = cap_hist_list$ch_wide
+```
+
+```{r load-capture-history, echo = F}
+load('../data/prepped/pilot/cap_hist.rda')
+cap_hist = cap_hist_list$ch_wide
+```
+
+Note that there may be tagged fish that never appear in the capture history, because they were never detected. In this example, that includes `r sum(!cap_hist_list$tag_df$tag_id %in% cap_hist$tag_id)` tags that we'll want to account for. We need to construct a capture history for those tags with all zeros. In addition, for this example we will focus only on those fish implanted with a radio tag from batch_1, so we want to exclude the tags with an "on_off" duty cycle. 
+
+```{r finalize-cap-history}
+cap_hist %<>%
+  full_join(cap_hist_list$tag_df %>%
+               filter(duty_cycle == 'batch_1') %>%
+               select(tag_id),
+            by = "tag_id") %>%
+  anti_join(cap_hist_list$tag_df %>%
+               filter(duty_cycle == 'on_off') %>%
+               select(tag_id),
+            by = "tag_id") %>%
+  mutate(ch_width = nchar(cap_hist)) %>%
+  fill(ch_width) %>% 
+  rowwise() %>%
+  mutate(cap_hist = if_else(is.na(cap_hist),
+                            as.character(paste0(rep(0, ch_width), collapse = '')),
+                            cap_hist)) %>%
+  select(-ch_width) %>%
+  mutate_at(vars(-tag_id, -cap_hist),
+            list(~ if_else(is.na(.), 0, .)))
+```
+
+```{r, echo = F, eval = F}
+cap_hist %>%
+  group_by(cap_hist) %>%
+  summarise(freq = n()) %>%
+  arrange(desc(freq))
+```
+
+# Cormack Jolly-Seber Model
+
+Now that our capture histories are prepared, we can start constructing the CJS model, and the input data for it. First, we translate the wide capture histories into an $N \times J$ matrix, where $N$ is the number of tags used in the model, and $J$ is the number of detection points, including an initial release point (which must have a detection of 1 by definition). Next, we need to determine at which detection points the fish was known to be alive, because it had been detected there or further downstream. The `telemetyr` package contains a function to do that, called `known_alive()`.
+
+```{r jags-data}
+y = cap_hist %>%
+  mutate(Rel = 1) %>%
+  select(tag_id, cap_hist, Rel, everything()) %>%
+  select(-tag_id, -cap_hist) %>%
+  as.matrix()
+
+jags_data = list(
+  N = nrow(y),
+  J = ncol(y),
+  y = y,
+  z = known_alive(y)
+)
+
+```
+
+Next we specify the JAGS model. For this example, we will fit a model with different detection probabilities for each site, and different survival probabilities between each site. We will also calculate the cummulative survival up to each site.
+
+```{r specify-jags-model}
+jags_model = function() {
+  # PRIORS
+  phi[1] <- 1
+  p[1] <- 1
+  for(j in 2:J) {
+    phi[j] ~ dbeta(1,1) # survival probability between arrays
+    p[j] ~ dbeta(1,1)   # detection probability at each array
+  }
+
+  # LIKELIHOOD - Here, p and phi are global
+  for (i in 1:N) {
+    # j = 1 is the release occasion - known alive; i.e., the mark event
+    for (j in 2:J) {
+      # survival process: must have been alive in j-1 to have non-zero pr(alive at j)
+      z[i,j] ~ dbern(phi[j] * z[i,j-1]) # fish i in period j is a bernoulli trial
+      
+      # detection process: must have been alive in j to observe in j
+      y[i,j] ~ dbern(p[j] * z[i,j]) # another bernoulli trial
+    }
+  }
+  
+  # DERIVED QUANTITIES
+  # survivorship is probability of surviving from release to a detection occasion
+  survship[1] <- 1 # the mark event; everybody survived to this point
+  for (j in 2:J) { # the rest of the events
+    survship[j] <- survship[j-1] * phi[j]
+  }
+}
+
+# write model to a text file
+jags_file = "model.txt"
+write_model(jags_model, jags_file)
+
+# specify which parameters to track
+jags_params = c("phi", "p", "survship")
+```
+
+We then fit the JAGS model, and obtain an `mcmc.list` of samples from the posterior.
+
+```{r, eval = F, echo = F}
+# using jagsUI package
+library(jagsUI)
+post = jagsUI::jags.basic(jags_data,
+                          parameters.to.save = jags_params,
+                          model.file = jags_file,
+                          n.chains = 4,
+                          n.adapt = 1000,
+                          n.iter = 10000,
+                          n.burnin = 5000,
+                          n.thin = 10)
+```
+
+```{r post-samples}
+# using rjags package
+jags = jags.model(jags_file,
+                  data = jags_data,
+                  n.chains = 4,
+                  n.adapt = 1000)
+# burnin
+update(jags, n.iter = 2500)
+# posterior sampling
+post = coda.samples(jags,
+                    jags_params,
+                    n.iter = 2500,
+                    thin = 5)
+
+```
+
+## Results 
+
+We can extract summary statistics from the posteriors, and construct plots of detection probablities, survival probabilities and cummulative survival probabilities. 
+
+```{r create-figures}
+param_summ = post_summ(post,
+          jags_params,
+          Rhat = T,
+          ess = T) %>%
+  t() %>%
+  as_tibble(rownames = "param") %>%
+  mutate(cv = sd / mean)
+
+surv_p = param_summ %>%
+  filter(grepl('survship', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Cummulative Survival')
+
+phi_p = param_summ %>%
+  filter(grepl('phi', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Survival From Previous Site')
+
+det_p = param_summ %>%
+  filter(grepl('^p\\[', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Detection Probability')
+
+```
+
+```{r detect-fig}
+det_p
+```
+
+```{r phi-fig}
+phi_p
+```
+
+```{r survival-fig}
+surv_p
+```
+
+## Diagnostics 
+
+We can also look at some diagnostics to assess model convergence. These plots use the `postpack` package. 
+
+```{r diag-phi, fig.width = 8, fig.height = 8}
+diag_plots(post, "phi",
+           layout = "5x3")
+```
+
+```{r diag-surv, fig.width = 8, fig.height = 8}
+diag_plots(post, "survship",
+           layout = "5x3")
+```
+
+```{r diag-p, fig.width = 8, fig.height = 8}
+diag_plots(post, "^p[",
+           layout = "5x3")
+```
+
+
+```{r diagnostics}
+library(mcmcr)
+my_mcmcr = as.mcmcr(post)
+
+# get Rhat statistics for all parameters
+conv_df = rhat(my_mcmcr,
+               by = 'term',
+               as_df = T) %>%
+  left_join(esr(my_mcmcr,
+                by = 'term',
+                as_df = T)) %>%
+  # which parameters have converged and which haven't?
+  left_join(converged(my_mcmcr, 
+                      by = 'term',
+                      as_df = T))
+
+# how many parameters did not converge?
+sum(conv_df$converged == F)
+
+# conv_df %>%
+#   arrange(esr)
+
+```
+
+```{r diagnostics-ggmcmc, eval = F, echo = F}
+library(ggmcmc)
+my_ggs = ggs(post,
+             family = c('p')) %>%
+  filter(grepl('^p\\[', Parameter))
+             # family = c('survship'))
+             # family = c('phi'))
+
+dens_p = ggs_density(my_ggs) +
+  stat_function(fun = function(x) dbeta(x, 1, 1),
+                color = 'black') +
+  facet_wrap(~ Parameter)
+trace_p = ggs_traceplot(my_ggs) +
+  facet_wrap(~ Parameter)
+run_mean_p = ggs_running(my_ggs)
+rhat_p = ggs_Rhat(my_ggs)
+geweke_p = ggs_geweke(my_ggs)
+ggs_autocorrelation(my_ggs)
+
+
+```
+
