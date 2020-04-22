@@ -13,7 +13,7 @@ plot_volt_temp_data(volt_temp_df, column = "volt_avg", receiver_codes = NULL)
 "volt_avg", "volt_min", "volt_max", "temp_avg", "temp_min", "temp_max".}
 
 \item{receiver_codes}{character vector of receiver codes to download files for.
-The default is \code{NULL}, which will keep all receiver codes found in the path folder.}
+The default is \code{NULL}, which will keep all receiver codes found in the path folder}
 }
 \value{
 time-series plots of volt or temp faceted by receiver

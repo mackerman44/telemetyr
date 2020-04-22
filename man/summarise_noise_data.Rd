@@ -14,7 +14,7 @@ summarise_noise_data(
 \item{compress_df}{compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.}
 
 \item{receiver_codes}{character vector of receiver codes to download files for.
-The default is \code{NULL}, which will keep all receiver codes found in the path folder.}
+The default is \code{NULL}, which will keep all receiver codes found in the path folder}
 
 \item{operations_summary}{an optional summary of receiver operation times typically the \code{operations_summ} object
 from \code{summarise_timer_data()}}

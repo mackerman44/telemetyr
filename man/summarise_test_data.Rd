@@ -6,11 +6,13 @@
 \usage{
 summarise_test_data(
   compress_df = NULL,
-  tag_data_path = "data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx"
+  tag_data = "data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx"
 )
 }
 \arguments{
 \item{compress_df}{compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.}
+
+\item{tag_data}{dataframe with metadata for each tag, including columns named \code{tag_id}, \code{tag_purpose} (with some tags having "\code{fish}" in this column), and \code{release_time}.}
 }
 \value{
 summaries of test tag data

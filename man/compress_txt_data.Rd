@@ -2,7 +2,7 @@
 % Please edit documentation in R/compress_txt_data.R
 \name{compress_txt_data}
 \alias{compress_txt_data}
-\title{Compress rounded RT observations}
+\title{Compress Rounded Telemetry Records}
 \usage{
 compress_txt_data(
   data_df = NULL,
@@ -13,21 +13,25 @@ compress_txt_data(
 )
 }
 \arguments{
-\item{data_df}{data.frame containing all valid observations, output from \code{read_txt_data()}, followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}}
+\item{data_df}{data.frame containing all valid observations, output from \code{read_txt_data()},
+followed by \code{clean_raw_data()}, followed by \code{round_tag_codes()}}
 
-\item{max_min}{maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 2.}
+\item{max_min}{maximum number of minutes between detections of a tag before it's considered a
+different "group" of detections. Default is 2.}
 
 \item{assign_week}{Should this function assign a week number to the output? Default is \code{TRUE}}
 
-\item{week_base}{If assigning week numbers, the date when the numbering should start in MMDD format}
+\item{week_base}{If assigning week numbers, the date when the numbering should start in "MMDD" format}
 
-\item{append_week}{If assigning weeks, should the week be assigned based on the \code{first} or \code{last} time a tag was detected on that receiver? Default value is \code{first}.}
+\item{append_week}{If assigning weeks, should the week be assigned based on the \code{first}
+or \code{last} time a tag was detected on that receiver? Default value is \code{first}.}
 }
 \value{
-a data.frame containing a summary of the raw data
+a data frame containing a compressed format of the telemetry receiver records
 }
 \description{
-Compresses cleaned detections, showing the first and last detection on each receiver for each tag, and how many times it was detected on that receiver in that window.
+Compresses cleaned records, showing the first and last detection on each receiver for each tag,
+and how many times it was detected on that receiver in that window.
 }
 \author{
 Kevin See and Mike Ackerman

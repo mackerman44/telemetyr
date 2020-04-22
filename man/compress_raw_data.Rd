@@ -2,7 +2,7 @@
 % Please edit documentation in R/compress_raw_data.R
 \name{compress_raw_data}
 \alias{compress_raw_data}
-\title{Compress raw RT observations}
+\title{Clean and Compress Raw Telemetry Data}
 \usage{
 compress_raw_data(
   data_df = NULL,
@@ -33,19 +33,25 @@ raw Tracker software .txt downloads.}
 either 5 or 10. If \code{round_to = 5}, will round to the nearest 5. If \code{round_to = 10}, will round
 to the nearest 0.}
 
-\item{max_min}{maximum number of minutes between detections of a tag before it's considered a different "group" of detections. Default is 2.}
+\item{max_min}{maximum number of minutes between detections of a tag before it's considered a
+different "group" of detections. Default is 2.}
 
 \item{assign_week}{Should this function assign a week number to the output? Default is \code{TRUE}}
 
-\item{week_base}{If assigning week numbers, the date when the numbering should start in MMDD format}
+\item{week_base}{If assigning week numbers, the date when the numbering should start in "MMDD" format}
 
-\item{append_week}{If assigning weeks, should the week be assigned based on the \code{first} or \code{last} time a tag was detected on that receiver? Default value is \code{first}.}
+\item{append_week}{If assigning weeks, should the week be assigned based on the \code{first}
+or \code{last} time a tag was detected on that receiver? Default value is \code{first}.}
 }
 \value{
-a data.frame containing a summary of the raw data
+a data frame containing a compressed format of the telemetry receiver records
 }
 \description{
-Cleans detections, rounds observed tag codes and compresses the detections, showing the first and last detection on each receiver for each tag, and how many times it was detected on that receiver in that window.
+A wrapper function for \code{clean_raw_data()}, \code{round_tag_codes()},
+and \code{compress_txt_data()}. Cleans records, rounds tag codes, and then compresses the detections,
+showing the first and last detection on each receiver for each tag, and how many times it was
+detected on that receiver in that window. \code{compress_raw_data} is similar to the routine
+Tracker uses to compress .txt format data to .csv format.
 }
 \author{
 Kevin See and Mike Ackerman
