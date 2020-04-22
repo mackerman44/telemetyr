@@ -1,6 +1,10 @@
-#' @title Compress raw RT observations
+#' @title Clean and Compress Raw Telemetry Data
 #'
-#' @description Cleans detections, rounds observed tag codes and compresses the detections, showing the first and last detection on each receiver for each tag, and how many times it was detected on that receiver in that window.
+#' @description A wrapper function for \code{clean_raw_data()}, \code{round_tag_codes()},
+#' and \code{compress_txt_data()}. Cleans records, rounds tag codes, and then compresses the detections,
+#' showing the first and last detection on each receiver for each tag, and how many times it was
+#' detected on that receiver in that window. \code{compress_raw_data} is similar to the routine
+#' Tracker uses to compress .txt format data to .csv format.
 #'
 #' @author Kevin See and Mike Ackerman
 #'
@@ -11,7 +15,7 @@
 #' @import dplyr stringr lubridate tidyr
 #' @importFrom magrittr %<>%
 #' @export
-#' @return a data.frame containing a summary of the raw data
+#' @return a data frame containing a compressed format of the telemetry receiver records
 
 compress_raw_data = function(data_df = NULL,
                              min_yr = 2017,
@@ -44,4 +48,5 @@ compress_raw_data = function(data_df = NULL,
                       append_week = append_week)
 
   return(compress_df)
+
 }
