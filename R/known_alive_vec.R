@@ -9,6 +9,10 @@
 #' @return a vector containing 1's and NA's
 
 known_alive_vec = function(x_i) {
+  if(sum(x_i, na.rm = T) == 0) {
+    z = rep(NA, length(x_i))
+    return(z)
+  }
   f_alive = min(which(x_i == 1))
   l_alive = max(which(x_i == 1))
   z = rep(NA, length(x_i))
