@@ -5,3 +5,4 @@
 
 # this ignores temporary files that show up on my computer when I open a document
 ~$*
+inst/doc
