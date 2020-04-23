@@ -3,6 +3,7 @@
 export(clean_raw_data)
 export(compress_raw_data)
 export(compress_txt_data)
+export(first_alive)
 export(fix_bad_dates)
 export(get_file_nms)
 export(known_alive)
