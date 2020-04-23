@@ -382,7 +382,21 @@ run_mean_p = ggs_running(my_ggs)
 rhat_p = ggs_Rhat(my_ggs)
 geweke_p = ggs_geweke(my_ggs)
 ggs_autocorrelation(my_ggs)
-
+ggs_crosscorrelation(my_ggs)
 
 ```
 
+# Assumptions and Caveats
+
+The assumptions behind a CJS model include:
+
+* Every marked animal present in the population at sampling period $i$ has the same probability $p_i$ of being captured or resighted.
+* Every marked animal present in the population at sampling period $i$ has the same probability $\phi_i$ of survival until sampling period $i+1$.
+* Marks are neither lost nor overlooked and are recorded correctly.
+* Sampling periods are instantaneous (in reality they are very short periods) and recaptured animals are released immediately.
+* All emigration from the sampled area is permanent.
+* The fate of each animal with respect to capture and survival probability is independent of the fate of any other animal.
+
+Some of the caveats to keep in mind with CJS models include:
+
+* Estimates of $\phi$ are really estimates of *apparent* survival. $1 - \phi_i$ represents the chances that an animal either died in reach $i - 1$, or left the population (became unavailable for detection). The latter is analogous to a fish that hunkers down in a reach to ride out the winter. It may be surviving very well within that reach, or it may have died there, there is no way to tell from only the radio tag observations. 
