@@ -33,45 +33,40 @@ tabyl(cap_hist_list$tag_df,
       duty_cycle) %>%
   adorn_totals(where = c("row", "col"))
 
+cap_hist_list$tag_df
+
+
+
+# how many detections at each site by duty cycle
+cap_hist_list$tag_df %>%
+  select(tag_id, duty_cycle) %>%
+  left_join(cap_hist_list$ch_wide) %>%
+  group_by(duty_cycle) %>%
+  summarise_at(vars(-tag_id, -cap_hist),
+               list(sum),
+               na.rm = T)
+
 cap_hist = cap_hist_list$ch_wide
 
-# # finalize capture history
-# cap_hist %<>%
-#   inner_join(cap_hist_list$tag_df %>%
-#               # filter(release_site == 'LLRTP') %>%
-#               # filter(duty_cycle == 'batch_1') %>%
-#               filter(grepl('batch', duty_cycle)) %>%
-#               select(tag_id),
-#             by = "tag_id") %>%
-#   anti_join(cap_hist_list$tag_df %>%
-#               filter(duty_cycle == 'on_off') %>%
-#               select(tag_id),
-#             by = "tag_id") %>%
-#   mutate(ch_width = nchar(cap_hist)) %>%
-#   fill(ch_width) %>%
-#   rowwise() %>%
-#   mutate(cap_hist = if_else(is.na(cap_hist),
-#                             as.character(paste0(rep(0, ch_width), collapse = '')),
-#                             cap_hist)) %>%
-#   ungroup() %>%
-#   select(-ch_width) %>%
-#   mutate_at(vars(-tag_id, -cap_hist),
-#             list(~ if_else(is.na(.), 0, .)))
-#
-# cap_hist %>%
-#   left_join(cap_hist_list$tag_df %>%
-#               select(tag_id, duty_cycle)) %>%
-#   # mutate(Rel = if_else(duty_cycle == "batch_1",
-#   #                      1, NA_real_)) %>%
-#   select(tag_id, cap_hist, Rel, everything()) %>%
-#   # select(-(DG:DC)) %>%
-#   # select(-(BC:DD)) %>%
-#   group_by(duty_cycle) %>%
-#   summarise_at(vars(-tag_id, -cap_hist),
-#                list(sum))
-
-
+#--------------------------------------
 # Capture history matrix
+# 2017-2018
+y = cap_hist_list$tag_df %>%
+  filter(release_site == 'LLRTP',
+         duty_cycle != "on_off") %>%
+  select(tag_id, release_site, duty_cycle) %>%
+  left_join(cap_hist) %>%
+  mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
+  filter(duty_cycle == 'batch_1' | some_det) %>%
+  select(-some_det) %>%
+  mutate_at(vars(-(tag_id:cap_hist)),
+            list(~ if_else(is.na(.), 0, .))) %>%
+  mutate(LLRTP = if_else(duty_cycle == "batch_1",
+                         1, NA_real_)) %>%
+  select(tag_id:cap_hist, LLRTP, everything()) %>%
+  select(-(tag_id:cap_hist)) %>%
+  as.matrix()
+
 # 2018-2019
 y = cap_hist_list$tag_df %>%
   filter(release_site == 'LLRTP') %>%
@@ -104,8 +99,6 @@ y = cap_hist_list$tag_df %>%
   select(-(release_site:duty_cycle)) %>%
   select(-tag_id, -cap_hist) %>%
   as.matrix()
-
-
 
 # put together data for JAGS
 jags_data = list(
@@ -154,6 +147,8 @@ write_model(jags_model, jags_file)
 
 # specify which parameters to track
 jags_params = c("phi", "p", "survship")
+# if interested in estimates of final location
+# jags_params = c(jags_params, "z")
 
 # using rjags package
 jags = jags.model(jags_file,
@@ -176,6 +171,31 @@ param_summ = post_summ(post,
   t() %>%
   as_tibble(rownames = "param") %>%
   mutate(cv = sd / mean)
+
+qplot(Rhat, data = param_summ)
+qplot(ess, data = param_summ)
+param_summ %>%
+  filter(ess == 0)
+
+param_summ %>%
+  filter(grepl('^z\\[', param)) %>%
+  mutate(tag = str_extract(param, "[:digit:]+"),
+         loc = str_extract(param, "\\,[:digit:]+"),
+         loc = str_remove(loc, "^,")) %>%
+  mutate_at(vars(tag, loc),
+            list(as.integer)) %>%
+  arrange(tag, loc) %>%
+  # filter(tag == 63)
+  group_by(tag) %>%
+  filter(loc == max(loc[`50%` == 1])) %>%
+  # filter(loc == max(loc[mean > 0.4])) %>%
+  # filter(loc == 12)
+  tabyl(loc) %>%
+  adorn_pct_formatting() %>%
+  left_join(tibble(loc = 1:ncol(y),
+                   site = colnames(y))) %>%
+  select(site, everything()) %>%
+  arrange(desc(n))
 
 # plots of estimates
 surv_p = param_summ %>%
