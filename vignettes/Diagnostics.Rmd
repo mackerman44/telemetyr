@@ -58,7 +58,7 @@ This vignetted describes how to read in various files downloaded during the fiel
 
 The raw data is contained in *.txt* files, located in a folder named after the receiver that it was downloaded from. Each receiver has a 3-digit code. And typically, all of the receiver folders for a given study season are stored in a dirctory for that season. So first, let's set the file path to the folder that contains all of the reciever folders. The following provides an example for where data for the 2018/2019 fixed site download data is stored for the Lemhi River juvenile Chinook telemetry.
 
-```{r data-path}
+```{r data-path, eval = FALSE}
 download_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
 # download_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
 ```
@@ -236,9 +236,14 @@ test_summ$tag_life_p
 
 Finally, a user may be interested in examining or plotting receiver voltage or temperature data from the receivers. This information is stored in different files within `download_path`, typically ending in *\$\$.txt*, separate from the observation data and not in the `compress_df`. We have provided a function `read_volt_temp_data()` to read in and combine all of those files ending in *\$\$.txt*.
 
-```{r volt-temp, results = "hide"}
+```{r volt-temp, eval = FALSE}
 # read receiver volt & temperature info
-vt_df = read_volt_temp_data(download_path)
+volt_temp_df = read_volt_temp_data(download_path)
+
+```
+
+```{r load-data, echo = F}
+load("../data/prepped/2018_2019/volt_temp.rda")
 
 ```
 
@@ -246,16 +251,16 @@ The user can then view or work with the `vt_df` data frame as they see fit. For 
 
 ```{r volt-temp-plot, fig.cap = "A plot of voltage, faceted by receiver."}
 # plot voltage information
-volt_p = plot_volt_temp_data(vt_df,
+volt_p = plot_volt_temp_data(volt_temp_df,
                              column = "volt_avg")
 
 # plot voltage information - only receiver_codes in receiver_nms
-volt_p = plot_volt_temp_data(vt_df,
+volt_p = plot_volt_temp_data(volt_temp_df,
                              column = "volt_avg",
                              receiver_codes = receiver_nms)
 
 # plot temperature information - only receiver_codes in receiver_nms
-temp_p = plot_volt_temp_data(vt_df,
+temp_p = plot_volt_temp_data(volt_temp_df,
                              column = "temp_avg",
                              receiver_codes = receiver_nms)
 
