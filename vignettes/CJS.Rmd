@@ -1,9 +1,36 @@
 ---
 title: "Fitting a CJS Model"
-output: 
+author:
+  - Mike Ackerman:
+      email: mike.ackerman@merck.com
+      institute: [biomark]
+      correspondence: true
+  - Kevin See:
+      email: kevin.see@merck.com
+      institute: [biomark]
+institute:
+  - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
   rmarkdown::html_vignette:
     fig_height: 6
     fig_width: 6
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+  bookdown::html_vignette2:
+    fig_height: 6
+    fig_width: 6
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+  bookdown::html_document2:
+    fig_height: 6
+    fig_width: 6
+    theme: flatly
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
 vignette: >
   %\VignetteIndexEntry{Fitting a CJS Model}
   %\VignetteEngine{knitr::rmarkdown}
@@ -396,6 +423,8 @@ The assumptions behind a CJS model include:
 * Sampling periods are instantaneous (in reality they are very short periods) and recaptured animals are released immediately.
 * All emigration from the sampled area is permanent.
 * The fate of each animal with respect to capture and survival probability is independent of the fate of any other animal.
+
+Most of these 
 
 Some of the caveats to keep in mind with CJS models include:
 
