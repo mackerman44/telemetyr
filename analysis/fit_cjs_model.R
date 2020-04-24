@@ -47,7 +47,7 @@ cap_hist_list$tag_df %>%
 #--------------------------------------
 # Capture history matrix
 # 2017-2018
-y = cap_hist_list$tag_df %>%
+cap_hist = cap_hist_list$tag_df %>%
   filter(release_site == 'LLRTP',
          duty_cycle != "on_off") %>%
   select(tag_id, release_site, duty_cycle) %>%
@@ -59,12 +59,11 @@ y = cap_hist_list$tag_df %>%
             list(~ if_else(is.na(.), 0, .))) %>%
   mutate(LLRTP = if_else(duty_cycle == "batch_1",
                          1, NA_real_)) %>%
-  select(tag_id:cap_hist, LLRTP, everything()) %>%
-  select(-(tag_id:cap_hist)) %>%
-  as.matrix()
+  arrange(tag_id) %>%
+  select(tag_id:cap_hist, LLRTP, everything())
 
 # 2018-2019
-y = cap_hist_list$tag_df %>%
+cap_hist = cap_hist_list$tag_df %>%
   filter(release_site == 'LLRTP') %>%
   select(tag_id, release_site, duty_cycle) %>%
   left_join(cap_hist_list$ch_wide %>%
@@ -76,12 +75,11 @@ y = cap_hist_list$tag_df %>%
             list(~ if_else(is.na(.), 0, .))) %>%
   mutate(LLRTP = if_else(duty_cycle == "batch_1",
                        1, NA_real_)) %>%
-  select(tag_id:cap_hist, LLRTP, everything()) %>%
-  select(-(tag_id:cap_hist)) %>%
-  as.matrix()
+  arrange(tag_id) %>%
+  select(tag_id:cap_hist, LLRTP, everything())
 
 # 2019-2020
-y = cap_hist_list$tag_df %>%
+cap_hist = cap_hist_list$tag_df %>%
   select(tag_id, release_site, duty_cycle) %>%
   left_join(cap_hist_list$ch_wide) %>%
   mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
@@ -91,13 +89,16 @@ y = cap_hist_list$tag_df %>%
                        1, NA_real_),
          LLRTP = if_else(duty_cycle == "batch_1" & release_site == 'LLRTP',
                          1, NA_real_)) %>%
-  select(tag_id:cap_hist, Rel, BC:LF, LLRTP, everything()) %>%
-  select(-(release_site:duty_cycle)) %>%
-  select(-tag_id, -cap_hist) %>%
-  as.matrix()
+  arrange(tag_id) %>%
+  select(tag_id:cap_hist, Rel, BC:LF, LLRTP, everything())
 
 #-----------------------------------
 # put together data for JAGS
+y = cap_hist %>%
+  select(-(tag_id:cap_hist)) %>%
+  as.matrix()
+rownames(y) = cap_hist$tag_id
+
 jags_data = list(
   N = nrow(y),
   J = ncol(y),
