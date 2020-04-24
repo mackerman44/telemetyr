@@ -1,0 +1,182 @@
+---
+title: "Diagnostics How-To"
+author:
+  - Mike Ackerman:
+      email: mike.ackerman@merck.com
+      institute: [biomark]
+      correspondence: true
+  - Kevin See:
+      email: kevin.see@merck.com
+      institute: [biomark]
+institute:
+  - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+    bookdown::html_document2:
+      fig_caption: yes
+      fig_height: 6
+      fig_width: 6
+      toc: yes
+      toc_depth: 3
+      toc_float:
+        collapsed: yes
+        smooth_scroll: yes
+      theme: flatly
+      pandoc_args:
+      - --lua-filter=templates/scholarly-metadata.lua
+      - --lua-filter=templates/author-info-blocks.lua
+vignette: >
+  %\VignetteIndexEntry{Fitting a CJS Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+abstract: |
+  This manual contains instructions on how to read in telemetry records and perform diagnostics including evaluations of receiver noise and operations and tag battery life evaluations.
+---    
+
+```{r setup, echo = FALSE}
+# load necessary libraries
+library(dplyr)
+
+# knitr library and options
+library(knitr)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = TRUE,
+  comment = "#>"
+)
+
+```
+
+# Introduction
+
+This vignette describes how to read in all of the various files downloaded from the Tracker software and then perform some diagnostics including evaluations of receiver operation time, noise, and voltage and tag battery life.
+
+# Data Prep
+
+```{r read-raw-data, eval = F}
+download_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
+raw_df = read_txt_data(download_path)
+
+```
+
+```{r load-raw-data, eval = F}
+load("../data/prepped/2018_2019/raw.rda")
+
+```
+
+```{r compress-raw-data, echo = F, eval = F}
+# clean, round and compress data
+compress_df = compress_raw_data(raw_df,
+                                min_yr = 2018,
+                                max_yr = 2019,
+                                round_to = 5)
+
+```
+
+```{r load-data, echo = F}
+load('../data/prepped/2018_2019/compressed.rda')
+
+```
+
+```{r view-data}
+compress_df %>%
+  filter(receiver != 'ACT') %>%
+  head()
+```
+
+# Diagnostics
+
+## Receiver Names
+
+```{r receiver-names}
+# a list of the receiver names
+receiver_nms = unique(compress_df$receiver)
+
+receiver_nms = c("CA1", "CC1", "DC1", "DG1", "DW1", "KP1", "LH1", "LR1", "NF1",
+                 "RR1", "SB1", "SR1", "TB1", "TR1", "TT1", "TT2", "VC1", "YP1")
+
+receiver_nms = unique(compress_df$receiver) %>%
+  setdiff(c("ACT", "TT1", "TT2"))
+
+```
+
+## Receiver Operation Times
+
+```{r timer}
+# summarise timer data - all receivers in compress_df
+timer_summ = summarise_timer_data(compress_df)
+
+# summarise timer data - only receiver_codes in receiver_nms
+timer_summ = summarise_timer_data(compress_df,
+                                  receiver_codes = receiver_nms)
+
+# summarise timer data - only receiver_codes in receiver_nms, and
+# manually set the season start and season end dates
+timer_summ = summarise_timer_data(compress_df,
+                                  receiver_codes = receiver_nms,
+                                  season_start = "2018-09-15",
+                                  season_end   = "2019-04-01")
+
+# objects available in timer_summ:
+head(timer_summ$operations_summ) # TRUE/FALSE summary of receiver operations by hour
+timer_summ$p_operational         # proportion of time that each receiver was operational
+timer_summ$operations_plot       # plot showing receiver operation times
+
+```
+
+## Receiver Noise
+
+```{r noise}
+# summarise noise data - all receivers in compress_df
+noise_summ = summarise_noise_data(compress_df)
+
+# summarise noise data - only receiver_codes in receiver_nms
+noise_summ = summarise_noise_data(compress_df,
+                                  receiver_codes = receiver_nms)
+
+# summarise noise data - only receiver_codes in receiver_nms,
+# and provide receiver operations summary so that noise can 
+# be converted to a rate (noise/hr)
+noise_summ = summarise_noise_data(compress_df,
+                                  receiver_codes = receiver_nms,
+                                  operations_summary = timer_summ$operations_summ)
+
+# objects available in noise_summ:
+noise_summ$noise_tbl  # summary of noise by receiver and channel
+noise_summ$noise_plot # a plot of noise_tbl
+
+```
+
+## Test Tag Battery Life
+
+```{r test}
+# summarise test tag data
+test_summ = summarise_test_data(compress_df,
+                                tag_data = "../data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx")
+
+# objects available in noise_summ:
+test_summ$test_tag_ids # list of test tags and their duty cycle
+test_summ$test_df      # a summary of tag life for each test tag
+test_summ$tag_life     # summary by duty cycle
+test_summ$tag_life_p   # a box plot of tag life by duty cycle
+
+```
+
+## Receiver Volt & Temperature
+
+```{r volt-temp}
+#-------------------------
+# volt & temp info
+#-------------------------
+vt_df = read_volt_temp_data(path)
+vt_p = plot_volt_temp_data(vt_df,
+                           column = "volt_avg")
+vt_p = plot_volt_temp_data(vt_df,
+                           column = "volt_avg",
+                           receiver_codes = receiver_nms)
+vt_p
+
+```
+
