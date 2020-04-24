@@ -26,7 +26,7 @@ output:
       - --lua-filter=templates/scholarly-metadata.lua
       - --lua-filter=templates/author-info-blocks.lua
 vignette: >
-  %\VignetteIndexEntry{Fitting a CJS Model}
+  %\VignetteIndexEntry{Diagnositcs}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 abstract: |
