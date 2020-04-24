@@ -24,10 +24,12 @@ library(postpack)
 #-------------------------
 # load capture history
 #-------------------------
+# which year of data to load?
 load('data/prepped/pilot/cap_hist.rda')
 load('data/prepped/2018_2019/cap_hist.rda')
 load('data/prepped/2019_2020/cap_hist.rda')
 
+# some preliminary examination of data
 tabyl(cap_hist_list$tag_df,
       release_site,
       duty_cycle) %>%
@@ -47,50 +49,56 @@ cap_hist_list$tag_df %>%
 #--------------------------------------
 # Capture history matrix
 # 2017-2018
-cap_hist = cap_hist_list$tag_df %>%
-  filter(release_site == 'LLRTP',
-         duty_cycle != "on_off") %>%
-  select(tag_id, release_site, duty_cycle) %>%
-  left_join(cap_hist_list$ch_wide) %>%
-  mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
-  filter(duty_cycle == 'batch_1' | some_det) %>%
-  select(-some_det) %>%
-  mutate_at(vars(-(tag_id:cap_hist)),
-            list(~ if_else(is.na(.), 0, .))) %>%
-  mutate(LLRTP = if_else(duty_cycle == "batch_1",
-                         1, NA_real_)) %>%
-  arrange(tag_id) %>%
-  select(tag_id:cap_hist, LLRTP, everything())
+if(unique(cap_hist_list$tag_df$season) == "17_18") {
+  cap_hist = cap_hist_list$tag_df %>%
+    filter(release_site == 'LLRTP',
+           duty_cycle != "on_off") %>%
+    select(tag_id, release_site, duty_cycle) %>%
+    left_join(cap_hist_list$ch_wide) %>%
+    mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
+    filter(duty_cycle == 'batch_1' | some_det) %>%
+    select(-some_det) %>%
+    mutate_at(vars(-(tag_id:cap_hist)),
+              list(~ if_else(is.na(.), 0, .))) %>%
+    mutate(LLRTP = if_else(duty_cycle == "batch_1",
+                           1, NA_real_)) %>%
+    arrange(tag_id) %>%
+    select(tag_id:cap_hist, LLRTP, everything())
+}
 
 # 2018-2019
-cap_hist = cap_hist_list$tag_df %>%
-  filter(release_site == 'LLRTP') %>%
-  select(tag_id, release_site, duty_cycle) %>%
-  left_join(cap_hist_list$ch_wide %>%
-              select(-(DG:DC))) %>%
-  mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
-  filter(duty_cycle == 'batch_1' | some_det) %>%
-  select(-some_det) %>%
-  mutate_at(vars(-(tag_id:cap_hist)),
-            list(~ if_else(is.na(.), 0, .))) %>%
-  mutate(LLRTP = if_else(duty_cycle == "batch_1",
-                       1, NA_real_)) %>%
-  arrange(tag_id) %>%
-  select(tag_id:cap_hist, LLRTP, everything())
+if(unique(cap_hist_list$tag_df$season) == "18_19") {
+  cap_hist = cap_hist_list$tag_df %>%
+    filter(release_site == 'LLRTP') %>%
+    select(tag_id, release_site, duty_cycle) %>%
+    left_join(cap_hist_list$ch_wide %>%
+                select(-(DG:DC))) %>%
+    mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
+    filter(duty_cycle == 'batch_1' | some_det) %>%
+    select(-some_det) %>%
+    mutate_at(vars(-(tag_id:cap_hist)),
+              list(~ if_else(is.na(.), 0, .))) %>%
+    mutate(LLRTP = if_else(duty_cycle == "batch_1",
+                           1, NA_real_)) %>%
+    arrange(tag_id) %>%
+    select(tag_id:cap_hist, LLRTP, everything())
+}
 
 # 2019-2020
-cap_hist = cap_hist_list$tag_df %>%
-  select(tag_id, release_site, duty_cycle) %>%
-  left_join(cap_hist_list$ch_wide) %>%
-  mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
-  filter(duty_cycle == 'batch_1' | some_det) %>%
-  select(-some_det) %>%
-  mutate(Rel = if_else(duty_cycle == "batch_1" & release_site %in% c('LEMTRP', 'HYDTRP'),
-                       1, NA_real_),
-         LLRTP = if_else(duty_cycle == "batch_1" & release_site == 'LLRTP',
-                         1, NA_real_)) %>%
-  arrange(tag_id) %>%
-  select(tag_id:cap_hist, Rel, BC:LF, LLRTP, everything())
+if(unique(cap_hist_list$tag_df$season) == "19_20") {
+  cap_hist = cap_hist_list$tag_df %>%
+    select(tag_id, release_site, duty_cycle) %>%
+    left_join(cap_hist_list$ch_wide) %>%
+    mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
+    filter(duty_cycle == 'batch_1' | some_det) %>%
+    select(-some_det) %>%
+    mutate(Rel = if_else(duty_cycle == "batch_1" & release_site %in% c('LEMTRP', 'HYDTRP'),
+                         1, NA_real_),
+           LLRTP = if_else(duty_cycle == "batch_1" & release_site == 'LLRTP',
+                           1, NA_real_)) %>%
+    arrange(tag_id) %>%
+    select(tag_id:cap_hist, Rel, BC:LF, LLRTP, everything())
+}
 
 #-----------------------------------
 # put together data for JAGS
