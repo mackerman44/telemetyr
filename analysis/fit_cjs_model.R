@@ -20,7 +20,6 @@ library(janitor)
 library(rjags)
 library(postpack)
 
-
 #-------------------------
 # load capture history
 #-------------------------
