@@ -35,8 +35,6 @@ tabyl(cap_hist_list$tag_df,
 
 cap_hist_list$tag_df
 
-
-
 # how many detections at each site by duty cycle
 cap_hist_list$tag_df %>%
   select(tag_id, duty_cycle) %>%
@@ -46,8 +44,6 @@ cap_hist_list$tag_df %>%
                list(sum),
                na.rm = T)
 
-cap_hist = cap_hist_list$ch_wide
-
 #--------------------------------------
 # Capture history matrix
 # 2017-2018
@@ -55,7 +51,7 @@ y = cap_hist_list$tag_df %>%
   filter(release_site == 'LLRTP',
          duty_cycle != "on_off") %>%
   select(tag_id, release_site, duty_cycle) %>%
-  left_join(cap_hist) %>%
+  left_join(cap_hist_list$ch_wide) %>%
   mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
   filter(duty_cycle == 'batch_1' | some_det) %>%
   select(-some_det) %>%
@@ -71,7 +67,7 @@ y = cap_hist_list$tag_df %>%
 y = cap_hist_list$tag_df %>%
   filter(release_site == 'LLRTP') %>%
   select(tag_id, release_site, duty_cycle) %>%
-  left_join(cap_hist %>%
+  left_join(cap_hist_list$ch_wide %>%
               select(-(DG:DC))) %>%
   mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
   filter(duty_cycle == 'batch_1' | some_det) %>%
@@ -87,7 +83,7 @@ y = cap_hist_list$tag_df %>%
 # 2019-2020
 y = cap_hist_list$tag_df %>%
   select(tag_id, release_site, duty_cycle) %>%
-  left_join(cap_hist) %>%
+  left_join(cap_hist_list$ch_wide) %>%
   mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
   filter(duty_cycle == 'batch_1' | some_det) %>%
   select(-some_det) %>%
@@ -100,6 +96,7 @@ y = cap_hist_list$tag_df %>%
   select(-tag_id, -cap_hist) %>%
   as.matrix()
 
+#-----------------------------------
 # put together data for JAGS
 jags_data = list(
   N = nrow(y),
@@ -177,6 +174,7 @@ qplot(ess, data = param_summ)
 param_summ %>%
   filter(ess == 0)
 
+# look at where tags were estimated to stop moving
 param_summ %>%
   filter(grepl('^z\\[', param)) %>%
   mutate(tag = str_extract(param, "[:digit:]+"),
