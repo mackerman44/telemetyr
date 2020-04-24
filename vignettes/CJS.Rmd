@@ -415,16 +415,20 @@ ggs_crosscorrelation(my_ggs)
 
 # Assumptions and Caveats
 
+## Assumptions
+
 The assumptions behind a CJS model include:
 
-* Every marked animal present in the population at sampling period $i$ has the same probability $p_i$ of being captured or resighted.
-* Every marked animal present in the population at sampling period $i$ has the same probability $\phi_i$ of survival until sampling period $i+1$.
-* Marks are neither lost nor overlooked and are recorded correctly.
-* Sampling periods are instantaneous (in reality they are very short periods) and recaptured animals are released immediately.
-* All emigration from the sampled area is permanent.
-* The fate of each animal with respect to capture and survival probability is independent of the fate of any other animal.
+1. Every marked animal present in the population at sampling period $i$ has the same probability $p_i$ of being captured or resighted.
+1. Every marked animal present in the population at sampling period $i$ has the same probability $\phi_i$ of survival until sampling period $i+1$.
+1. Marks are neither lost nor overlooked and are recorded correctly.
+1. Sampling periods are instantaneous (in reality they are very short periods) and recaptured animals are released immediately.
+1. All emigration from the sampled area is permanent.
+1. The fate of each animal with respect to capture and survival probability is independent of the fate of any other animal.
 
-Most of these 
+Some of these become questionable when dealing with multiple batches of tags that turn on/off at different times. In particular, the 1st and 4th assumption are probably violated. There may be ways to construct the JAGS model to handle that, but it should be noted. 
+
+## Caveats
 
 Some of the caveats to keep in mind with CJS models include:
 
