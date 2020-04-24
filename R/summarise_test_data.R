@@ -6,7 +6,7 @@
 #'
 #' @inheritParams prep_capture_history
 #'
-#' @import lubridate dplyr ggplot2 stringr
+#' @import lubridate dplyr ggplot2 stringr readxl
 #' @export
 #' @return summaries of test tag data
 
@@ -19,12 +19,12 @@ summarise_test_data = function(compress_df = NULL,
   cat("Parsing out test tag data.\n")
 
   # what season?
-  yr_label = paste(str_sub(lubridate::year(min(compress_df$start, na.rm = T)), -2),
-                   str_sub(lubridate::year(max(compress_df$start, na.rm = T)), -2),
+  yr_label = paste(stringr::str_sub(lubridate::year(min(compress_df$start, na.rm = T)), -2),
+                   stringr::str_sub(lubridate::year(max(compress_df$start, na.rm = T)), -2),
                    sep = "_")
 
   # get information about test tags including code and duty cycle
-  test_tag_ids = read_excel(tag_data) %>%
+  test_tag_ids = readxl::read_excel(tag_data) %>%
     filter(season == yr_label,
            tag_purpose == "test") %>%
     select(radio_tag_id, duty_cycle) %>%
@@ -36,8 +36,8 @@ summarise_test_data = function(compress_df = NULL,
   tmp = compress_df %>%
     filter(tag_id %in% test_tag_ids$tag_id) %>%
     group_by(tag_id) %>%
-    summarise(activation = min(start),
-              dead = max(end)) %>%
+    summarise(activation = min(start, na.rm = T),
+              dead = max(end, na.rm = T)) %>%
     ungroup() %>%
     mutate(tag_life_days = as.numeric(difftime(dead,
                                                activation,
