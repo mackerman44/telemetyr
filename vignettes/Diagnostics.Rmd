@@ -60,7 +60,7 @@ The raw data is contained in *.txt* files, located in a folder named after the r
 
 ```{r data-path}
 download_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
-
+# download_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
 ```
 
 After setting the path to the receiver downloads, use the `read_txt_data()` function to read in each text file and combine them all into one long dataframe. 
