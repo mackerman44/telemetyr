@@ -20,7 +20,7 @@ Description: An R package for reading, cleaning, reducing, analysis, and
     availability and use to describe preferred or target habitat conditions. 
     Our hope is to build the package with functions and tools that can be 
     applied elsewhere to telemetry or similar observational datasets.
-License: What license is it under?
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.0
