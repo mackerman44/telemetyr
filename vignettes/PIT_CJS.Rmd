@@ -4,10 +4,10 @@ author:
   - Mike Ackerman:
       email: mike.ackerman@merck.com
       institute: [biomark]
-      correspondence: true
   - Kevin See:
       email: kevin.see@merck.com
       institute: [biomark]
+      correspondence: true
 institute:
   - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
 date: "`r format(Sys.time(), '%B %d, %Y')`"
@@ -34,7 +34,8 @@ output:
 vignette: >
   %\VignetteIndexEntry{Fitting a CJS Model}
   %\VignetteEncoding{UTF-8}
-  %\VignetteEngine{knitr::rmarkdown}
+  <!-- %\VignetteEngine{knitr::rmarkdown} -->
+  %\VignetteEngine{bookdown::bookdown}
 ---
 
 ```{r, include = FALSE}

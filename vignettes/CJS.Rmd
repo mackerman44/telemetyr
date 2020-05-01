@@ -12,13 +12,13 @@ institute:
   - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  rmarkdown::html_vignette:
+  bookdown::html_vignette2:
     fig_height: 6
     fig_width: 6
     pandoc_args:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks.lua
-  bookdown::html_vignette2:
+  rmarkdown::html_vignette:
     fig_height: 6
     fig_width: 6
     pandoc_args:
@@ -33,8 +33,9 @@ output:
     - --lua-filter=templates/author-info-blocks.lua
 vignette: >
   %\VignetteIndexEntry{Fitting a CJS Model}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  <!-- %\VignetteEngine{knitr::rmarkdown} -->
+  %\VignetteEngine{bookdown::bookdown}
 ---
 
 ```{r, include = FALSE}
