@@ -1,18 +1,27 @@
 model {
-  phi[1] <- 1
+  for (i in 1:2) {
+    phi[i, 1] <- 1
+  }
   p[1] <- 1
+  b0[1] <- 0
+  b1[1] <- 0
   for (j in 2:J) {
-    phi[j] ~ dbeta(1, 1)
+    b0[j] ~ dunif(-5, 5)
+    b1[j] ~ dunif(-5, 5)
+    logit(phi[1, j]) <- b0[j]
+    logit(phi[2, j]) <- b0[j] + b1[j]
     p[j] ~ dbeta(1, 1)
   }
   for (i in 1:N) {
     for (j in (f[i] + 1):J) {
-      z[i, j] ~ dbern(phi[j] * z[i, j - 1])
+      z[i, j] ~ dbern(phi[rt_tag[i], j] * z[i, j - 1])
       y[i, j] ~ dbern(p[j] * z[i, j])
     }
   }
-  survship[1] <- 1
-  for (j in 2:J) {
-    survship[j] <- survship[j - 1] * phi[j]
+  for (i in 1:2) {
+    survship[i, 1] <- 1
+    for (j in 2:J) {
+      survship[i, j] <- survship[i, j - 1] * phi[i, j]
+    }
   }
 }

@@ -12,9 +12,10 @@ institute:
   - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
-  bookdown::html_vignette2:
+  bookdown::html_document2:
     fig_height: 6
     fig_width: 6
+    theme: flatly
     pandoc_args:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks.lua
@@ -24,10 +25,9 @@ output:
     pandoc_args:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks.lua
-  bookdown::html_document2:
+  bookdown::html_vignette2:
     fig_height: 6
     fig_width: 6
-    theme: flatly
     pandoc_args:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks.lua
@@ -66,7 +66,7 @@ theme_set(theme_bw())
 
 # Introduction
 
-We are interested primarily in estimating survival of fish from release (e.g. at the Lower Lemhi screw trap) to arrival at Lower Granite dam, using a Cormack Jolly-Seber (CJS) model. 
+We are interested primarily in estimating survival of fish from release (e.g. at the Lower Lemhi screw trap) to arrival at Lower Granite dam, using a Cormack Jolly-Seber (CJS) model. In particular, we want to investigate whether there is any difference in survival between fish tagged with a radio tag, and other PIT tagged fish.
 
 # Methods
 
@@ -140,6 +140,9 @@ configuration = org_config %>%
                         Node),
          Node = if_else(SiteID == "LEMHIR",
                         "LLRTP",
+                        Node),
+         Node = if_else(Node %in% c('GRS', 'GRA'),
+                        "GRJ",
                         Node)) %>%
   select(site_code = SiteID, Node, SiteType, SiteName, RKM, RKMTotal) %>%
   distinct() %>%
@@ -162,36 +165,28 @@ cap_hist = comp_df %>%
   mutate(n_obs = if_else(n_obs > 0, as.integer(1), n_obs)) %>%
   spread(Node, n_obs,
          fill = 0) %>%
-  # mutate(Release = 1) %>%
-  select(season, tag_code,
+  mutate(RT_fish = if_else(tag_code %in% rt_fish_df$pit_tag_id, T, F)) %>%
+  select(season, RT_fish,
+         tag_code,
          LLRTP:Below_GRJ)
-
-cap_hist %>%
-  left_join(rt_fish_df %>%
-              select(tag_code = pit_tag_id,
-                     release_site)) %>%
-  filter(release_site == "LLRTP") %>%
-  # filter(season == 2018) %>%
-  filter(LLRTP == 0,
-         LLR == 0,
-         GRJ == 0,
-         Below_GRJ == 0)
-
 
 # develop list of input matrices for CJS model
 # focus on fish released from lower Lemhi screw trap or detected there
 y_list = cap_hist %>%
-    left_join(rt_fish_df %>%
-              select(tag_code = pit_tag_id,
-                     release_site)) %>%
-  filter(release_site == "LLRTP" |
-           LLRTP == 1) %>%
-  select(-release_site) %>%
   split(list(.$season)) %>%
   map(.f = function(x) {
     x %>%
       select(-(season:tag_code)) %>%
       as.matrix()
+  })
+
+rt_vec_list = cap_hist %>%
+  mutate_at(vars(RT_fish),
+            list(as.numeric)) %>%
+  split(list(.$season)) %>%
+  map(.f = function(x) {
+    x %>%
+      pull(RT_fish) + 1
   })
 
 ```
@@ -200,10 +195,18 @@ y_list = cap_hist %>%
 # specify model in JAGS
 jags_model = function() {
   # PRIORS
-  phi[1] <- 1
+  for(i in 1:2) {
+    phi[i,1] <- 1
+  }
   p[1] <- 1
+  b0[1] <- 0
+  b1[1] <- 0
   for(j in 2:J) {
-    phi[j] ~ dbeta(1,1) # survival probability between arrays
+    b0[j] ~ dunif(-5, 5) # for survival
+    b1[j] ~ dunif(-5, 5) # for survival
+    logit(phi[1,j]) <- b0[j]       # surival between reaches for regular fish
+    logit(phi[2,j]) <- b0[j] + b1[j]  # surival between reaches for RT fish
+    
     p[j] ~ dbeta(1,1)   # detection probability at each array
   }
 
@@ -214,7 +217,7 @@ jags_model = function() {
     # j = 1 is the release occasion - known alive; i.e., the mark event
     for (j in (f[i] + 1):J) {
       # survival process: must have been alive in j-1 to have non-zero pr(alive at j)
-      z[i,j] ~ dbern(phi[j] * z[i,j-1]) # fish i in period j is a bernoulli trial
+      z[i,j] ~ dbern(phi[rt_tag[i], j] * z[i,j-1]) # fish i in period j is a bernoulli trial
 
       # detection process: must have been alive in j to observe in j
       y[i,j] ~ dbern(p[j] * z[i,j]) # another bernoulli trial
@@ -223,9 +226,11 @@ jags_model = function() {
 
   # DERIVED QUANTITIES
   # survivorship is probability of surviving from release to a detection occasion
-  survship[1] <- 1 # the mark event; everybody survived to this point
-  for (j in 2:J) { # the rest of the events
-    survship[j] <- survship[j-1] * phi[j]
+  for(i in 1:2) {
+    survship[i, 1] <- 1 # the mark event; everybody survived to this point
+    for (j in 2:J) { # the rest of the events
+      survship[i,j] <- survship[i,j-1] * phi[i,j]
+    }
   }
 }
 
@@ -234,7 +239,11 @@ jags_file = "CJS_model.txt"
 write_model(jags_model, jags_file)
 
 # specify which parameters to track
-jags_params = c("phi", "p", "survship")
+jags_params = c("phi", 
+                "p", 
+                "survship", 
+                "b0", 
+                "b1")
 ```
 
 ```{r fit-jags-model, eval = F}
@@ -242,17 +251,20 @@ jags_params = c("phi", "p", "survship")
 for(i in 1:2) {
   
   y = y_list[[i]]
+  rt_tag = rt_vec_list[[i]]
   
   # put together data for JAGS
   jags_data = list(
     N = nrow(y),
     J = ncol(y),
     y = y,
+    rt_tag = rt_tag,
     z = known_alive(y),
     f = first_alive(y)
   )
   
   # using rjags package
+  set.seed(4)
   jags = jags.model(jags_file,
                     data = jags_data,
                     n.chains = 4,
@@ -305,8 +317,8 @@ param_summ = 2017:2018 %>%
                          "2018" = "2018-19",
                          "2019" = "2019-20")) %>%
   # filter out parameters that are either fixed at 1, or not actually estimable
-  filter(!grepl('\\[1\\]$', param),
-         !grepl('\\[4\\]$', param))
+  filter(!grepl('1\\]$', param),
+         !grepl('4\\]$', param))
 
 
 # labels for plotting
@@ -321,9 +333,11 @@ between_nms = c("LLRTP to LLR",
 ```{r phi-tab}
 param_summ %>%
   filter(grepl('phi', param)) %>%
-  mutate(site = factor(rep(between_nms, n_distinct(season)),
-                       levels = between_nms)) %>%
-  select(season, Reach = site, 
+  mutate(site = factor(rep(rep(between_nms, each = 2), n_distinct(season)),
+                       levels = between_nms),
+         tag = rep(c('No RT', 'RT'), 2*n_distinct(season))) %>%
+  select(season, Reach = site,
+         tag,
          mean, 
          se = sd,
          cv,
@@ -355,15 +369,35 @@ param_summ %>%
 ```{r surv-tab}
 param_summ %>%
   filter(grepl('surv', param)) %>%
-  mutate(site = factor(rep(site_nms, n_distinct(season)),
-                       levels = site_nms)) %>%
+  mutate(site = factor(rep(rep(site_nms, each = 2), n_distinct(season)),
+                       levels = site_nms),
+         tag = rep(c('No RT', 'RT'), 2 * n_distinct(season))) %>%
   select(season, site, 
+         tag,
          mean, 
          se = sd,
          cv,
          lwrCI = `2.5%`,
          uprCI = `97.5%`) %>%
   kable(caption = 'Estimates of cummulative survival up to detection points.',
+        digits = 3) %>%
+  kable_styling()
+```
+
+The `b1` parameter represents the difference in survival between radio tagged fish and other PIT tagged fish. In 2017-18, the 95% credible interval of `b1` between LLRTP and LLR is quite large, and encompasses zero, implying no difference in survival after tagging to LLR. However, that same reach in 2018-19 and from LLR to Lower Granite in both years do appear to be significant, with radio tagged fish experiencing much lower survival.
+
+```{r b1-tab}
+param_summ %>%
+  filter(grepl('b1', param)) %>%
+  mutate(site = factor(rep(between_nms,n_distinct(season)),
+                       levels = between_nms)) %>%
+  select(season, Reach = site,
+         mean, 
+         se = sd,
+         cv,
+         lwrCI = `2.5%`,
+         uprCI = `97.5%`) %>%
+  kable(caption = 'Differences in survival between radio tagged fish and other PIT tagged fish on logit scale.',
         digits = 3) %>%
   kable_styling()
 ```
@@ -377,34 +411,38 @@ dodge_width = 0.3
 
 surv_p = param_summ %>%
   filter(grepl('survship', param)) %>%
-  mutate(site = factor(rep(site_nms, n_distinct(season)),
-                       levels = site_nms)) %>%
+  mutate(site = factor(rep(rep(site_nms, each = 2), n_distinct(season)),
+                       levels = site_nms),
+         tag = rep(c('No RT', 'RT'), 2 * n_distinct(season))) %>%
   ggplot(aes(x = site,
              y = mean,
-             color = season)) +
+             color = tag)) +
   scale_color_brewer(palette = "Set1") +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0,
                 position = position_dodge(width = dodge_width)) +
   geom_point(position = position_dodge(width = dodge_width)) +
+  facet_wrap(~ season) +
   labs(x = 'Site',
        y = 'Cummulative Survival',
        color = 'Season')
 
 phi_p = param_summ %>%
   filter(grepl('phi', param)) %>%
-  mutate(site = factor(rep(between_nms, n_distinct(season)),
-                       levels = between_nms)) %>%
+  mutate(site = factor(rep(rep(between_nms, each = 2), n_distinct(season)),
+                       levels = between_nms),
+         tag = rep(c('No RT', 'RT'), 2 * n_distinct(season))) %>%
   ggplot(aes(x = site,
              y = mean,
-             color = season)) +
+             color = tag)) +
   scale_color_brewer(palette = "Set1") +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0,
                 position = position_dodge(width = dodge_width)) +
   geom_point(position = position_dodge(width = dodge_width)) +
+  facet_wrap(~ season) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = 'Reach',
        y = 'Survival Within Reach',
@@ -417,7 +455,8 @@ det_p = param_summ %>%
   ggplot(aes(x = site,
              y = mean,
              color = season)) +
-  scale_color_brewer(palette = "Set1") +
+  # scale_color_brewer(palette = "Set2") +
+  scale_color_viridis_d(begin = 0.3, end = 0.8) +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0,
