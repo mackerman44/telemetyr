@@ -33,5 +33,6 @@ Imports:
     stringr (>= 1.4.0)
 Suggests: 
     knitr,
-    rmarkdown
-VignetteBuilder: knitr
+    rmarkdown,
+    bookdown
+VignetteBuilder: bookdown
