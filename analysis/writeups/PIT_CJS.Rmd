@@ -48,7 +48,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup, message=F}
-# setwd('vignettes')
+# setwd('analysis/writeups')
 library(telemetyr)
 library(tidyverse)
 library(readxl)
@@ -96,7 +96,7 @@ rt_fish_df = list('pilot',
   rlang::set_names() %>%
   map_df(.id = 'Year',
          .f = function(x) {
-           load(paste0('../data/prepped/', x, '/cap_hist.rda'))
+           load(paste0('../../data/prepped/', x, '/cap_hist.rda'))
            return(cap_hist_list$tag_df)
          }) %>%
   # filter out fish with no PIT tag information
@@ -106,7 +106,7 @@ rt_fish_df = list('pilot',
 org_config = buildConfig()
 
 # read in detections from PTAGIS
-observations = read_csv('../data/raw/PITcleanr_query.csv')
+observations = read_csv('../../data/raw/PITcleanr_query.csv')
 
 # compress observations
 comp_df = observations %>%
@@ -290,7 +290,7 @@ for(i in 1:2) {
   file_nm = paste0('PIT_only_CJS_', names(y_list)[i], '.rda')
   
   save(jags_data, post, param_summ,
-       file = paste0("../analysis/CJS_models/", file_nm))
+       file = paste0("../CJS_models/", file_nm))
   
   rm(y, jags_data, jags, post, param_summ, file_nm)
 }
@@ -309,7 +309,7 @@ param_summ = 2017:2018 %>%
   rlang::set_names() %>%
   map_df(.id = 'season',
          .f = function(yr) {
-           load(paste0("../analysis/CJS_models/PIT_only_CJS_", yr, ".rda"))
+           load(paste0("../CJS_models/PIT_only_CJS_", yr, ".rda"))
            return(param_summ)
          }) %>%
   mutate(season = recode(as.character(season),
