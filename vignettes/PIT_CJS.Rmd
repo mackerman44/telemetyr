@@ -1,0 +1,441 @@
+---
+title: "PIT Tag-Only CJS Models"
+author:
+  - Mike Ackerman:
+      email: mike.ackerman@merck.com
+      institute: [biomark]
+      correspondence: true
+  - Kevin See:
+      email: kevin.see@merck.com
+      institute: [biomark]
+institute:
+  - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  bookdown::html_vignette2:
+    fig_height: 6
+    fig_width: 6
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+  rmarkdown::html_vignette:
+    fig_height: 6
+    fig_width: 6
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+  bookdown::html_document2:
+    fig_height: 6
+    fig_width: 6
+    theme: flatly
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+vignette: >
+  %\VignetteIndexEntry{Fitting a CJS Model}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = F,
+  message = F,
+  comment = "#>"
+)
+```
+
+```{r setup, message=F}
+# setwd('vignettes')
+library(telemetyr)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(magrittr)
+library(PITcleanr) # to install, use devtools::install_github("KevinSee/PITcleanr")
+library(janitor)
+library(rjags)
+library(postpack)
+# for formatting in this vignette
+library(kableExtra)
+
+theme_set(theme_bw())
+```
+
+# Introduction
+
+We are interested primarily in estimating survival of fish from release (e.g. at the Lower Lemhi screw trap) to arrival at Lower Granite dam, using a Cormack Jolly-Seber (CJS) model. 
+
+# Methods
+
+## Data
+
+The data is PIT tag detections, which we queried from [PTAGIS](www.ptagis.org). For a given list of tags, we queried their complete detection history, including fields such as:
+
+* Tag Code
+* Mark Rear Type
+* Event Type
+* Event Date/Time
+* Event Release Date/Time
+* Antenna ID
+* Antenna Group Configuration Value
+
+We then consolidated some of the detections, to simplify the model. We were primarily focused on survival between the lower Lemhi array (LLR) and Lower Granite Dam (GRJ). All the sites with a river kilometer downstream of Lower Granite were grouped into a "Below_GRJ" site, and any intermediate detections at sites between LLR and GRJ were grouped in with LLR detections, since we know that fish made it past LLR. This leaves us with a matrix of 4 columns: release, LLR, GRJ and Below_GRJ, with one row per tag and a 1 or 0 in the column corresponding to whether that tag was detected at each of those sites. 
+
+## Model
+
+We used a Cormack Jolly-Seber model to estimate survival between reaches and detection probability at each detection point. The detection probability at the last site and the survival to that site are confounded in the model, and cannot be estimated separately. This is why we ensured our last site was below Lower Granite dam. 
+
+```{r prep-data}
+# read in all the information about radio tagged fish
+rt_fish_df = list('pilot',
+                  '2018_2019',
+                  '2019_2020') %>%
+  rlang::set_names() %>%
+  map_df(.id = 'Year',
+         .f = function(x) {
+           load(paste0('../data/prepped/', x, '/cap_hist.rda'))
+           return(cap_hist_list$tag_df)
+         }) %>%
+  # filter out fish with no PIT tag information
+  filter(!is.na(pit_tag_id))
+
+# build configuration table (requires internet connection and PITcleanr package)
+org_config = buildConfig()
+
+# read in detections from PTAGIS
+observations = read_csv('../data/raw/PITcleanr_query.csv')
+
+# compress observations
+comp_df = observations %>%
+  clean_names(case = 'snake') %>%
+  mutate_at(vars(matches('date_time')),
+            list(mdy_hms)) %>%
+  group_by(tag_code) %>%
+  mutate(season = year(event_date_time_value[event_type_name == "Mark"])) %>%
+  ungroup() %>%
+  mutate(obs_date = if_else(is.na(event_date_time_value),
+                            event_release_date_time_value,
+                            event_date_time_value)) %>%
+  group_by(season, tag_code, site_code = event_site_code_value) %>%
+  summarise(min_date = min(obs_date),
+            max_date = max(obs_date),
+            n_obs = n()) %>%
+  ungroup()
+
+# consolidate some sites in the configuration file
+configuration = org_config %>%
+  filter(SiteID %in% unique(comp_df$site_code)) %>%
+  filter(!EndDate < min(comp_df$min_date) | is.na(EndDate)) %>%
+  mutate(Node = SiteID) %>%
+  mutate(Node = if_else(RKMTotal < unique(RKMTotal[SiteID == "GRJ"]),
+                        'Below_GRJ',
+                        Node),
+         Node = if_else(RKMTotal < unique(RKMTotal[SiteID == "LLR"]) &
+                          RKMTotal > unique(RKMTotal[SiteID == "GRJ"]) &
+                          SiteID != "LEMHIR",
+                        "LLR",
+                        Node),
+         Node = if_else(SiteID == "LEMHIR",
+                        "LLRTP",
+                        Node)) %>%
+  select(site_code = SiteID, Node, SiteType, SiteName, RKM, RKMTotal) %>%
+  distinct() %>%
+  arrange(desc(RKMTotal))
+
+# build capture histories
+cap_hist = comp_df %>%
+  left_join(configuration %>%
+              group_by(Node) %>%
+              mutate(min_rkm = min(RKMTotal))) %>%
+  mutate(Node = fct_reorder(Node,
+                            min_rkm),
+         Node = fct_rev(Node)) %>%
+  group_by(season, tag_code, Node) %>%
+  summarise(min_date = min(min_date),
+            max_date = max(max_date),
+            n_obs = sum(n_obs)) %>%
+  ungroup() %>%
+  select(-ends_with("date")) %>%
+  mutate(n_obs = if_else(n_obs > 0, as.integer(1), n_obs)) %>%
+  spread(Node, n_obs,
+         fill = 0) %>%
+  # mutate(Release = 1) %>%
+  select(season, tag_code,
+         LLRTP:Below_GRJ)
+
+cap_hist %>%
+  left_join(rt_fish_df %>%
+              select(tag_code = pit_tag_id,
+                     release_site)) %>%
+  filter(release_site == "LLRTP") %>%
+  # filter(season == 2018) %>%
+  filter(LLRTP == 0,
+         LLR == 0,
+         GRJ == 0,
+         Below_GRJ == 0)
+
+
+# develop list of input matrices for CJS model
+# focus on fish released from lower Lemhi screw trap or detected there
+y_list = cap_hist %>%
+    left_join(rt_fish_df %>%
+              select(tag_code = pit_tag_id,
+                     release_site)) %>%
+  filter(release_site == "LLRTP" |
+           LLRTP == 1) %>%
+  select(-release_site) %>%
+  split(list(.$season)) %>%
+  map(.f = function(x) {
+    x %>%
+      select(-(season:tag_code)) %>%
+      as.matrix()
+  })
+
+```
+
+```{r jags-model}
+# specify model in JAGS
+jags_model = function() {
+  # PRIORS
+  phi[1] <- 1
+  p[1] <- 1
+  for(j in 2:J) {
+    phi[j] ~ dbeta(1,1) # survival probability between arrays
+    p[j] ~ dbeta(1,1)   # detection probability at each array
+  }
+
+  # LIKELIHOOD - Here, p and phi are global
+  for (i in 1:N) {
+    # first known occasion must be z == 1
+    # z[i, f[i]] <- 1
+    # j = 1 is the release occasion - known alive; i.e., the mark event
+    for (j in (f[i] + 1):J) {
+      # survival process: must have been alive in j-1 to have non-zero pr(alive at j)
+      z[i,j] ~ dbern(phi[j] * z[i,j-1]) # fish i in period j is a bernoulli trial
+
+      # detection process: must have been alive in j to observe in j
+      y[i,j] ~ dbern(p[j] * z[i,j]) # another bernoulli trial
+    }
+  }
+
+  # DERIVED QUANTITIES
+  # survivorship is probability of surviving from release to a detection occasion
+  survship[1] <- 1 # the mark event; everybody survived to this point
+  for (j in 2:J) { # the rest of the events
+    survship[j] <- survship[j-1] * phi[j]
+  }
+}
+
+# write model to a text file
+jags_file = "CJS_model.txt"
+write_model(jags_model, jags_file)
+
+# specify which parameters to track
+jags_params = c("phi", "p", "survship")
+```
+
+```{r fit-jags-model, eval = F}
+# only focus on 2017-18 and 2018-19 for now, since PIT tag detections at Lower Granite and downstream may not be recorded until after June 30
+for(i in 1:2) {
+  
+  y = y_list[[i]]
+  
+  # put together data for JAGS
+  jags_data = list(
+    N = nrow(y),
+    J = ncol(y),
+    y = y,
+    z = known_alive(y),
+    f = first_alive(y)
+  )
+  
+  # using rjags package
+  jags = jags.model(jags_file,
+                    data = jags_data,
+                    n.chains = 4,
+                    n.adapt = 1000)
+  # burnin
+  update(jags, n.iter = 2500)
+  # posterior sampling
+  post = coda.samples(jags,
+                      jags_params,
+                      n.iter = 2500,
+                      thin = 5)
+  
+  # posterior summaries
+  param_summ = post_summ(post,
+                         jags_params,
+                         Rhat = T,
+                         ess = T) %>%
+    t() %>%
+    as_tibble(rownames = "param") %>%
+    mutate(cv = sd / mean)
+  
+  # save model results
+  file_nm = paste0('PIT_only_CJS_', names(y_list)[i], '.rda')
+  
+  save(jags_data, post, param_summ,
+       file = paste0("../analysis/CJS_models/", file_nm))
+  
+  rm(y, jags_data, jags, post, param_summ, file_nm)
+}
+
+```
+
+
+# Results
+
+This CJS model has 4 detection points: lower Lemhi trap, LLR, GRJ and anywhere downstream of GRJ. Survival and detection probabilities for the last detection point are confounded in CJS models, so we do not present those estimates. Detection at the release site (lower Lemhi trap) is fixed at 100%, since that's the most upstream site and where fish enter the model. Therefore, we focus on survival between the trap and LLR, and between LLR and GRJ, (Table \ref{tab:phi-tab}) as well as detection probabilities at LLR and GRJ (Table \ref{tab:det-tab}). In addition, we calculated cummulative survival to each site as well (Table \ref{tab:surv-tab}). 
+
+```{r}
+# compile parameter estimaets for all years
+param_summ = 2017:2018 %>%
+  as.list() %>%
+  rlang::set_names() %>%
+  map_df(.id = 'season',
+         .f = function(yr) {
+           load(paste0("../analysis/CJS_models/PIT_only_CJS_", yr, ".rda"))
+           return(param_summ)
+         }) %>%
+  mutate(season = recode(as.character(season),
+                         "2017" = "2017-18",
+                         "2018" = "2018-19",
+                         "2019" = "2019-20")) %>%
+  # filter out parameters that are either fixed at 1, or not actually estimable
+  filter(!grepl('\\[1\\]$', param),
+         !grepl('\\[4\\]$', param))
+
+
+# labels for plotting
+site_nms = c("LLR",
+             "GRJ")
+between_nms = c("LLRTP to LLR",
+                "LLR to GRJ")
+
+
+```
+
+```{r phi-tab}
+param_summ %>%
+  filter(grepl('phi', param)) %>%
+  mutate(site = factor(rep(between_nms, n_distinct(season)),
+                       levels = between_nms)) %>%
+  select(season, Reach = site, 
+         mean, 
+         se = sd,
+         cv,
+         lwrCI = `2.5%`,
+         uprCI = `97.5%`) %>%
+  kable(caption = 'Estimates of survival between detection points.',
+        digits = 3) %>%
+  kable_styling()
+```
+
+
+```{r det-tab}
+param_summ %>%
+  filter(grepl('^p\\[', param)) %>%
+  mutate(site = factor(rep(site_nms, n_distinct(season)),
+                       levels = site_nms)) %>%
+  select(season, site, 
+         mean, 
+         se = sd,
+         cv,
+         lwrCI = `2.5%`,
+         uprCI = `97.5%`) %>%
+  kable(caption = 'Estimates of detection probability.',
+        digits = 3) %>%
+  kable_styling()
+```
+
+
+```{r surv-tab}
+param_summ %>%
+  filter(grepl('surv', param)) %>%
+  mutate(site = factor(rep(site_nms, n_distinct(season)),
+                       levels = site_nms)) %>%
+  select(season, site, 
+         mean, 
+         se = sd,
+         cv,
+         lwrCI = `2.5%`,
+         uprCI = `97.5%`) %>%
+  kable(caption = 'Estimates of cummulative survival up to detection points.',
+        digits = 3) %>%
+  kable_styling()
+```
+
+We also present these results in Figures \ref{fig:phi-fig}, \ref{fig:det-fig} and \ref{fig:surv_fig}.
+
+```{r}
+# plots of estimates
+dodge_width = 0.3
+
+
+surv_p = param_summ %>%
+  filter(grepl('survship', param)) %>%
+  mutate(site = factor(rep(site_nms, n_distinct(season)),
+                       levels = site_nms)) %>%
+  ggplot(aes(x = site,
+             y = mean,
+             color = season)) +
+  scale_color_brewer(palette = "Set1") +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0,
+                position = position_dodge(width = dodge_width)) +
+  geom_point(position = position_dodge(width = dodge_width)) +
+  labs(x = 'Site',
+       y = 'Cummulative Survival',
+       color = 'Season')
+
+phi_p = param_summ %>%
+  filter(grepl('phi', param)) %>%
+  mutate(site = factor(rep(between_nms, n_distinct(season)),
+                       levels = between_nms)) %>%
+  ggplot(aes(x = site,
+             y = mean,
+             color = season)) +
+  scale_color_brewer(palette = "Set1") +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0,
+                position = position_dodge(width = dodge_width)) +
+  geom_point(position = position_dodge(width = dodge_width)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = 'Reach',
+       y = 'Survival Within Reach',
+       color = 'Season')
+
+det_p = param_summ %>%
+  filter(grepl('^p\\[', param)) %>%
+  mutate(site = factor(rep(site_nms, n_distinct(season)),
+                       levels = site_nms)) %>%
+  ggplot(aes(x = site,
+             y = mean,
+             color = season)) +
+  scale_color_brewer(palette = "Set1") +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0,
+                position = position_dodge(width = dodge_width)) +
+  geom_point(position = position_dodge(width = dodge_width)) +
+  labs(x = 'Site',
+       y = 'Detection Probability',
+       color = 'Season')
+
+```
+
+```{r phi-fig, fig.cap = "Estimates, with 95% confidence intervals, of survival between reaches."}
+phi_p
+```
+
+```{r det-fig, fig.cap = "Estimates, with 95% confidence intervals, of detection probabilities."}
+det_p
+```
+
+```{r surv-fig, fig.cap = "Estimates, with 95% confidence intervals, of cummulative survival between reaches."}
+surv_p
+```
