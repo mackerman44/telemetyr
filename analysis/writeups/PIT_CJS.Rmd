@@ -409,7 +409,7 @@ param_summ %>%
   kable_styling()
 ```
 
-We also present these results in Figures \ref{fig:phi-fig}, \ref{fig:det-fig} and \ref{fig:surv_fig}.
+We also present these results in Figures \@ref(fig:phi-fig), \@ref(fig:det-fig), and \@ref(fig:surv-fig).
 
 ```{r}
 # plots of estimates
