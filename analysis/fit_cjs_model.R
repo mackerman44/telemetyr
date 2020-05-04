@@ -212,8 +212,8 @@ for(i in 1:3) {
 # pull out parameter summaries
 #-----------------------------------
 param_summ_all = c("17_18",
-               "18_19",
-               "19_20") %>%
+                   "18_19",
+                   "19_20") %>%
   as.list() %>%
   rlang::set_names() %>%
   map_df(.id = 'season',
@@ -229,7 +229,10 @@ param_summ_all = c("17_18",
          }) %>%
   mutate(site = factor(site,
                        levels = c("LEMTRP", levels(rec_df$site_code), "LLRTP")),
-         site = fct_relevel(site, "LLRTP", after = 9))
+         site = fct_relevel(site, "LLRTP", after = 9)) %>%
+  group_by(season) %>%
+  filter(site_num != max(site_num)) %>%
+  ungroup()
 
 #-----------------------------------
 # Make some plots
@@ -298,8 +301,7 @@ surv_summ = post %>%
          `survship[14]` = `survship[13]` * `phi[14]`,
          `survship[15]` = `survship[14]` * `phi[15]`,
          `survship[16]` = `survship[15]` * `phi[16]`,
-         `survship[17]` = `survship[16]` * `phi[17]`,
-         `survship[18]` = `survship[17]` * `phi[18]`) %>%
+         `survship[17]` = `survship[16]` * `phi[17]`) %>%
   select(starts_with('surv')) %>%
   gather(param, value) %>%
   group_by(param) %>%
