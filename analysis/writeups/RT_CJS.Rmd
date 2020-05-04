@@ -454,7 +454,7 @@ det_p
 surv_p
 ```
 
-```{r surv2-fig, echo = F, fig.cap = "Estimates, with 95% confidence intervals, of cummulative survival across reaches, resetting survival to start at Lower Lemhi screw trap."}
+```{r surv2-fig, echo = F, fig.cap = "Estimates, with 95% confidence intervals, of cummulative survival across reaches, resetting survival in 2019-20 to start at Lower Lemhi screw trap."}
 surv_p2
 ```
 
