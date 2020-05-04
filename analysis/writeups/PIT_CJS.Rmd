@@ -317,6 +317,8 @@ param_summ = 2017:2018 %>%
            load(paste0("../CJS_models/PIT_only_CJS_", yr, ".rda"))
            return(param_summ)
          }) %>%
+  mutate_at(vars(cv),
+            list(abs)) %>%
   mutate(season = recode(as.character(season),
                          "2017" = "2017-18",
                          "2018" = "2018-19",

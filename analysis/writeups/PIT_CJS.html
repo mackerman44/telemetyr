@@ -11,7 +11,7 @@
 
 <meta name="author" content="Mike Ackerman1, and Kevin See1,✉" />
 
-<meta name="date" content="2020-05-01" />
+<meta name="date" content="2020-05-04" />
 
 <title>PIT Tag-Only CJS Models</title>
 
@@ -1539,7 +1539,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">PIT Tag-Only CJS Models</h1>
 <h4 class="author">Mike Ackerman<sup>1</sup>, and Kevin See<sup>1,✉</sup></h4>
-<h4 class="date">May 01, 2020</h4>
+<h4 class="date">May 04, 2020</h4>
 
 </div>
 
@@ -1799,6 +1799,8 @@ param_summ = 2017:2018 %&gt;%
            load(paste0(&quot;../CJS_models/PIT_only_CJS_&quot;, yr, &quot;.rda&quot;))
            return(param_summ)
          }) %&gt;%
+  mutate_at(vars(cv),
+            list(abs)) %&gt;%
   mutate(season = recode(as.character(season),
                          &quot;2017&quot; = &quot;2017-18&quot;,
                          &quot;2018&quot; = &quot;2018-19&quot;,
@@ -2548,7 +2550,7 @@ LLR to GRJ
 0.580
 </td>
 <td style="text-align:right;">
--0.302
+0.302
 </td>
 <td style="text-align:right;">
 -3.114
@@ -2571,7 +2573,7 @@ LLRTP to LLR
 0.538
 </td>
 <td style="text-align:right;">
--0.129
+0.129
 </td>
 <td style="text-align:right;">
 -4.961
@@ -2594,7 +2596,7 @@ LLR to GRJ
 0.354
 </td>
 <td style="text-align:right;">
--0.337
+0.337
 </td>
 <td style="text-align:right;">
 -1.712
