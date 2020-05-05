@@ -12,7 +12,13 @@ institute:
   - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
-    bookdown::html_document2:
+  bookdown::html_vignette2:
+    fig_height: 6
+    fig_width: 6
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+  bookdown::html_document2:
       fig_caption: yes
       fig_height: 6
       fig_width: 6
@@ -27,7 +33,8 @@ output:
       - --lua-filter=templates/author-info-blocks.lua
 vignette: >
   %\VignetteIndexEntry{Diagnositcs}
-  %\VignetteEngine{knitr::rmarkdown}
+  <!-- %\VignetteEngine{knitr::rmarkdown} -->
+  %\VignetteEngine{bookdown::bookdown}
   %\VignetteEncoding{UTF-8}
 abstract: |
   This manual contains instructions on how to read in telemetry records and perform diagnostics including evaluations of receiver noise and operations and tag battery life evaluations.
@@ -101,7 +108,7 @@ compressed = compress_raw_data(raw_df,
 
 Again, the `compress_df` object can be saved using `save()` and loaded at a later date, thus saving time. The `compress_raw_data()` function can take a fair amount of time depending on the size of your dataset.
 
-```{r load-data, echo = F}
+```{r load-det-data, echo = F}
 load('../data/prepped/2018_2019/compressed.rda')
 
 ```

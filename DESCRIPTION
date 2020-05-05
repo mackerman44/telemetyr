@@ -20,7 +20,8 @@ Description: An R package for reading, cleaning, reducing, analysis, and
     availability and use to describe preferred or target habitat conditions. 
     Our hope is to build the package with functions and tools that can be 
     applied elsewhere to telemetry or similar observational datasets.
-License: What license is it under?
+Depends: R (>= 3.5.0)
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.0
@@ -33,6 +34,4 @@ Imports:
 Suggests: 
     knitr,
     rmarkdown
-VignetteBuilder: knitr
-Depends: 
-    R (>= 2.10)
+VignetteBuilder: bookdown
