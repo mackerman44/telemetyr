@@ -71,7 +71,7 @@ rt_ch = list('pilot',
   gather(site, seen, -(Year:tag_id)) %>%
   mutate(site = factor(site,
                        levels = c("LEMTRP", levels(rec_df$site_code), "LLRTP")),
-         site = fct_relevel(site, "LLRTP", after = 9)) %>%
+         site = fct_relevel(site, "LLRTP", after = 8)) %>%
   filter(!is.na(site)) %>%
   spread(site, seen,
          fill = 0)
@@ -153,7 +153,7 @@ y_list = rt_ch %>%
       y = x %>%
         # filter out fish released from lower Lemhi trap but detected upstream
         filter(!(release_site == 'LLRTP' &
-                 (BC == 1 | TC == 1 | EC == 1 | SS == 1 | EU == 1 | LF == 1 | DD == 1))) %>%
+                 (BC == 1 | TC == 1 | EC == 1 | SS == 1 | EU == 1 | LF == 1))) %>%
         select(one_of(c("LEMTRP", 'LLRTP', sites))) %>%
         select(one_of(names(x))) %>%
         as.matrix()
@@ -229,7 +229,7 @@ param_summ_all = c("17_18",
          }) %>%
   mutate(site = factor(site,
                        levels = c("LEMTRP", levels(rec_df$site_code), "LLRTP")),
-         site = fct_relevel(site, "LLRTP", after = 9)) %>%
+         site = fct_relevel(site, "LLRTP", after = 8)) %>%
   group_by(season) %>%
   filter(site_num != max(site_num)) %>%
   ungroup()
@@ -302,18 +302,34 @@ surv_summ = post %>%
          `survship[15]` = `survship[14]` * `phi[15]`,
          `survship[16]` = `survship[15]` * `phi[16]`,
          `survship[17]` = `survship[16]` * `phi[17]`) %>%
-  select(starts_with('surv')) %>%
-  gather(param, value) %>%
-  group_by(param) %>%
-  summarise(mean = mean(value),
-         sd = sd(value),
-         `50%` = quantile(value, 0.5),
-         `2.5%` = quantile(value, 0.025),
-         `97.5%` = quantile(value, 0.975),
-         cv = sd / mean) %>%
-  ungroup() %>%
-  mutate(season = '19_20') %>%
-  select(season, everything())
+  select(ssurv_summ = post %>%
+           as.matrix(chain = T,
+                     iter = T) %>%
+           as_tibble() %>%
+           select(-(`p[1]`:`phi[7]`),
+                  -(`survship[1]`:`survship[7]`)) %>%
+           mutate(`survship[8]` = 1) %>%
+           mutate(`survship[9]` = `survship[8]` * `phi[9]`,
+                  `survship[10]` = `survship[9]` * `phi[10]`,
+                  `survship[11]` = `survship[10]` * `phi[11]`,
+                  `survship[12]` = `survship[11]` * `phi[12]`,
+                  `survship[13]` = `survship[12]` * `phi[13]`,
+                  `survship[14]` = `survship[13]` * `phi[14]`,
+                  `survship[15]` = `survship[14]` * `phi[15]`,
+                  `survship[16]` = `survship[15]` * `phi[16]`,
+                  `survship[17]` = `survship[16]` * `phi[17]`) %>%
+           select(starts_with('surv')) %>%
+           gather(param, value) %>%
+           group_by(param) %>%
+           summarise(mean = mean(value),
+                     sd = sd(value),
+                     `50%` = quantile(value, 0.5),
+                     `2.5%` = quantile(value, 0.025),
+                     `97.5%` = quantile(value, 0.975),
+                     cv = sd / mean) %>%
+           ungroup() %>%
+           mutate(season = '19_20') %>%
+           select(season, everything())
 
 surv_p2 = param_summ_all %>%
   anti_join(surv_summ %>%
@@ -323,7 +339,7 @@ surv_p2 = param_summ_all %>%
                           select(-(mean:`97.5%`),
                                  -cv))) %>%
   filter(grepl('surv', param)) %>%
-  filter(!(season == '19_20' & site_num < 9)) %>%
+  filter(!(season == '19_20' & site_num < 8)) %>%
   ggplot(aes(x = site,
              y = mean,
              color = season)) +
