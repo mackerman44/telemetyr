@@ -1,0 +1,124 @@
+---
+title: "Importing, Cleaning, and Compressing Telemetry Data"
+author:
+  - Mike Ackerman:
+      email: mike.ackerman@merck.com
+      institute: [biomark]
+      correspondence: true
+  - Kevin See:
+      email: kevin.see@merck.com
+      institute: [biomark]
+institute:
+  - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+    bookdown::html_document2:
+      fig_caption: yes
+      fig_height: 6
+      fig_width: 6
+      toc: yes
+      toc_depth: 3
+      toc_float:
+        collapsed: yes
+        smooth_scroll: yes
+      theme: flatly
+      pandoc_args:
+      - --lua-filter=templates/scholarly-metadata.lua
+      - --lua-filter=templates/author-info-blocks.lua
+vignette: >
+  %\VignetteIndexEntry{Fitting a CJS Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+abstract: |
+  This manual contains instructions on how to import data available from radio telemetry receiver and the Tracker software including data cleaning and compression in preparation for data analysis. 
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE, results = "hide"}
+# knitr library and options
+library(knitr)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = TRUE,
+  comment = "#>"
+)
+
+```
+
+```{r libraries, message = F}
+# load necessary libraries
+library(telemetyr)
+
+```
+
+# Introduction
+
+This vignette describes how to import various files downloaded from telemetry receivers, and in our case, from radio receivers and using the Tracker software. We describe how to read in telemetry observation records in both a "raw" .txt format and in a compressed .csv format. We also provide options for reading in on/off information and temperature and voltage records that are available from the receivers. Finally, we describe how to work with the raw .txt observation data to clean and compress it including a description of all of the various arguments used to prepare the telemetry observation data before analysis. All of the functionality described here is available as part of the \code{telemetyr} R package available [here](https://github.com/mackerman44/telemetyr).
+
+# Data Import
+
+We begin by importing each of the various file types that can be downloaded from radio telemetry receivers and using the Tracker software. There are 5 file types available:
+
+* **.HEX**: These are the rawest form of data available from the Tracker software and contain a header containing receiver system parameters that include site information, download data, and receiver settings (among other things) followed by data in hexadecimal format and ASCII text form. We do not deal with the *.HEX* format files further here.
+
+* **.txt**: Contains the raw records or observations from the receiver converted from the *.HEX* file. Can include test or timer tag data, noise, and finally, observations of radio-tagged fish. 
+
+* **.csv**: Contains the same information as in the *.txt* files, except in a compressed format using a combination of default parameters or parameters than can be set in the Tracker software.
+
+* **$.txt**: Information on when receivers were recorded turning ON or OFF.
+
+* **$$.txt**: Time-series data of voltage and air temperature (minimum, maximum, and average) recorded by the receiver.
+
+All of these various file types are stored in a series of folders, typically one for each receiver, which are all catalogued in a single folder for each study season. Each of the receiver folders are named using the 3-character code or ID for that receiver (e.g., CC1, DW1). As an example, let's set a file path to where we stored all of the downloads for the Lemhi River study and 2018/2019 season:  
+
+```{r data-path}
+# E.g. Biomark NAS mapped to S:/
+download_path = "S:/data/telemetry/lemhi/fixed_site_downloads/2018_2019"
+
+```
+
+Following, we provide brief examples of how to import each of the above file types (excluding the *.HEX* files).
+
+## ON/OFF Data
+
+If interested, the user can read in the receiver on/off information using the `read_on_off_data()` function contained in `telemetyr`. The on/off information is contained in the files with a single dollar sign ($) prior to the *.txt* file extension. By default, the `read_on_off_data()` function reads in the on/off information from all folders (receivers) in the `path`, but the `receiver_codes` can be invoked to read in on/off data for a subset of receivers.
+
+```{r read-on-off, eval = F}
+# import on/off data, all receivers
+on_off_df = read_on_off_data(path = download_path)
+
+# import on/off data, just a few receivers
+on_off_df = read_on_off_data(path = download_path,
+                             receiver_codes = c("LH1", "DW1", "YP1"))
+
+```
+
+The `on_off_df` object is then available to review on/off times for receivers. However, to date, we have found this information to be unreliable and of limited use.
+
+## Volt and Temperature Data
+
+The volt and temperature data logged by the receivers can be imported using the `read_volt_temp_data()` function available in the `telemetyr` package. This information is in files within `download_path` ending in *\$\$.txt*. The function concatenates all of those files, and in our example, saves them to a new object `volt_temp_df`. As above, the `receiver codes` argument can be invoked to read in the voltage & temperature information for only a subset of receivers.
+
+```{r read-volt-temp, eval = F}
+# import receiver volt & temperature data, all receivers
+volt_temp_df = read_volt_temp_data(download_path)
+
+# import receiver volt & temperature data, just a few receivers
+volt_temp_df = read_volt_temp_data(download_path,
+                                   receiver_codes = c("DW1", "SR1", "CC1"))
+
+```
+
+The `volt_temp_df` object is then available for the user to examine or plot as they see fit e.g., using the `plot_volt_temp_data()` function.
+
+## Compressed Data
+
+## Raw Data
+
+# Data Cleaning
+
+# Data Compression
+
+
+ 
