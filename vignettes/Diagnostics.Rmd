@@ -52,15 +52,16 @@ library(dplyr)
 
 # Introduction
 
-This vignetted describes how to read in various files downloaded during the field season using the Tracker software and then perform various "diagnostics" using data within those files. The diagnostics include summaries of receiver operation times, noise, and voltage/temperature and test tag battery life. Similar diagnostic summaries e.g. of sentinel tag detections could easily be summarised and added to the \code{telemetyr} R package at a later date. 
+This vignette describes how to read in various files downloaded during the field season using the Tracker software and then perform various "diagnostics" using data within those files. The diagnostics include summaries of receiver operation times, noise, and voltage/temperature and test tag battery life. Similar diagnostic summaries e.g. of sentinel tag detections could easily be summarised and added to the \code{telemetyr} R package at a later date. 
 
 # Data Prep
 
 The raw data is contained in *.txt* files, located in a folder named after the receiver that it was downloaded from. Each receiver has a 3-digit code. And typically, all of the receiver folders for a given study season are stored in a dirctory for that season. So first, let's set the file path to the folder that contains all of the reciever folders. The following provides an example for where data for the 2018/2019 fixed site download data is stored for the Lemhi River juvenile Chinook telemetry.
 
-```{r data-path, eval = FALSE}
-download_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
-# download_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
+```{r data-path, eval = F}
+# Biomark NAS mapped to S:/, e.g.
+download_path = "S:/data/telemetry/lemhi/fixed_site_downloads/2018_2019"
+
 ```
 
 After setting the path to the receiver downloads, use the `read_txt_data()` function to read in each text file and combine them all into one long dataframe. 
@@ -91,7 +92,7 @@ Finally, we compressed these detections into windows of time, such that for each
 
 ```{r compress-raw-data, echo = F, eval = F}
 # clean, round and compress data
-compress_df = compress_raw_data(raw_df,
+compressed = compress_raw_data(raw_df,
                                 min_yr = 2018,
                                 max_yr = 2019,
                                 round_to = 5)
@@ -242,7 +243,7 @@ volt_temp_df = read_volt_temp_data(download_path)
 
 ```
 
-```{r load-data, echo = F}
+```{r load-volt-temp-data, echo = F}
 load("../data/prepped/2018_2019/volt_temp.rda")
 
 ```
