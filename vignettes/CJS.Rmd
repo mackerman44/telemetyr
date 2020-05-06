@@ -434,3 +434,7 @@ Some of these become questionable when dealing with multiple batches of tags tha
 Some of the caveats to keep in mind with CJS models include:
 
 * Estimates of $\phi$ are really estimates of *apparent* survival. $1 - \phi_i$ represents the chances that an animal either died in reach $i - 1$, or left the population (became unavailable for detection). The latter is analogous to a fish that hunkers down in a reach to ride out the winter. It may be surviving very well within that reach, or it may have died there, there is no way to tell from only the radio tag observations. 
+
+#### END CJS VIGNETTE
+
+*Jolly good work! That deserves a gin and tonic.*

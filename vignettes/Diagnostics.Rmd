@@ -279,4 +279,4 @@ volt_p
 
 #### END DIAGNOSTICS VIGNETTE
 
-Old Fashioned, anyone?
+*Job well done! Old Fashioned, anyone?*
