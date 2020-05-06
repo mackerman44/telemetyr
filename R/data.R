@@ -1,9 +1,9 @@
 #' Raw .txt Format Telemetry Data
 #'
 #' An example dataset containing observations for 5 receivers
-#' and odd numbered frequencies, 2018/2019 season
+#' and 3 frequencies, 2018/2019 season
 #'
-#' @format A data frame with 2694507 rows and 9 variables:
+#' @format A data frame with 2008291 rows and 9 variables:
 #' \describe{
 #'   \item{file_name}{the full file path}
 #'   \item{file}{the file name}
@@ -21,9 +21,9 @@
 #' Compressed Telemetry Data
 #'
 #' An example dataset containing compressed observations
-#' for 5 receivers and odd numbered frequencies, 2018/2019 season
+#' for 5 receivers and 3 frequencies, 2018/2019 season
 #'
-#' @format A data frame with 260437 rows and 7 variables:
+#' @format A data frame with 195994 rows and 7 variables:
 #' \describe{
 #'   \item{receiver}{receiver code}
 #'   \item{valid}{is observation valid, 1 = T, 0 = F}
@@ -39,9 +39,9 @@
 #' Volt & Temperature Data
 #'
 #' An example dataset containing voltage and temperature data recorded
-#' by 3 telemetry receivers, 2018/2019 season
+#' by 6 telemetry receivers, 2018/2019 season
 #'
-#' @format A data frame with 43656 rows and 11 variables:
+#' @format A data frame with 77826 rows and 11 variables:
 #' \describe{
 #'   \item{file_name}{the full file path}
 #'   \item{file}{the file name}
@@ -56,4 +56,4 @@
 #'   \item{receiver}{receiver code}
 #' }
 #' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
-"volt_temp_df"
+"volt_temp"
