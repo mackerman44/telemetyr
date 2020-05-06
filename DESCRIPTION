@@ -9,7 +9,7 @@ Authors@R: as.person(c(
     "Kevin See <kevin.see@merck.com> [aut]",
     "Nick Porter <nick.porter@merck.com> [ctb]"
     ))
-Maintainer: The package maintainer <yourself@somewhere.net>
+Maintainer: Mike Ackerman <mike.ackerman@merck.com>
 Description: An R package for reading, cleaning, reducing, analysis, and 
     visualization of telemetry observation data. The package is being 
     initially build using radio telemetry data from a project to characterize
