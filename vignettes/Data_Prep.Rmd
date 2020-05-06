@@ -49,6 +49,7 @@ knitr::opts_chunk$set(
 ```{r libraries, message = F}
 # load necessary libraries
 library(telemetyr)
+library(dplyr)
 
 ```
 
@@ -142,10 +143,91 @@ raw = read_txt_data(path = download_path,
 
 ```
 
+From here forward, we will use this *.txt* format data in the `raw` object and perform data cleaning and reduction. The goal is to end up with a clean, compressed dataset that is similar in format to the *.csv* format data available from the Tracker software and is ready for diagnostics, building capture histories, analysis, visualization, etc.
+
 # Data Cleaning
 
-# Data Compression
+## Dates and Valid Records
+
+The first step of the data cleaning process is to clean up some errant dates in the imported receiver records. We noted that many files have incorrect dates typically at the beginning of the file, perhaps because the timer had not been reset after the previous receiver download. To remedy this, we included the function `clean_raw_data()`, that fixes as many of those dates as possible, based on the valid dates within each file. The function also includes the arguments `min_yr` and `max_yr` to place bounds around the expected dates, to help determine which dates should be corrected.
+
+In addition, `clean_raw_data` includes an option to filter out records that are marked as invalid (`valid == 0`) if `filter_valid == TRUE` (the default). And finally, `clean_raw_data()` fixes any file and record that lists a receiver as `000`.
+
+```{r clean-raw-data-help, eval = F}
+# help menu
+?clean_raw_data
+
+```
+
+```{r clean-raw-data, eval = F}
+# clean the raw object
+clean = clean_raw_data(raw_data = raw,
+                       min_yr = 2018,
+                       max_yr = 2019,
+                       filter_valid = T)
+
+```
+
+## Tag Code Rounding
+
+Next, we want to round the tag codes that were logged by the receiver, to the nearest potential code, hopefully to match a tag that was actually deployed (or similarly, a test or sentinel tag or noise record). In some years, tags ending in either a 0 or 5 were deployed, whereas in others, only tags ending in 0. So we've included another function, `round_tag_codes()` that includes an input parameter `round_to` to determine whether to round detected tag codes to the nearest 5 or nearest 10. Note that `round_tag_codes()` function creates a new variable **tag_id** with the rounded codes rather than overwriting the existing variable **tag_code** in `raw`, allowing the user to examine cases where the unrounded and rounded codes do not match. The variable was re-named to **tag_id**, because after which we assume it matches up to a tag ID from a tag actually deployed.
+
+```{r round-tag-codes, eval = F}
+# round tag codes to nearest 5
+clean_round = round_tag_codes(data_df = clean,
+                              round_to = 5)
+
+```
+
+# Data Reduction
+
+We now have a dataset with clean dates, filtered for valid records, and with rounded tag codes, in this case the `clean_round` object. But now we want to compress those records into windows of time, such that for each **tag_id**, we record how many observations occurred within that window. This can be accomplished using the `compress_txt_data()` function. By default, the time window is 2 minutes, but that can easily be changed by the user using the `max_min` argument, which is the maximum number of minutes between detections of a **tag_id** before it's considered a different "group" of detections.
+
+```{r compress-data, eval = F}
+# compress records
+compressed = compress_txt_data(data_df = clean_round,
+                               max_min = 2,            # the default
+                               assign_week = F)        # described below
+
+```
+
+## Assign Study Week to Observations
+
+The `compress_txt_data()` has an additional feature that allows the user to assign a study week to each observation by setting `assign_week = TRUE`. If assigning week numbers, the data when week numbering should start can be set using `week_base` and using "MMDD" format (e.g. the default "0901"). Setting a consistent `week_base` among study year would allow the user to also compare the timing of observations across years. Finally, if assigning weeks, the user can determine whether the week should be assigned based on the `first` or `last` time a tag was detected on a receiver using the `append_week` argument.
+
+```{r assign-week, eval = F}
+# compress records and assign week
+compressed = compress_txt_data(data_df = clean_round,
+                               max_min = 2,
+                               assign_week = T,
+                               week_base = "0901",
+                               append_week = "first")
+
+```
+
+# The `compress_raw_data()` Function
+
+For your convenience, all of the functionality in the [Data Cleaning](#Data-Cleaning) and [Data Reduction](#Data-Reduction) sections have been included in the wrapper function `compress_raw_data()`. The function is a wrapper for `clean_raw_data()`, `round_tag_codes()`, and `compress_txt_data()` to clean records, round tag codes, and compress observations in one fell swoop and inherits all of the arguments used by those functions. `compress_raw_data()` is similar to the routine that Tracker uses to compress *.txt* format data to *.csv*. 
+
+```{r compress-raw-data}
+# clean data, round tag codes, compress data, and assign weeks
+compressed = compress_raw_data(data_df = raw,
+                               min_yr = 2018,
+                               max_yr = 2019,
+                               round_to = 5)
+
+```
+
+Note that the compressed data output by `clean_txt_data()` and `clean_raw_data()` are of the same format and match the format of the data provided by the *.csv* files downloaded using the Tracker software.
+
+The resulting compressed data look something like this:
+
+```{r view-data}
+compressed %>%
+  head()
+
+```
 
 #### END DATA PREP VIGNETTE
 
-*Now go get yourself a margarita!*
+*Good work! Now go get yourself a margarita!*
