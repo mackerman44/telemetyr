@@ -59,6 +59,29 @@
 #' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
 "site_metadata"
 
+#' Tag Release Information
+#'
+#' Data for tags deployed in the Lemhi River juvenile Chinook
+#' salmon winter telemetry project
+#'
+#' @format A data frame with 776 rows and 12 variables:
+#' \describe{
+#'   \item{season}{the year/season the tag was deployed}
+#'   \item{tag_id}{tag ID including frequency and code}
+#'   \item{pit_tag_id}{the PIT tag number also injected into the fish}
+#'   \item{srr}{species, run, rear, uses PTAGIS nomenclature}
+#'   \item{length}{length, millimeters}
+#'   \item{weight}{weight, grams}
+#'   \item{tag_purpose}{Was tag deployed in a fish, used as test tag, or other?}
+#'   \item{release_site}{location that a fish was released at}
+#'   \item{duty_cycle}{the batch or duty cycle of the fish}
+#'   \item{activation_time}{the activation time of the tag, Pacific Standard}
+#'   \item{release_time}{the release time for the fish, Pacific Standard}
+#'   \item{notes}{relevant notes}
+#' }
+#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+"tag_releases"
+
 #' Volt & Temperature Data
 #'
 #' An example dataset containing voltage and temperature data recorded
