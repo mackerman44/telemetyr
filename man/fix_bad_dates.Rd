@@ -4,10 +4,10 @@
 \alias{fix_bad_dates}
 \title{Fix bad dates}
 \usage{
-fix_bad_dates(detect_df = NULL)
+fix_bad_dates(raw_data = NULL)
 }
 \arguments{
-\item{detect_df}{data.frame of raw text records, as returned by \code{read_txt_data()}.}
+\item{raw_data}{data.frame of raw text records, as returned by \code{read_txt_data()}.}
 }
 \value{
 a data frame matching the original, with corrected dates and a new column, \code{orig_date}, showing the original date (character) from the file.

@@ -4,13 +4,13 @@
 #'
 #' @author Kevin See and Mike Ackerman
 #'
-#' @param detect_df data.frame of raw text records, as returned by \code{read_txt_data()}.
+#' @param raw_data data.frame of raw text records, as returned by \code{read_txt_data()}.
 #'
 #' @import dplyr lubridate
 #' @export
 #' @return a data frame matching the original, with corrected dates and a new column, \code{orig_date}, showing the original date (character) from the file.
 
-fix_bad_dates = function(detect_df = NULL) {
+fix_bad_dates = function(raw_data = NULL) {
 
   stopifnot(!is.null(detect_df))
 
