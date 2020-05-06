@@ -70,7 +70,7 @@ We begin by importing each of the various file types that can be downloaded from
 
 * **$$.txt**: Time-series data of voltage and air temperature (minimum, maximum, and average) recorded by the receiver.
 
-All of these various file types are stored in a series of folders, typically one for each receiver, which are all catalogued in a single folder for each study season. Each of the receiver folders are named using the 3-character code or ID for that receiver (e.g., CC1, DW1). As an example, let's set a file path to where we stored all of the downloads for the Lemhi River study and 2018/2019 season:  
+All of these various file types are stored in a series of folders, typically one for each receiver, which are all catalogued in a single folder for each study season. Each of the receiver folders are named using the 3-character code or ID for that receiver (e.g., CC1, DW1). As an example, let's set a file path to where we stored all of the downloads for the Lemhi River juvenile Chinook telemetry study and 2018/2019 season: 
 
 ```{r data-path}
 # E.g. Biomark NAS mapped to S:/
@@ -114,11 +114,38 @@ The `volt_temp_df` object is then available for the user to examine or plot as t
 
 ## Compressed Data
 
+The `telemetyr` R package is intended to be used on the raw telemetry data stored in the *.txt* files (see [Raw Data](##Raw-Data) section). However, options are provided in the `telemetyr` package to import and deal with the compressed *.csv* format data that can also be downloaded from the Tracker software. Once again, just use the `receiver_codes` argument to import data for only a subset of receivers. The *.csv* format data can be imported using the `read_csv_data()` function as follows:
+
+```{r read-csv-data, eval = F}
+# import compressed .csv data, all receivers
+csv_df = read_csv_data(path = download_path)
+
+# import compressed .csv data, subset receivers
+csv_df = read_csv_data(path = download_path,
+                       # e.g. only Lemhi Hole to North Fork
+                       receiver_codes = c("LH1", "MB1", "TR1", "RR1", "NF1"))
+
+```
+
 ## Raw Data
+
+Finally, the `read_txt_data()` function in `telemetyr` can be used to import the raw *.txt* format data available from the Tracker software. The *.txt* data contains a single row for each record or observation logged by the receiver including the time, receiver code, channel and tag code, and signal strength for the record. The `receiver_code` argument is also available in `read_txt_data()` allowing the user to import data for only a subset of receivers. As an example, *.txt* data can be imported using the following:
+
+```{r read-txt-data, eval = F}
+# import compressed .csv data, all receivers
+raw = read_txt_data(path = download_path)
+
+# import compressed .csv data, subset receivers
+raw = read_txt_data(path = download_path,
+                       # e.g. only Lemhi Hole to North Fork
+                       receiver_codes = c("LH1", "MB1", "TR1", "RR1", "NF1"))
+
+```
 
 # Data Cleaning
 
 # Data Compression
 
+#### END DATA PREP VIGNETTE
 
- 
+*Now go get yourself a margarita!*

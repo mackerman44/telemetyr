@@ -278,3 +278,5 @@ volt_p
 ```
 
 #### END DIAGNOSTICS VIGNETTE
+
+Old Fashioned, anyone?
