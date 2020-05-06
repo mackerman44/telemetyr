@@ -5,7 +5,7 @@
 \title{Clean and Compress Raw Telemetry Data}
 \usage{
 compress_raw_data(
-  data_df = NULL,
+  raw_data = NULL,
   min_yr = 2017,
   max_yr = NA,
   filter_valid = T,
@@ -17,7 +17,8 @@ compress_raw_data(
 )
 }
 \arguments{
-\item{data_df}{any data frame with a column named \code{tag_code}}
+\item{raw_data}{a data frame containing raw data from telemetry receivers and the Tracker software,
+typically an output from \code{read_txt_data()}}
 
 \item{min_yr}{the minimum acceptable year (e.g. 2017), likely the year at the start of a season. Used to filter
 errant dates that occur within the data pre-season.}
