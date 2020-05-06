@@ -17,7 +17,7 @@
 #' @export
 #' @return a data frame containing a compressed format of the telemetry receiver records
 
-compress_raw_data = function(data_df = NULL,
+compress_raw_data = function(raw_data = NULL,
                              min_yr = 2017,
                              max_yr = NA,
                              filter_valid = T,
