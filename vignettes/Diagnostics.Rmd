@@ -1,0 +1,187 @@
+---
+title: "Diagnostics How-To"
+author: Mike Ackerman, Kevin See
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Diagnostics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, results = "hide"}
+# knitr options
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = TRUE,
+  comment = "#>"
+)
+
+```
+
+```{r setup}
+# load necessary libraries
+library(telemetyr)
+library(dplyr)
+
+```
+
+# Introduction
+
+This vignette describes how to read in various files downloaded during the field season using the Tracker software and then perform various "diagnostics" using data within those files. The diagnostics include summaries of receiver operation times, noise, and voltage/temperature and test tag battery life. Similar diagnostic summaries e.g. of sentinel tag detections could easily be summarised and added to the \code{telemetyr} R package at a later date. 
+
+This vignette will perform our "diagnostics" using the `compressed` dataset available in the `telemetyr` package, which contains our cleaned, rounded data in a compressed format. In addtion, the [Receiver Volt and Temperature](#receiver-volt-and-temperature) section will use the `volt_temp` object.
+
+# Diagnostics
+
+## Receiver Names
+
+Most of the functions in the subsequent sections use an argument `receiver_codes` that can be used to specify which receivers you'd like to evaluate. If `receiver_codes = NULL`, the default, the function will simply be performed on all unique receivers present within the `compress_df`. The following are a few examples of how the user can create an object `receiver_nms`, that can later be fed into the `receiver_codes` argument.
+
+```{r receiver-names}
+# a list of the receiver names; note using this option would 
+# provide the same output as if receiver_codes = NULL
+receiver_nms = unique(compressed$receiver)
+
+# get all unique receivers, but then discard a couple
+receiver_nms = unique(compressed$receiver) %>%
+  setdiff(c("LH1", "CA1"))
+
+# provide an explicit list of receiver codes
+receiver_nms = c("LH1", "CA1", "TR1", "RR1", "NF1")
+
+```
+
+## Receiver Operation Times
+
+We've provided a function, `summarise_timer_data()`, that uses records in the data from timer tags, typically `tag_id` ending in "575" to summarise the hours for which each receiver was operational or not. The function should be performed on the compressed data. Optionally, the `receiver_codes` argument can be used to summarise operational times for a subset of receivers. By default, the function uses the first and last observation within the timer tag data for plotting and the first and last observation for each receiver to calculate the proportion of time a given receiver was operational. However, the user can use the `season_start` and `season_end` arguments ("%Y-%m-%d" i.e. "2018-09-15" format) to override those dates, in which case, the x-axis of the plot and the estimated proportion operational times will reflect those dates. The following are a few examples of how to use the `summarise_timer_data()` function to create a `timer_summ` object.
+
+```{r timer, results = "hide"}
+# summarise timer data - all receivers in compress_df
+timer_summ = summarise_timer_data(compressed)
+
+# summarise timer data - only receiver_codes in receiver_nms
+timer_summ = summarise_timer_data(compressed,
+                                  receiver_codes = receiver_nms)
+
+# summarise timer data - only receiver_codes in receiver_nms, and
+# manually set the season start and season end dates
+timer_summ = summarise_timer_data(compressed,
+                                  receiver_codes = receiver_nms,
+                                  season_start = "20180915",
+                                  season_end   = "20190401")
+```
+
+The resulting `timer_summ` list contains a few objects summarizing operatinal times. The `timer_summ$operations_summ` object contains a record for each hour of the season showing whether a given receiver was operational (`TRUE`) or not (`FALSE`). The `timer_summ$p_operational` data frame provides as estimate for each receiver of the proportion of time that the receiver was operational during the season. Finally, `timer_summ$operations_plot` provides a plot showing the operational times for each receiver. The following are examples of the objects available from `summarise_timer_data()`:
+
+```{r timer-objects, fig.cap = "A plot of receiver operation times. Hours for which the receiver were operational are shown as black."}
+# TRUE/FALSE summary of receiver operations by hour
+head(timer_summ$operations_summ)
+
+# proportion of time that each receiver was operational
+head(timer_summ$p_operational)
+
+# plot showing receiver operation times
+timer_summ$operations_plot       
+
+```
+
+## Receiver Noise
+
+The `summarise_noise_data()` functions summarises "noise" records from each receiver, typically `tag_id` ending in "995". Again, this function should be performed on the compressed data and the `receiver_codes` argument can be used to look at only a subset of receivers. Optionally, the `operations_summary` argument, typically the `operations_summ` object in the `timer_summ` list (see [Receiver Operation Times](#receiver-operation-times) section), can be used to calculate a noise rate (i.e. noise records per hour). If `operations_summary = NULL`, the default, the function will simply tally the number of noise records by receiver and channel.
+
+```{r noise, results = "hide"}
+# summarise noise data - all receivers in compress_df
+noise_summ = summarise_noise_data(compressed)
+
+# summarise noise data - only receiver_codes in receiver_nms
+noise_summ = summarise_noise_data(compressed,
+                                  receiver_codes = receiver_nms)
+
+# summarise noise data - only receiver_codes in receiver_nms,
+# and provide receiver operations summary so that noise can 
+# be converted to a rate (noise/hr)
+noise_summ = summarise_noise_data(compressed,
+                                  receiver_codes = receiver_nms,
+                                  operations_summary = timer_summ$operations_summ)
+
+```
+
+The resulting `noise_summ` list contains two objects. The `noise_tbl` object contains a simple summary of noise by receiver and channel and the `noise_plot` provides a heat map of that table. The following are examples of those objects available from the 2018/2019 season in the Lemhi River dataset:
+
+```{r noise-objects, fig.cap = "A heat map summarising noise records by receiver and channel."}
+# summary of noise by receiver and channel
+head(noise_summ$noise_tbl) 
+
+# a plot of noise_tbl
+noise_summ$noise_plot 
+
+```
+
+## Test Tag Battery Life
+
+The `summarise_test_data()` function is provided to summarise data available from the "test" tags, typically to estimate the battery life for tags, and this function should also be run on the compressed data. A path to the metadata for all tags deployed, including test tags, should be provided to the argument `tag_data` and that .xlsx file should contain two columns `radio_tag_id` and `duty_cycle` containing the tag code and batch information for each tag, respectively. By default, the function will also use dates in the `compress_df` object to determine the appropriate season and only grab test tags for that season.
+
+NOTE: The `summarise_test_data()` function could easily be modified by the authors, in the future, so that the user could provide their own list of test tags and duty cycles.
+
+```{r test, results = "hide"}
+# summarise test tag data
+test_summ = summarise_test_data(compressed,
+                                tag_data = tag_releases)
+
+```
+
+The `summarise_test_data()` function, like the other summary functions, also returns a list containing a handful of objects. The `test_tag_ids` is simply the test tag IDs and duty cycle information extracted for a given season. The `test_df` object is a data frame containing the activation time and time that each tag was determined to be "dead" along with an estimate tag life using all of the records for those test tags. The duty cycle for each tag is also provided for convenience. The `tag_life` provides a quick summary of tag life including the mean standard, deviation, and quartiles, and finally, the `tag_life_p` is a boxplot of battery life information, summarised by duty cycle. The following are examples of those objects from the `summarise_test_data()` function.
+
+```{r test-objects}
+# list of test tags and their duty cycle
+head(test_summ$test_tag_ids)
+
+# a summary of tag life for each test tag
+head(test_summ$test_df)
+
+# summary by duty cycle
+test_summ$tag_life
+
+# a box plot of tag life by duty cycle
+test_summ$tag_life_p   
+
+```
+
+## Receiver Volt and Temperature
+
+Finally, a user may be interested in examining or plotting receiver voltage or temperature data from the receivers. This information is stored in different files within `download_path`, typically ending in *\$\$.txt*, separate from the observation data and not in the `compress_df`. We have provided a function `read_volt_temp_data()` to read in and combine all of those files ending in *\$\$.txt*.
+
+```{r volt-temp, eval = F}
+# read receiver volt & temperature info
+volt_temp_df = read_volt_temp_data(download_path)
+
+```
+
+The user can then view or work with the `vt_df` data frame as they see fit. For quick plotting, we have provided a function `plot_volt_temp_data()` to plot a given variable within `vt_df`, faceted by receiver. The user can use the `column` argument to specify which column in `vt_df` they would like to plot, and again, the `receiver_codes` function can be used to plot only a subset of receivers.
+
+```{r volt-temp-plot, fig.cap = "A plot of voltage, faceted by receiver."}
+# plot voltage information
+volt_p = plot_volt_temp_data(volt_temp,
+                             column = "volt_avg")
+
+# plot voltage information - only receiver_codes in receiver_nms
+volt_p = plot_volt_temp_data(volt_temp,
+                             column = "volt_avg",
+                             receiver_codes = receiver_nms)
+
+# plot temperature information - only receiver_codes in receiver_nms
+temp_p = plot_volt_temp_data(volt_temp,
+                             column = "temp_avg",
+                             receiver_codes = receiver_nms)
+
+# view the last volt_p
+volt_p
+
+```
+
+#### END DIAGNOSTICS VIGNETTE
+
+*Job well done! Old Fashioned, anyone?*
