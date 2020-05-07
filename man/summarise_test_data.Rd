@@ -4,10 +4,7 @@
 \alias{summarise_test_data}
 \title{Summarize Test Tag Information}
 \usage{
-summarise_test_data(
-  compress_df = NULL,
-  tag_data = "data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx"
-)
+summarise_test_data(compress_df = NULL, tag_data = NULL)
 }
 \arguments{
 \item{compress_df}{compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.}
