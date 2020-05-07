@@ -36,6 +36,52 @@
 #' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
 "compressed"
 
+#' Site Metadata
+#'
+#' Metadata for tag release and observation sites for the Lemhi River
+#' juvenile Chinook salmon winter telemetry project
+#'
+#' @format A data frame with 45 rows and 12 variables:
+#' \describe{
+#'   \item{site_name}{name of release or observation site}
+#'   \item{site_code}{site code, PTAGIS code in the case of \code{site_type == rst} | \code{site_type == pit_array}}
+#'   \item{site_type}{rotary screw trap (rst), fixed radio telemetry, or PIT tag array}
+#'   \item{receivers}{a list of receivers that have been used at the site}
+#'   \item{rt_site_type}{for \code{site_type == rt_fixed}, pod or trailer}
+#'   \item{point_y}{latitude, WGS84, decimal degrees}
+#'   \item{point_x}{longitude, WGS84, decimal degrees}
+#'   \item{use17_18}{Was the site used during the 2017/2018 pilot season?}
+#'   \item{use18_19}{Was the site used during the 2018/2019 season?}
+#'   \item{use19_20}{Was the site used during the 2019/2020 season?}
+#'   \item{ptagis_rkm}{river rkm from PTAGIS}
+#'   \item{rt_rkm}{river rkm for Lemhi River telemetry project, \code{site_code == TB} was designated as "000"}
+#' }
+#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+"site_metadata"
+
+#' Tag Release Information
+#'
+#' Data for tags deployed in the Lemhi River juvenile Chinook
+#' salmon winter telemetry project
+#'
+#' @format A data frame with 776 rows and 12 variables:
+#' \describe{
+#'   \item{season}{the year/season the tag was deployed}
+#'   \item{tag_id}{tag ID including frequency and code}
+#'   \item{pit_tag_id}{the PIT tag number also injected into the fish}
+#'   \item{srr}{species, run, rear, uses PTAGIS nomenclature}
+#'   \item{length}{length, millimeters}
+#'   \item{weight}{weight, grams}
+#'   \item{tag_purpose}{Was tag deployed in a fish, used as test tag, or other?}
+#'   \item{release_site}{location that a fish was released at}
+#'   \item{duty_cycle}{the batch or duty cycle of the fish}
+#'   \item{activation_time}{the activation time of the tag, Pacific Standard}
+#'   \item{release_time}{the release time for the fish, Pacific Standard}
+#'   \item{notes}{relevant notes}
+#' }
+#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+"tag_releases"
+
 #' Volt & Temperature Data
 #'
 #' An example dataset containing voltage and temperature data recorded
