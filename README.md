@@ -22,9 +22,9 @@ To use `devtools` you may also have to download and install Rtools. The latest v
 
 Once `devtools` is successfully installed, use the following to install `telemtyr`:
 ```
-devtools::install_github("mackerman44/telemetyr")
+devtools::install_github("mackerman44/telemetyr", build_vignettes = TRUE)
 ```
 
-If you are interested in making contributions to `telemetyr`, consider getting a GitHub account, fork this repository, clone to a local directory, modify, and send me a pull request. I can then review any changes and merge.
+Be sure to include the `build_vignettes = TRUE` argument, as this will ensure that vignettes in the package will be made available. If you are interested in making contributions to `telemetyr`, consider getting a GitHub account, fork this repository, clone to a local directory, modify, and send me a pull request. I can then review any changes and merge.
 
 Cheers!
