@@ -12,9 +12,9 @@
 
 fix_bad_dates = function(raw_data = NULL) {
 
-  stopifnot(!is.null(detect_df))
+  stopifnot(!is.null(raw_data))
 
-  detect_fix = suppressWarnings(detect_df %>%
+  detect_fix = suppressWarnings(raw_data %>%
                                   mutate(hr = lubridate::hour(time),
                                          lead_hr = lead(hr),
                                          lead_date = lead(date),
