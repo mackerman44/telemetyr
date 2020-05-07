@@ -8,7 +8,7 @@
 #' @param operations_summary an optional summary of receiver operation times typically the \code{operations_summ} object
 #' from \code{summarise_timer_data()}
 #'
-#' @import dplyr ggplot2 viridis
+#' @import dplyr ggplot2 viridis forcats
 #' @export
 #' @return summaries of noise information
 
@@ -19,7 +19,7 @@ summarise_noise_data = function(compress_df = NULL,
   cat("Parsing out noise records.\n")
 
   noise_df = compress_df %>%
-    parse_code_ending(code_ending = "575$")
+    parse_code_ending(code_ending = "995$")
 
   # get list of all unique receivers in noise_df
   receiver_nms = sort(unique(noise_df$receiver))
@@ -61,16 +61,17 @@ summarise_noise_data = function(compress_df = NULL,
                              levels = receiver_nms)) %>%
     arrange(receiver)
 
-  # add average nose across channels for each receiver
+  # add average noise across channels for each receiver
   tmp = tmp %>%
     mutate(mn_noise = tmp %>%
-             select(`1`:`9`) %>%
+             select_if(names(.) %in% c(1:9)) %>%
              rowMeans() %>%
              round(1))
 
   # plot noise
   tmp_plot = tmp %>%
-    select(receiver, `1`:`9`) %>%
+    #select(receiver, `1`:`9`) %>%
+    select_if(names(.) %in% c("receiver", 1:9)) %>%
     gather(channel,
            value,
            -receiver) %>%
