@@ -23,14 +23,25 @@ summarise_test_data = function(compress_df = NULL,
                    stringr::str_sub(lubridate::year(max(compress_df$start, na.rm = T)), -2),
                    sep = "_")
 
+  # I need to clean up the below at some time, but should work for now...
   # get information about test tags including code and duty cycle
-  test_tag_ids = readxl::read_excel(tag_data) %>%
-    filter(season == yr_label,
-           tag_purpose == "test") %>%
-    select(radio_tag_id, duty_cycle) %>%
-    mutate(tag_id = stringr::str_extract(radio_tag_id, "[:digit:]*"),
-           tag_id = as.numeric(tag_id)) %>%
-    select(-radio_tag_id)
+  if ( is.character(tag_data) == TRUE ) {
+    test_tag_ids = readxl::read_excel(tag_data) %>%
+      filter(season == yr_label,
+             tag_purpose == "test") %>%
+      select(radio_tag_id, duty_cycle) %>%
+      mutate(tag_id = stringr::str_extract(radio_tag_id, "[:digit:]*"),
+             tag_id = as.numeric(tag_id)) %>%
+      select(-radio_tag_id)
+  } else {
+    test_tag_ids = tag_data %>%
+      filter(season == yr_label,
+             tag_purpose == "test") %>%
+      select(radio_tag_id, duty_cycle) %>%
+      mutate(tag_id = stringr::str_extract(radio_tag_id, "[:digit:]*"),
+             tag_id = as.numeric(tag_id)) %>%
+      select(-radio_tag_id)
+  }
 
   # filter out test tag data from compress_df
   tmp = compress_df %>%
