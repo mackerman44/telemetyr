@@ -160,8 +160,8 @@ timer_summ = summarise_timer_data(compress_df,
 # manually set the season start and season end dates
 timer_summ = summarise_timer_data(compress_df,
                                   receiver_codes = receiver_nms,
-                                  season_start = "2018-09-15",
-                                  season_end   = "2019-04-01")
+                                  season_start = "20180915",
+                                  season_end   = "20190401")
 ```
 
 The resulting `timer_summ` list contains a few objects summarizing operatinal times. The `timer_summ$operations_summ` object contains a record for each hour of the season showing whether a given receiver was operational (`TRUE`) or not (`FALSE`). The `timer_summ$p_operational` data frame provides as estimate for each receiver of the proportion of time that the receiver was operational during the season. Finally, `timer_summ$operations_plot` provides a plot showing the operational times for each receiver. The following are examples of the objects available from `summarise_timer_data()`:

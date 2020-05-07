@@ -7,8 +7,8 @@
 #' @inheritParams prep_capture_history
 #' @inheritParams get_file_nms
 #'
-#' @param season_start format "\%Y-\%m-\%d" the first day of the season that the receivers were considered turned on
-#' @param season_end format "\%Y-\%m-\%d" the final day of the season that the receivers were all turned off
+#' @param season_start character with format "YYYYMMDD" the first day of the season that the receivers were considered turned on
+#' @param season_end character with format "YYYYMMDD" the final day of the season that the receivers were all turned off
 #'
 #' @import dplyr lubridate ggplot2 forcats
 #' @export
@@ -26,9 +26,10 @@ summarise_timer_data = function(compress_df = NULL,
 
   # range of time among timer tags in timer_df
   hr_range = lubridate::floor_date(range(timer_df$start, na.rm = T), unit = "hours")
+
   # if the season_start or season_end parameters are provided, use them to overwrite values in hr_range
-  if(!is.null(season_start)) hr_range[1] <- season_start
-  if(!is.null(season_end))   hr_range[2] <- season_end
+  if(!is.null(season_start)) hr_range[1] <- lubridate::ymd(season_start)
+  if(!is.null(season_end))   hr_range[2] <- lubridate::ymd(season_end)
 
   # hours in hr_range
   n_hrs = difftime(hr_range[2],
