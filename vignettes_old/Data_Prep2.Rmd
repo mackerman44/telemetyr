@@ -1,0 +1,323 @@
+---
+title: "Importing, Cleaning, and Compressing Telemetry Data"
+author:
+  - Mike Ackerman:
+      email: mike.ackerman@merck.com
+      institute: [biomark]
+      correspondence: true
+  - Kevin See:
+      email: kevin.see@merck.com
+      institute: [biomark]
+institute:
+  - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+    bookdown::html_document2:
+      fig_caption: yes
+      fig_height: 6
+      fig_width: 6
+      toc: yes
+      toc_depth: 3
+      toc_float:
+        collapsed: yes
+        smooth_scroll: yes
+      theme: flatly
+      pandoc_args:
+      - --lua-filter=templates/scholarly-metadata.lua
+      - --lua-filter=templates/author-info-blocks.lua
+vignette: >
+  %\VignetteIndexEntry{Fitting a CJS Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+abstract: |
+  This manual contains instructions on how to import data available from radio telemetry receiver and the Tracker software including data cleaning and compression in preparation for data analysis. 
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE, results = "hide"}
+# knitr library and options
+library(knitr)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = TRUE,
+  comment = "#>"
+)
+
+# load necessary libraries
+library(telemetyr)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(magrittr)
+library(purrr)
+
+```
+
+# Introduction
+
+This vignette describes how to import various files downloaded from telemetry receivers, and in our case, from radio receivers and using the Tracker software. We describe how to read in telemetry observation records in both a "raw" .txt format and in a compressed .csv format. We also provide options for reading in on/off information and temperature and voltage records that are available from the receivers. Finally, we describe how to work with the raw .txt observation data to clean and compress it including a description of all of the various arguments used to prepare the telemetry observation data before analysis. All of the functionality described here is available as part of the \code{telemetyr} R package available [here](https://github.com/mackerman44/telemetyr).
+
+# Data Import
+
+We begin by importing each of the various file types that can be downloaded from radio telemetry receivers and using the Tracker software. There are 5 file types available:
+
+* **.HEX**: These are the rawest form of data available from the Tracker software and contain a header containing receiver system parameters that include site information, download data, and receiver settings (among other things) followed by data in hexadecimal format and ASCII text form. We do not deal with the *.HEX* format files further here.
+
+* **.txt**: Contains the raw records or observations from the receiver converted from the *.HEX* file. Can include test or timer tag data, noise, and finally, observations of radio-tagged fish. 
+
+* **.csv**: Contains the same information as in the *.txt* files, except in a compressed format using a combination of default parameters or parameters than can be set in the Tracker software.
+
+* **$.txt**: Information on when receivers were recorded turning ON or OFF.
+
+* **$$.txt**: Time-series data of voltage and air temperature (minimum, maximum, and average) recorded by the receiver.
+
+All of these various file types are stored in a series of folders, typically one for each receiver, which are all catalogued in a single folder for each study season. Each of the receiver folders are named using the 3-character code or ID for that receiver (e.g., CC1, DW1). As an example, let's set a file path to where we stored all of the downloads for the Lemhi River juvenile Chinook telemetry study and 2018/2019 season: 
+
+```{r data-path}
+# E.g. Biomark NAS mapped to S:/
+download_path = "S:/data/telemetry/lemhi/fixed_site_downloads/2018_2019"
+
+```
+
+Following, we provide brief examples of how to import each of the above file types (excluding the *.HEX* files).
+
+## ON/OFF Data
+
+If interested, the user can read in the receiver on/off information using the `read_on_off_data()` function contained in `telemetyr`. The on/off information is contained in the files with a single dollar sign ($) prior to the *.txt* file extension. By default, the `read_on_off_data()` function reads in the on/off information from all folders (receivers) in the `path`, but the `receiver_codes` can be invoked to read in on/off data for a subset of receivers.
+
+```{r read-on-off, eval = F}
+# import on/off data, all receivers
+on_off = read_on_off_data(path = download_path)
+
+# import on/off data, just a few receivers
+on_off = read_on_off_data(path = download_path,
+                          # only Lemhi Hole to North Fork, 2018/2019 sites
+                          receiver_codes = c("LH1", "CA1", "TR1", "RR1", "NF1"))
+
+```
+
+The `on_off_df` object is then available to review on/off times for receivers. However, to date, we have found this information to be unreliable and of limited use.
+
+## Volt and Temperature Data
+
+The volt and temperature data logged by the receivers can be imported using the `read_volt_temp_data()` function available in the `telemetyr` package. This information is in files within `download_path` ending in *\$\$.txt*. The function concatenates all of those files, and in our example, saves them to a new object `volt_temp_df`. As above, the `receiver codes` argument can be invoked to read in the voltage & temperature information for only a subset of receivers.
+
+```{r read-volt-temp, eval = F}
+# import receiver volt & temperature data, all receivers
+volt_temp = read_volt_temp_data(download_path)
+
+# import receiver volt & temperature data, just a few receivers
+volt_temp = read_volt_temp_data(download_path,
+                                receiver_codes = c("LH1", "CA1", "TR1", "RR1", "NF1"))
+
+```
+
+The `volt_temp_df` object is then available for the user to examine or plot as they see fit e.g., using the `plot_volt_temp_data()` function.
+
+## Compressed Data
+
+The `telemetyr` R package is intended to be used on the raw telemetry data stored in the *.txt* files (see [Raw Data](##Raw-Data) section). However, options are provided in the `telemetyr` package to import and deal with the compressed *.csv* format data that can also be downloaded from the Tracker software. Once again, just use the `receiver_codes` argument to import data for only a subset of receivers. The *.csv* format data can be imported using the `read_csv_data()` function as follows:
+
+```{r rec-nms, echo = F}
+# list of receivers
+rec_nms = c("LH1", "CA1", "TR1", "RR1", "NF1")
+
+```
+
+```{r read-csv-data, eval = F}
+# import compressed .csv data, all receivers
+csv_df = read_csv_data(path = download_path)
+
+# list of receivers
+rec_nms = c("LH1", "CA1", "TR1", "RR1", "NF1")
+
+# import compressed .csv data, subset receivers
+csv_data = read_csv_data(path = download_path,
+                         receiver_codes = rec_nms)
+
+```
+
+Note that you could establish your list of receivers at the beginning of your script (e.g. in an object `rec_nms`) and then call that object in all following functions.
+
+## Raw Data
+
+Finally, the `read_txt_data()` function in `telemetyr` can be used to import the raw *.txt* format data available from the Tracker software. The *.txt* data contains a single row for each record or observation logged by the receiver including the time, receiver code, channel and tag code, and signal strength for the record. The `receiver_code` argument is also available in `read_txt_data()` allowing the user to import data for only a subset of receivers. As an example, *.txt* data can be imported using the following:
+
+```{r read-txt-data, eval = F}
+# import compressed .csv data, all receivers
+raw = read_txt_data(path = download_path)
+
+# import compressed .csv data, subset receivers
+raw = read_txt_data(path = download_path,
+                    receiver_codes = rec_nms)
+
+```
+
+From here forward, we will use this *.txt* format data in the `raw` object and perform data cleaning and reduction. The goal is to end up with a clean, compressed dataset that is similar in format to the *.csv* format data available from the Tracker software and is ready for diagnostics, building capture histories, analysis, visualization, etc.
+
+# Data Cleaning
+
+## Dates and Valid Records
+
+The first step of the data cleaning process is to clean up some errant dates in the imported receiver records. We noted that many files have incorrect dates typically at the beginning of the file, perhaps because the timer had not been reset after the previous receiver download. To remedy this, we included the function `clean_raw_data()`, that fixes as many of those dates as possible, based on the valid dates within each file. The function also includes the arguments `min_yr` and `max_yr` to place bounds around the expected dates, to help determine which dates should be corrected.
+
+In addition, `clean_raw_data` includes an option to filter out records that are marked as invalid (`valid == 0`) if `filter_valid == TRUE` (the default). And finally, `clean_raw_data()` fixes any file and record that lists a receiver as `000`.
+
+```{r clean-raw-data}
+# clean the raw object
+clean = clean_raw_data(raw_data = raw,
+                       min_yr = 2018,
+                       max_yr = 2019,
+                       filter_valid = T)
+
+```
+
+PRO TIP: Remember that the `?` function can be invoked at any time to access the help menu for any function in the `telemetyr` package e.g. `?clean_raw_data`.
+
+## Tag Code Rounding
+
+Next, we want to round the tag codes that were logged by the receiver, to the nearest potential code, hopefully to match a tag that was actually deployed (or similarly, a test or sentinel tag or noise record). In some years, tags ending in either a 0 or 5 were deployed, whereas in others, only tags ending in 0. So we've included another function, `round_tag_codes()` that includes an input parameter `round_to` to determine whether to round detected tag codes to the nearest 5 or nearest 10. Note that `round_tag_codes()` function creates a new variable **tag_id** with the rounded codes rather than overwriting the existing variable **tag_code** in `raw`, allowing the user to examine cases where the unrounded and rounded codes do not match. The variable was re-named to **tag_id**, because after which we assume it matches up to a tag ID from a tag actually deployed.
+
+```{r round-tag-codes}
+# round tag codes to nearest 5
+clean_round = round_tag_codes(data_df = clean,
+                              round_to = 5)
+
+```
+
+# Data Reduction
+
+We now have a dataset with clean dates, filtered for valid records, and with rounded tag codes, in this case the `clean_round` object. But now we want to compress those records into windows of time, such that for each **tag_id**, we record how many observations occurred within that window. This can be accomplished using the `compress_txt_data()` function. By default, the time window is 2 minutes, but that can easily be changed by the user using the `max_min` argument, which is the maximum number of minutes between detections of a **tag_id** before it's considered a different "group" of detections.
+
+```{r compress-data, eval = F}
+# compress records
+compressed = compress_txt_data(data_df = clean_round,
+                               max_min = 2,            # the default
+                               assign_week = F)        # described below
+
+```
+
+## Assign Study Week to Observations
+
+The `compress_txt_data()` has an additional feature that allows the user to assign a study week to each observation by setting `assign_week = TRUE`. If assigning week numbers, the data when week numbering should start can be set using `week_base` and using "MMDD" format (e.g. the default "0901"). Setting a consistent `week_base` among study year would allow the user to also compare the timing of observations across years. Finally, if assigning weeks, the user can determine whether the week should be assigned based on the `first` or `last` time a tag was detected on a receiver using the `append_week` argument.
+
+```{r assign-week}
+# compress records and assign week
+compressed = compress_txt_data(data_df = clean_round,
+                               # the default settings
+                               max_min = 2,
+                               assign_week = T,
+                               week_base = "0901",
+                               append_week = "first")
+
+```
+
+# The `compress_raw_data()` Function
+
+For your convenience, all of the functionality in the [Data Cleaning](#Data-Cleaning) and [Data Reduction](#Data-Reduction) sections have been included in the wrapper function `compress_raw_data()`. The function is a wrapper for `clean_raw_data()`, `round_tag_codes()`, and `compress_txt_data()` to clean records, round tag codes, and compress observations in one fell swoop and inherits all of the arguments used by those functions. The functionality of `compress_raw_data()` is similar to the routine that Tracker uses to compress *.txt* format data to *.csv*. 
+
+```{r compress-raw-data, eval = F}
+# clean data, round tag codes, compress data, and assign weeks
+compressed = compress_raw_data(raw_data = raw,
+                               min_yr = 2018,
+                               max_yr = 2019,
+                               filter_valid = T,
+                               round_to = 5,
+                               max_min = 2,
+                               assign_week = T,
+                               week_base = "0901",
+                               append_week = "first")
+
+```
+
+Note that the compressed data output by `clean_txt_data()` and `clean_raw_data()` are of the same format and match the format of the data provided by the *.csv* files downloaded using the Tracker software.
+
+The resulting compressed data look something like this:
+
+```{r view-data}
+compressed %>%
+  head()
+
+```
+
+# Capture Histories
+
+Now that we have our `compressed` dataset, the next major step towards many (or even most?) data analyses and visualizations is to prepare our cleaned observations into capture histories. To do that, we need additional information about our observation sites and released tags.
+
+## Telemetry Sites
+
+Next, let's pull in some metadata related to the receivers we used. We've included metadata for all release and observation sites used in the Lemhi River study, as an example, in an object called `site_metadata`. Using the following we can pull out metadata for those telemetry sites we've been using thus far (i.e. sites with receivers in `rec_nms`), plus the lower Lemhi River screw trap where tag releases occurred during the 2017/2018 season.
+
+```{r site-meta}
+# pull our sites out of site_metadata
+example_sites = site_metadata %>%
+  filter(site_code %in% c("LH", "CA", "TR", "RR", "NF"))
+
+# view example_sites
+example_sites
+
+```
+
+## Released tags
+
+We also need data about the tags releases each year. Similar to our site information, we've included tag release information from the Lemhi River study in an object `tag_releases` within the `telemetyr` package. Let's extract information from `tag_releases` for those tags released during the 2018/2019 season. In addition, our example `raw` and `compressed` datasets only contain records for radio tag IDs that start with (i.e. frequencies) 2, 5 or 8. This was simply done to reduce the example dataset to a more reasonable size. That is reflected in the following:
+
+```{r tag_release_data}
+# extract 2017/2018 tag releases
+example_tags = tag_releases %>%
+  filter(season == "18_19") %>%
+  filter(str_detect(tag_id, "^2|^5|^8"))
+
+# view example_tags
+head(example_tags)
+
+```
+
+## Prepare Capture Histories
+
+Combining the above with the `compressed` detections, we can put together capture histories for fish, using the function `prep_capture_history()`. One of the input parameters `delete_upstream` can be used to delete upstream movement/detection of fish, making the assumption that fish are only moving downstream. Additionally, a `n_obs_valid` argument is available to provide a minimum number of records made at a location for the observation to be considered valid; currently the default `n_obs_valid` is set to 3.  
+
+```{r prep-cap-hist}
+# prep sites for prep_capture_history()
+cjs_sites = example_sites %>%
+  select(site = site_code, 
+         receivers) %>%
+  group_by(site) %>%
+  nest() %>%
+  ungroup() %>%
+  mutate(receiver = map(data,
+                            .f = function(x) {
+                              str_split(x, "\\,") %>%
+                                extract2(1) %>%
+                                str_trim()
+                            })) %>%
+      select(-data) %>%
+      unnest(cols = receiver) %>%
+      mutate_at(vars(site, receiver),
+                list(~ factor(., levels = unique(.))))
+
+# prepare capture histories
+cap_hist_list = prep_capture_history(compressed,
+                                     tag_data = example_tags,
+                                     n_obs_valid = 3,
+                                     rec_site = cjs_sites,
+                                     delete_upstream = T,
+                                     location = "site",
+                                     output_format = "all")
+
+```
+
+The `prep_capture_history()` function returns a list of 3 objects including a capture history in wide format (one row per tag, columns for each detection site), a capture history in long format (one row per tag x detection site combination) and a dataframe containing all of the metadata for the tags implanted in fish that season. For the CJS models, we are mostly interested in the capture histories in wide format, but the long format can be used for other analyses or visualizations. We have saved examples of each of those three objects:
+
+```{r view-cap-hist}
+# view the objects in cap_hist_list
+head(ch_wide, 5)
+head(ch_long, 5)
+head(tag_df, 5)
+
+```
+
+#### END DATA PREP VIGNETTE
+
+*Good work! Now go get yourself a margarita!*
