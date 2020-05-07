@@ -26,7 +26,7 @@ clean_raw_data = function(raw_data = NULL,
 
   stopifnot(!is.null(raw_data))
 
-  cat("Formating dates \n")
+  cat("Formatting dates \n")
 
   raw_data = suppressWarnings(raw_data %>%
                                 mutate(orig_date = date,
