@@ -11,7 +11,7 @@
 #' @return summaries of test tag data
 
 summarise_test_data = function(compress_df = NULL,
-                               tag_data = 'data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx') {
+                               tag_data = NULL) {
 
   stopifnot(!is.null(compress_df),
             !is.null(tag_data))
@@ -37,10 +37,7 @@ summarise_test_data = function(compress_df = NULL,
     test_tag_ids = tag_data %>%
       filter(season == yr_label,
              tag_purpose == "test") %>%
-      select(radio_tag_id, duty_cycle) %>%
-      mutate(tag_id = stringr::str_extract(radio_tag_id, "[:digit:]*"),
-             tag_id = as.numeric(tag_id)) %>%
-      select(-radio_tag_id)
+      select(tag_id, duty_cycle)
   }
 
   # filter out test tag data from compress_df
