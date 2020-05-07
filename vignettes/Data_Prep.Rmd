@@ -44,9 +44,6 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-```
-
-```{r libraries, message = F}
 # load necessary libraries
 library(telemetyr)
 library(dplyr)
@@ -122,7 +119,7 @@ The `volt_temp_df` object is then available for the user to examine or plot as t
 
 The `telemetyr` R package is intended to be used on the raw telemetry data stored in the *.txt* files (see [Raw Data](##Raw-Data) section). However, options are provided in the `telemetyr` package to import and deal with the compressed *.csv* format data that can also be downloaded from the Tracker software. Once again, just use the `receiver_codes` argument to import data for only a subset of receivers. The *.csv* format data can be imported using the `read_csv_data()` function as follows:
 
-```{r rec-nms, echo = F, eval = T}
+```{r rec-nms, echo = F}
 # list of receivers
 rec_nms = c("LH1", "CA1", "TR1", "RR1", "NF1")
 
@@ -222,7 +219,7 @@ For your convenience, all of the functionality in the [Data Cleaning](#Data-Clea
 
 ```{r compress-raw-data, eval = F}
 # clean data, round tag codes, compress data, and assign weeks
-compressed = compress_raw_data(data_df = raw,
+compressed = compress_raw_data(raw_data = raw,
                                min_yr = 2018,
                                max_yr = 2019,
                                filter_valid = T,
@@ -311,13 +308,13 @@ cap_hist_list = prep_capture_history(compressed,
 
 ```
 
-The `prep_capture_history()` function returns a list of 3 objects including a capture history in wide format (one row per tag, columns for each detection site), a capture history in long format (one row per tag x detection site combination) and a dataframe containing all of the metadata for the tags implanted in fish that season. For the CJS models, we are mostly interested in the capture histories in wide format, but the long format can be used for other analyses or visualizations.
+The `prep_capture_history()` function returns a list of 3 objects including a capture history in wide format (one row per tag, columns for each detection site), a capture history in long format (one row per tag x detection site combination) and a dataframe containing all of the metadata for the tags implanted in fish that season. For the CJS models, we are mostly interested in the capture histories in wide format, but the long format can be used for other analyses or visualizations. We have saved examples of each of those three objects:
 
 ```{r view-cap-hist}
 # view the objects in cap_hist_list
-head(cap_hist_list$ch_wide, 5)
-head(cap_hist_list$ch_long, 5)
-head(cap_hist_list$tag_df, 5)
+head(ch_wide, 5)
+head(ch_long, 5)
+head(tag_df, 5)
 
 ```
 
