@@ -51,8 +51,7 @@ summarise_noise_data = function(compress_df = NULL,
                   summarise(hours = sum(operational)) %>%
                   ungroup()) %>%
       ungroup() %>%
-      mutate_at(vars('1':'9'), funs(. / hours)) %>%
-      mutate_at(2:10, round, 1)
+      mutate_if(names(.) %in% c('1':'9'), funs(. / hours))
 
   } # end operations_summary argument
 
