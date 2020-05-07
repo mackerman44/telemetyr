@@ -1,0 +1,324 @@
+---
+title: "Fitting a CJS Model"
+author: Kevin See, Mike Ackerman
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{CJS}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, results = "hide"}
+# knitr options
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = TRUE,
+  comment = "#>"
+)
+
+```
+
+```{r setup}
+# load necessary libraries
+library(telemetyr)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(magrittr)
+library(janitor)
+library(rjags)
+library(postpack)
+
+```
+
+# Introduction
+
+We would like to estimate survival for each reach (between each RT site), using a Cormack Jolly-Seber (CJS) model. 
+
+```{r load-ch-wide}
+# pull out the wide capture history
+cap_hist = ch_wide
+tag_df = tag_df
+
+```
+
+Note that there may be tagged fish that never appear in the capture history, because they were never detected. In this example, that includes `r sum(!tag_df$tag_id %in% cap_hist$tag_id)` tags that we'll want to account for. We need to construct a capture history for those tags with all zeros. In addition, for this example we will focus only on those fish implanted with a radio tag from batch_1, so we want to exclude the tags with an "on_off" duty cycle. 
+
+```{r finalize-cap-history}
+cap_hist %<>%
+  full_join(tag_df %>%
+               filter(duty_cycle == 'batch_1') %>%
+               select(tag_id),
+            by = "tag_id") %>%
+  # anti_join(tag_df %>%
+  #              filter(duty_cycle == 'on_off') %>%
+  #              select(tag_id),
+  #           by = "tag_id") %>%
+  mutate(ch_width = nchar(cap_hist)) %>%
+  fill(ch_width) %>% 
+  rowwise() %>%
+  mutate(cap_hist = if_else(is.na(cap_hist),
+                            as.character(paste0(rep(0, ch_width), collapse = '')),
+                            cap_hist)) %>%
+  select(-ch_width) %>%
+  mutate_at(vars(-tag_id, -cap_hist),
+            list(~ if_else(is.na(.), 0, .)))
+```
+
+```{r, echo = F, eval = F}
+cap_hist %>%
+  group_by(cap_hist) %>%
+  summarise(freq = n()) %>%
+  arrange(desc(freq))
+```
+
+# Cormack Jolly-Seber Model
+
+Now that our capture histories are prepared, we can start constructing the CJS model, and the input data for it. First, we translate the wide capture histories into an $N \times J$ matrix, where $N$ is the number of tags used in the model, and $J$ is the number of detection points, including an initial release point (which must have a detection of 1 by definition). Next, we need to determine at which detection points the fish was known to be alive, because it had been detected there or further downstream. The `telemetyr` package contains a function to do that, called `known_alive()`.
+
+```{r jags-data}
+y = cap_hist %>%
+  mutate(Rel = 1) %>%
+  select(tag_id, cap_hist, Rel, everything()) %>%
+  select(-tag_id, -cap_hist) %>%
+  as.matrix()
+
+jags_data = list(
+  N = nrow(y),
+  J = ncol(y),
+  y = y,
+  z = known_alive(y)
+)
+
+```
+
+Next we specify the JAGS model. For this example, we will fit a model with different detection probabilities for each site, and different survival probabilities between each site. We will also calculate the cummulative survival up to each site.
+
+```{r specify-jags-model}
+jags_model = function() {
+  # PRIORS
+  phi[1] <- 1
+  p[1] <- 1
+  for(j in 2:J) {
+    phi[j] ~ dbeta(1,1) # survival probability between arrays
+    p[j] ~ dbeta(1,1)   # detection probability at each array
+  }
+
+  # LIKELIHOOD - Here, p and phi are global
+  for (i in 1:N) {
+    # j = 1 is the release occasion - known alive; i.e., the mark event
+    for (j in 2:J) {
+      # survival process: must have been alive in j-1 to have non-zero pr(alive at j)
+      z[i,j] ~ dbern(phi[j] * z[i,j-1]) # fish i in period j is a bernoulli trial
+      
+      # detection process: must have been alive in j to observe in j
+      y[i,j] ~ dbern(p[j] * z[i,j]) # another bernoulli trial
+    }
+  }
+  
+  # DERIVED QUANTITIES
+  # survivorship is probability of surviving from release to a detection occasion
+  survship[1] <- 1 # the mark event; everybody survived to this point
+  for (j in 2:J) { # the rest of the events
+    survship[j] <- survship[j-1] * phi[j]
+  }
+}
+
+# write model to a text file
+jags_file = "model.txt"
+write_model(jags_model, jags_file)
+
+# specify which parameters to track
+jags_params = c("phi", "p", "survship")
+```
+
+We then fit the JAGS model, and obtain an `mcmc.list` of samples from the posterior.
+
+```{r, eval = F, echo = F}
+# using jagsUI package
+library(jagsUI)
+post = jagsUI::jags.basic(jags_data,
+                          parameters.to.save = jags_params,
+                          model.file = jags_file,
+                          n.chains = 4,
+                          n.adapt = 1000,
+                          n.iter = 10000,
+                          n.burnin = 5000,
+                          n.thin = 10)
+```
+
+```{r post-samples}
+# using rjags package
+jags = jags.model(jags_file,
+                  data = jags_data,
+                  n.chains = 4,
+                  n.adapt = 1000)
+# burnin
+update(jags, n.iter = 2500)
+# posterior sampling
+post = coda.samples(jags,
+                    jags_params,
+                    n.iter = 2500,
+                    thin = 5)
+
+```
+
+## Results 
+
+We can extract summary statistics from the posteriors, and construct plots of detection probablities, survival probabilities and cummulative survival probabilities. 
+
+```{r create-figures}
+param_summ = post_summ(post,
+          jags_params,
+          Rhat = T,
+          ess = T) %>%
+  t() %>%
+  as_tibble(rownames = "param") %>%
+  mutate(cv = sd / mean)
+
+surv_p = param_summ %>%
+  filter(grepl('survship', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Cummulative Survival')
+
+phi_p = param_summ %>%
+  filter(grepl('phi', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Survival From Previous Site')
+
+det_p = param_summ %>%
+  filter(grepl('^p\\[', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Detection Probability')
+
+```
+
+```{r detect-fig}
+det_p
+```
+
+```{r phi-fig}
+phi_p
+```
+
+```{r survival-fig}
+surv_p
+```
+
+## Diagnostics 
+
+We can also look at some diagnostics to assess model convergence. These plots use the `postpack` package. 
+
+```{r diag-phi, fig.width = 8, fig.height = 8}
+diag_plots(post, "phi",
+           layout = "5x3")
+```
+
+```{r diag-surv, fig.width = 8, fig.height = 8}
+diag_plots(post, "survship",
+           layout = "5x3")
+```
+
+```{r diag-p, fig.width = 8, fig.height = 8}
+diag_plots(post, "^p[",
+           layout = "5x3")
+```
+
+
+```{r diagnostics}
+library(mcmcr)
+my_mcmcr = as.mcmcr(post)
+
+# get Rhat statistics for all parameters
+conv_df = rhat(my_mcmcr,
+               by = 'term',
+               as_df = T) %>%
+  left_join(esr(my_mcmcr,
+                by = 'term',
+                as_df = T)) %>%
+  # which parameters have converged and which haven't?
+  left_join(converged(my_mcmcr, 
+                      by = 'term',
+                      as_df = T))
+
+# how many parameters did not converge?
+sum(conv_df$converged == F)
+
+# conv_df %>%
+#   arrange(esr)
+
+```
+
+```{r diagnostics-ggmcmc, eval = F, echo = F}
+library(ggmcmc)
+my_ggs = ggs(post,
+             family = c('p')) %>%
+  filter(grepl('^p\\[', Parameter))
+             # family = c('survship'))
+             # family = c('phi'))
+
+dens_p = ggs_density(my_ggs) +
+  stat_function(fun = function(x) dbeta(x, 1, 1),
+                color = 'black') +
+  facet_wrap(~ Parameter)
+trace_p = ggs_traceplot(my_ggs) +
+  facet_wrap(~ Parameter)
+run_mean_p = ggs_running(my_ggs)
+rhat_p = ggs_Rhat(my_ggs)
+geweke_p = ggs_geweke(my_ggs)
+ggs_autocorrelation(my_ggs)
+ggs_crosscorrelation(my_ggs)
+
+```
+
+# Assumptions and Caveats
+
+## Assumptions
+
+The assumptions behind a CJS model include:
+
+1. Every marked animal present in the population at sampling period $i$ has the same probability $p_i$ of being captured or resighted.
+1. Every marked animal present in the population at sampling period $i$ has the same probability $\phi_i$ of survival until sampling period $i+1$.
+1. Marks are neither lost nor overlooked and are recorded correctly.
+1. Sampling periods are instantaneous (in reality they are very short periods) and recaptured animals are released immediately.
+1. All emigration from the sampled area is permanent.
+1. The fate of each animal with respect to capture and survival probability is independent of the fate of any other animal.
+
+Some of these become questionable when dealing with multiple batches of tags that turn on/off at different times. In particular, the 1st and 4th assumption are probably violated. There may be ways to construct the JAGS model to handle that, but it should be noted. 
+
+## Caveats
+
+Some of the caveats to keep in mind with CJS models include:
+
+* Estimates of $\phi$ are really estimates of *apparent* survival. $1 - \phi_i$ represents the chances that an animal either died in reach $i - 1$, or left the population (became unavailable for detection). The latter is analogous to a fish that hunkers down in a reach to ride out the winter. It may be surviving very well within that reach, or it may have died there, there is no way to tell from only the radio tag observations. 
+
+#### END CJS VIGNETTE
+
+*Jolly good work! That deserves a gin and tonic.*
