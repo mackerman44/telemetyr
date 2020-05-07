@@ -82,6 +82,65 @@
 #' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
 "tag_releases"
 
+#' Capture Histories - Long Format
+#'
+#' Capture histories, in long format, for 5 receivers and tags
+#' in \code{tag_df} from Lemhi River juvenile Chinook salmon winter
+#' telemetry project
+#'
+#' @format A data frame with 149 rows and 5 variables:
+#' \describe{
+#'   \item{tag_id}{tag ID including frequency and code}
+#'   \item{loc}{observation location, site or receiver}
+#'   \item{first_obs}{the date and time of first observation at loc}
+#'   \item{last_obs}{the date and time of last observation at loc}
+#'   \item{n}{the number of records that occurred between \code{first_obs} and \code{last_obs}}
+#' }
+#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+"ch_long"
+
+#' Capture Histories - Wide Format
+#'
+#' Capture histories, in wide format, for 5 receivers and tags
+#' in \code{tag_df} from Lemhi River juvenile Chinook salmon winter
+#' telemetry project
+#'
+#' @format A data frame with 44 rows and 7 variables:
+#' \describe{
+#'   \item{tag_id}{tag ID including frequency and code}
+#'   \item{cap_hist}{the concatenated capture history}
+#'   \item{LH}{the site's code; Lemhi Hole}
+#'   \item{CA}{the site's code; Carmen Creek}
+#'   \item{TR}{the site's code; Tower Rock}
+#'   \item{RR}{the site's code; Red Rock}
+#'   \item{NF}{the site's code; North Fork}
+#' }
+#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+"ch_wide"
+
+#' Tag Releases - For Capture Histories
+#'
+#' A subset of \code{tag_releases} for those tags included
+#' in \code{ch_long} and \code{ch_wide}
+#'
+#' @format A data frame with 101 rows and 12 variables:
+#' \describe{
+#'   \item{season}{the year/season the tag was deployed}
+#'   \item{tag_id}{tag ID including frequency and code}
+#'   \item{pit_tag_id}{the PIT tag number also injected into the fish}
+#'   \item{srr}{species, run, rear, uses PTAGIS nomenclature}
+#'   \item{length}{length, millimeters}
+#'   \item{weight}{weight, grams}
+#'   \item{tag_purpose}{Was tag deployed in a fish, used as test tag, or other?}
+#'   \item{release_site}{location that a fish was released at}
+#'   \item{duty_cycle}{the batch or duty cycle of the fish}
+#'   \item{activation_time}{the activation time of the tag, Pacific Standard}
+#'   \item{release_time}{the release time for the fish, Pacific Standard}
+#'   \item{notes}{relevant notes}
+#' }
+#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+"tag_df"
+
 #' Volt & Temperature Data
 #'
 #' An example dataset containing voltage and temperature data recorded
