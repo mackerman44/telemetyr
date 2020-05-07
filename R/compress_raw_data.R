@@ -29,7 +29,7 @@ compress_raw_data = function(raw_data = NULL,
 
   # cat("Cleaning data and fixing dates.\n")
 
-  clean_df = data_df %>%
+  clean_df = raw_data %>%
     clean_raw_data(min_yr = min_yr,
                    max_yr = max_yr,
                    filter_valid = filter_valid)
