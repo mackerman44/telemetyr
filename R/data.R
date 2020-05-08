@@ -1,23 +1,3 @@
-#' Raw .txt Format Telemetry Data
-#'
-#' An example dataset containing observations for 5 receivers
-#' and 3 frequencies, 2018/2019 season
-#'
-#' @format A data frame with 2008291 rows and 9 variables:
-#' \describe{
-#'   \item{file_name}{the full file path}
-#'   \item{file}{the file name}
-#'   \item{date}{date in "\%d\%/\%m\%/\%y\%" format}
-#'   \item{time}{time in "\%H:\%M" format, PST}
-#'   \item{receiver}{receiver code}
-#'   \item{valid}{is observation valid, 1 = T, 0 = F}
-#'   \item{frequency}{channel of record or observation}
-#'   \item{tag_code}{receiver code}
-#'   \item{signal_strength}{receiver code}
-#' }
-#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
-"raw"
-
 #' Compressed Telemetry Data
 #'
 #' An example dataset containing compressed observations
