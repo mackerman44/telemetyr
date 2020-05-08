@@ -6,9 +6,6 @@
 # this ignores temporary files that show up on my computer when I open a document
 ~$*
 
-# ignore the JAGS model created when running the CJS vignette
-vignettes/model.txt
-
 inst/doc
 doc
 Meta

@@ -1,2 +1,5 @@
 *.html
 *.R
+
+# ignore the JAGS model created when running the CJS vignette
+model.txt
