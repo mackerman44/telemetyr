@@ -238,17 +238,17 @@ We can also look at some diagnostics to assess model convergence. These plots us
 
 ```{r diag-phi, fig.width = 8, fig.height = 8}
 diag_plots(post, "phi",
-           layout = "5x3")
+           layout = "4x2")
 ```
 
 ```{r diag-surv, fig.width = 8, fig.height = 8}
 diag_plots(post, "survship",
-           layout = "5x3")
+           layout = "4x2")
 ```
 
 ```{r diag-p, fig.width = 8, fig.height = 8}
 diag_plots(post, "^p[",
-           layout = "5x3")
+           layout = "4x2")
 ```
 
 
