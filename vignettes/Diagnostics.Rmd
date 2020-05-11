@@ -76,7 +76,7 @@ timer_summ = summarise_timer_data(compressed,
 
 The resulting `timer_summ` list contains a few objects summarizing operatinal times. The `timer_summ$operations_summ` object contains a record for each hour of the season showing whether a given receiver was operational (`TRUE`) or not (`FALSE`). The `timer_summ$p_operational` data frame provides as estimate for each receiver of the proportion of time that the receiver was operational during the season. Finally, `timer_summ$operations_plot` provides a plot showing the operational times for each receiver. The following are examples of the objects available from `summarise_timer_data()`:
 
-```{r timer-objects, fig.cap = "A plot of receiver operation times. Hours for which the receiver were operational are shown as black."}
+```{r timer-objects, fig.cap = "A plot of receiver operation times."}
 # TRUE/FALSE summary of receiver operations by hour
 head(timer_summ$operations_summ)
 
