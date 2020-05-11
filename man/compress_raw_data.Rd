@@ -10,6 +10,8 @@ compress_raw_data(
   max_yr = NA,
   filter_valid = T,
   round_to = 10,
+  timer_tag_code = "57",
+  noise_tag_code = "99",
   max_min = 2,
   assign_week = T,
   week_base = "0901",
@@ -33,6 +35,10 @@ raw Tracker software .txt downloads.}
 \item{round_to}{the integer that the user would like to round \code{tag_code} to. Currently supports
 either 5 or 10. If \code{round_to = 5}, will round to the nearest 5. If \code{round_to = 10}, will round
 to the nearest 0.}
+
+\item{timer_tag_code}{the beginning of the tag code associated with timer tags. Default value is "57".}
+
+\item{noise_tag_code}{the beginning of the tag code associated with noise tags. Default value is "99".}
 
 \item{max_min}{maximum number of minutes between detections of a tag before it's considered a
 different "group" of detections. Default is 2.}

@@ -8,6 +8,8 @@
 #' @param round_to the integer that the user would like to round \code{tag_code} to. Currently supports
 #' either 5 or 10. If \code{round_to = 5}, will round to the nearest 5. If \code{round_to = 10}, will round
 #' to the nearest 0.
+#' @param timer_tag_code the beginning of the tag code associated with timer tags. Default value is "57".
+#' @param noise_tag_code the beginning of the tag code associated with noise tags. Default value is "99".
 #'
 #' @import dplyr stringr tidyr
 #' @export
@@ -15,7 +17,9 @@
 #' containing the fixed tag IDs
 
 round_tag_codes = function(data_df = NULL,
-                           round_to = 5) {
+                           round_to = 5,
+                           timer_tag_code = "57",
+                           noise_tag_code = "99") {
 
   stopifnot(!is.null(data_df))
 
@@ -62,7 +66,21 @@ round_tag_codes = function(data_df = NULL,
       mutate(tag_id = janitor::round_half_up(tag_id / 10) * 10) %>%
       select(-other_digits,
              -last_digit)
+
   }
+
+  # fix timer tag and noise tag codes
+  rnd_data = rnd_data %>%
+    filter(grepl(paste0("^", timer_tag_code), tag_code)) %>%
+    mutate(tag_id = paste0(frequency, timer_tag_code, 5),
+           tag_id = as.numeric(tag_id)) %>%
+    bind_rows(rnd_data %>%
+                filter(grepl(paste0("^", noise_tag_code), tag_code)) %>%
+                mutate(tag_id = paste0(frequency, noise_tag_code, 5),
+                       tag_id = as.numeric(tag_id))) %>%
+    bind_rows(rnd_data %>%
+                filter(!grepl(paste0("^", timer_tag_code), tag_code),
+                       !grepl(paste0("^", noise_tag_code), tag_code)))
 
   return(rnd_data)
 }

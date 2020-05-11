@@ -22,6 +22,8 @@ compress_raw_data = function(raw_data = NULL,
                              max_yr = NA,
                              filter_valid = T,
                              round_to = 10,
+                             timer_tag_code = "57",
+                             noise_tag_code = "99",
                              max_min = 2,
                              assign_week = T,
                              week_base = "0901",
@@ -37,7 +39,9 @@ compress_raw_data = function(raw_data = NULL,
   cat('Rounding tag codes.\n')
 
   round_df = clean_df %>%
-    round_tag_codes(round_to = round_to)
+    round_tag_codes(round_to = round_to,
+                    timer_tag_code = timer_tag_code,
+                    noise_tag_code = noise_tag_code)
 
   cat("Compressing observations.\n")
 
