@@ -5,7 +5,7 @@
 \alias{raw}
 \title{Raw .txt Format Telemetry Data}
 \format{
-A data frame with 2008291 rows and 9 variables:
+A data frame with 696930 rows and 9 variables:
 \describe{
   \item{file_name}{the full file path}
   \item{file}{the file name}
@@ -26,6 +26,6 @@ raw
 }
 \description{
 An example dataset containing observations for 5 receivers
-and 3 frequencies, 2018/2019 season
+and 1 frequency, 2018/2019 season
 }
 \keyword{datasets}
