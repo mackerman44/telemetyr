@@ -142,7 +142,7 @@ The first step of the data cleaning process is to clean up some errant dates in 
 
 In addition, `clean_raw_data` includes an option to filter out records that are marked as invalid (`valid == 0`) if `filter_valid == TRUE` (the default). And finally, `clean_raw_data()` fixes any file and record that lists a receiver as `000`.
 
-```{r clean-raw-data}
+```{r clean-raw-data, eval = F}
 # clean the raw object
 clean = clean_raw_data(raw_data = raw,
                        min_yr = 2018,
@@ -155,9 +155,9 @@ PRO TIP: Remember that the `?` function can be invoked at any time to access the
 
 ## Tag Code Rounding
 
-Next, we want to round the tag codes that were logged by the receiver, to the nearest potential code, hopefully to match a tag that was actually deployed (or similarly, a test or sentinel tag or noise record). In some years, tags ending in either a 0 or 5 were deployed, whereas in others, only tags ending in 0. So we've included another function, `round_tag_codes()` that includes an input parameter `round_to` to determine whether to round detected tag codes to the nearest 5 or nearest 10. Note that `round_tag_codes()` function creates a new variable **tag_id** with the rounded codes rather than overwriting the existing variable **tag_code** in `raw`, allowing the user to examine cases where the unrounded and rounded codes do not match. The variable was re-named to **tag_id**, because after which we assume it matches up to a tag ID from a tag actually deployed.
+Next, we want to round the tag codes that were logged by the receiver, to the nearest potential code, hopefully to match a tag that was actually deployed (or similarly, a test or sentinel tag or noise record). In some years, tags ending in either a 0 or 5 were deployed, whereas in others, only tags ending in 0. So we've included another function, `round_tag_codes()` that includes an input parameter `round_to` to determine whether to round detected tag codes to the nearest 5 or nearest 10. Note that `round_tag_codes()` function creates a new variable **tag_id** with the rounded codes rather than overwriting the existing variable **tag_code** in `raw`, allowing the user to examine cases where the unrounded and rounded codes do not match. The variable was re-named to **tag_id**, because after which we assume it matches up to a tag ID from a tag actually deployed. If the user chooses to round to the nearest 10, a few special tags (timer tags and noise tags) are still rounded to the nearest 5 (i.e. all tag codes with "57-" have a **tag_id** of "575").
 
-```{r round-tag-codes}
+```{r round-tag-codes, eval = F}
 # round tag codes to nearest 5
 clean_round = round_tag_codes(data_df = clean,
                               round_to = 5)
@@ -180,7 +180,7 @@ compressed = compress_txt_data(data_df = clean_round,
 
 The `compress_txt_data()` has an additional feature that allows the user to assign a study week to each observation by setting `assign_week = TRUE`. If assigning week numbers, the data when week numbering should start can be set using `week_base` and using "MMDD" format (e.g. the default "0901"). Setting a consistent `week_base` among study year would allow the user to also compare the timing of observations across years. Finally, if assigning weeks, the user can determine whether the week should be assigned based on the `first` or `last` time a tag was detected on a receiver using the `append_week` argument.
 
-```{r assign-week}
+```{r assign-week, eval = F}
 # compress records and assign week
 compressed = compress_txt_data(data_df = clean_round,
                                # the default settings
@@ -242,7 +242,7 @@ example_sites
 We also need data about the tags releases each year. Similar to our site information, we've included tag release information from the Lemhi River study in an object `tag_releases` within the `telemetyr` package. Let's extract information from `tag_releases` for those tags released during the 2018/2019 season. In addition, our example `raw` and `compressed` datasets only contain records for radio tag IDs that start with (i.e. frequencies) 2, 5 or 8. This was simply done to reduce the example dataset to a more reasonable size. That is reflected in the following:
 
 ```{r tag_release_data}
-# extract 2017/2018 tag releases
+# extract 2018/2019 tag releases
 example_tags = tag_releases %>%
   filter(season == "18_19") %>%
   filter(str_detect(tag_id, "^2|^5|^8"))
