@@ -88,13 +88,14 @@
 #' in \code{tag_df} from Lemhi River juvenile Chinook salmon winter
 #' telemetry project
 #'
-#' @format A data frame with 149 rows and 5 variables:
+#' @format A data frame with 52 rows and 6 variables:
 #' \describe{
 #'   \item{tag_id}{tag ID including frequency and code}
 #'   \item{loc}{observation location, site or receiver}
 #'   \item{first_obs}{the date and time of first observation at loc}
 #'   \item{last_obs}{the date and time of last observation at loc}
 #'   \item{n}{the number of records that occurred between \code{first_obs} and \code{last_obs}}
+#'   \item{week}{the week number the first observation is from}
 #' }
 #' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
 "ch_long"
@@ -105,7 +106,7 @@
 #' in \code{tag_df} from Lemhi River juvenile Chinook salmon winter
 #' telemetry project
 #'
-#' @format A data frame with 44 rows and 7 variables:
+#' @format A data frame with 16 rows and 7 variables:
 #' \describe{
 #'   \item{tag_id}{tag ID including frequency and code}
 #'   \item{cap_hist}{the concatenated capture history}
@@ -123,11 +124,12 @@
 #' A subset of \code{tag_releases} for those tags included
 #' in \code{ch_long} and \code{ch_wide}
 #'
-#' @format A data frame with 101 rows and 12 variables:
+#' @format A data frame with 101 rows and 13 variables:
 #' \describe{
 #'   \item{season}{the year/season the tag was deployed}
-#'   \item{tag_id}{tag ID including frequency and code}
+#'   \item{radio_tag_id}{the radio tag ID including frequency, code and letter}
 #'   \item{pit_tag_id}{the PIT tag number also injected into the fish}
+#'   \item{tag_id}{tag ID including frequency and code}
 #'   \item{srr}{species, run, rear, uses PTAGIS nomenclature}
 #'   \item{length}{length, millimeters}
 #'   \item{weight}{weight, grams}
