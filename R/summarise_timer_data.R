@@ -83,15 +83,19 @@ summarise_timer_data = function(compress_df = NULL,
     ggplot2::ggplot(aes(x = hr,
                         y = forcats::fct_rev(receiver),
                         color = operational)) +
-    geom_line(size = 2,
-              color = "black") +
+    geom_line(size = 2) +
     geom_point(data = tmp %>%
                  filter(!operational),
-               size = 1.5,
-               color = "palegreen2") +
+               size = 1.5) +
+    scale_color_viridis_d(begin = 0.1,
+                          end = 0.8,
+                          option = 'C',
+                          direction = -1) +
     theme_bw() +
+    theme(legend.position = "bottom") +
     labs(x = "Time",
-         y = "Receiver")
+         y = "Receiver",
+         color = 'Operational')
 
   cat("What proportion of season was each receiver operational?\n")
 
