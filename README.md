@@ -25,6 +25,15 @@ Once `devtools` is successfully installed, use the following to install `telemty
 devtools::install_github("mackerman44/telemetyr", build_vignettes = TRUE)
 ```
 
-Be sure to include the `build_vignettes = TRUE` argument, as this will ensure that vignettes in the package will be made available. If you are interested in making contributions to `telemetyr`, consider getting a GitHub account, fork this repository, clone to a local directory, modify, and send me a pull request. I can then review any changes and merge.
+Be sure to include the `build_vignettes = TRUE` argument, as this will ensure that vignettes in the package will be made available. 
+
+## JAGS
+
+The `telemetyr` R package includes the functionality to create capture histories to be used in a Cormack-Jolly-Seber (CJS) capture-recapture model including a vignette on how to implement the model in
+the JAGS (Just Another Gibbs Sampler) software. JAGS can be downloaded [here](https://sourceforge.net/projects/mcmc-jags/files/).
+
+## Making Contributions
+
+If you are interested in making contributions to `telemetyr`, consider getting a GitHub account, fork this repository, clone to a local directory, modify, and send me a pull request. I can then review any changes and merge.
 
 Cheers!
