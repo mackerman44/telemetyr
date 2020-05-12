@@ -111,8 +111,8 @@ csv_df = read_csv_data(path = download_path)
 rec_nms = c("LH1", "CA1", "TR1", "RR1", "NF1")
 
 # import compressed .csv data, subset receivers
-csv_data = read_csv_data(path = download_path,
-                         receiver_codes = rec_nms)
+csv_df = read_csv_data(path = download_path,
+                       receiver_codes = rec_nms)
 
 ```
 
