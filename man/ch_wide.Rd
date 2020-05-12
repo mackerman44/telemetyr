@@ -5,7 +5,7 @@
 \alias{ch_wide}
 \title{Capture Histories - Wide Format}
 \format{
-A data frame with 44 rows and 7 variables:
+A data frame with 16 rows and 7 variables:
 \describe{
   \item{tag_id}{tag ID including frequency and code}
   \item{cap_hist}{the concatenated capture history}

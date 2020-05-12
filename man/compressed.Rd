@@ -5,7 +5,7 @@
 \alias{compressed}
 \title{Compressed Telemetry Data}
 \format{
-A data frame with 66468 rows and 7 variables:
+A data frame with 66449 rows and 7 variables:
 \describe{
   \item{receiver}{receiver code}
   \item{valid}{is observation valid, 1 = T, 0 = F}

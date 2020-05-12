@@ -5,11 +5,12 @@
 \alias{tag_df}
 \title{Tag Releases - For Capture Histories}
 \format{
-A data frame with 101 rows and 12 variables:
+A data frame with 101 rows and 13 variables:
 \describe{
   \item{season}{the year/season the tag was deployed}
-  \item{tag_id}{tag ID including frequency and code}
+  \item{radio_tag_id}{the radio tag ID including frequency, code and letter}
   \item{pit_tag_id}{the PIT tag number also injected into the fish}
+  \item{tag_id}{tag ID including frequency and code}
   \item{srr}{species, run, rear, uses PTAGIS nomenclature}
   \item{length}{length, millimeters}
   \item{weight}{weight, grams}

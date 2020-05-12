@@ -5,13 +5,14 @@
 \alias{ch_long}
 \title{Capture Histories - Long Format}
 \format{
-A data frame with 149 rows and 5 variables:
+A data frame with 52 rows and 6 variables:
 \describe{
   \item{tag_id}{tag ID including frequency and code}
   \item{loc}{observation location, site or receiver}
   \item{first_obs}{the date and time of first observation at loc}
   \item{last_obs}{the date and time of last observation at loc}
   \item{n}{the number of records that occurred between \code{first_obs} and \code{last_obs}}
+  \item{week}{the week number the first observation is from}
 }
 }
 \source{
