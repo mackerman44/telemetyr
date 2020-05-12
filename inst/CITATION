@@ -3,13 +3,13 @@ citHeader("To cite telemetyr in publications use:")
 citEntry(
   entry    = "Article",
   title    = ,
-  author   = ,
+  author   = {Mike Ackerman, Kevin See},
   journal  = ,
-  year     = ,
+  year     = {2020},
   volume   = ,
   number   = ,
   pages    = ,
-  url      = ,
+  url      = {https://github.com/mackerman44/telemetyr},
   textVersion = paste(
 
   )
