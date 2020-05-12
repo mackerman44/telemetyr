@@ -239,13 +239,14 @@ example_sites
 
 ## Released tags
 
-We also need data about the tags releases each year. Similar to our site information, we've included tag release information from the Lemhi River study in an object `tag_releases` within the `telemetyr` package. Let's extract information from `tag_releases` for those tags released during the 2018/2019 season. In addition, our example `raw` and `compressed` datasets only contain records for radio tag IDs that start with (i.e. frequencies) 2, 5 or 8. This was simply done to reduce the example dataset to a more reasonable size. That is reflected in the following:
+We also need data about the tags releases each year. Similar to our site information, we've included tag release information from the Lemhi River study in an object `tag_releases` within the `telemetyr` package. Let's extract information from `tag_releases` for those tags released during the 2018/2019 season. In addition, our example `raw` and `compressed` datasets only contain records for radio tag IDs that start with (i.e. frequencies) 5. This was simply done to reduce the example dataset to a more reasonable size. That is reflected in the following. We also provide an example if the user would, for example, like to extract tag codes starting with 2, 5 or 8:
 
 ```{r tag_release_data}
 # extract 2018/2019 tag releases
 example_tags = tag_releases %>%
   filter(season == "18_19") %>%
-  filter(str_detect(tag_id, "^2|^5|^8"))
+  filter(str_detect(tag_id, "^5"))
+  # filter(str_detect(tag_id, "^2|^5|^8"))
 
 # view example_tags
 head(example_tags)
