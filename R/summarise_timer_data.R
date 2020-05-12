@@ -22,7 +22,8 @@ summarise_timer_data = function(compress_df = NULL,
   cat("Parsing out timer tag data.\n")
 
   timer_df = compress_df %>%
-    parse_code_ending(code_ending = "575$")
+    parse_code_ending(code_ending = "550$|575$")
+    #parse_code_ending(code_ending = "575$")
 
   # range of time among timer tags in timer_df
   hr_range = lubridate::floor_date(range(timer_df$start, na.rm = T), unit = "hours")
