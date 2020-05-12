@@ -23,7 +23,7 @@
 #' An example dataset containing compressed observations
 #' for 5 receivers and 1 frequency, 2018/2019 season
 #'
-#' @format A data frame with 66468 rows and 7 variables:
+#' @format A data frame with 66449 rows and 7 variables:
 #' \describe{
 #'   \item{receiver}{receiver code}
 #'   \item{valid}{is observation valid, 1 = T, 0 = F}
