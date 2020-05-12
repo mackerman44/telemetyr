@@ -8,7 +8,8 @@ summarise_timer_data(
   compress_df = NULL,
   receiver_codes = NULL,
   season_start = NULL,
-  season_end = NULL
+  season_end = NULL,
+  include_noise = c(TRUE, FALSE)
 )
 }
 \arguments{
@@ -20,6 +21,10 @@ The default is \code{NULL}, which will keep all receiver codes found in the path
 \item{season_start}{character with format "YYYYMMDD" the first day of the season that the receivers were considered turned on}
 
 \item{season_end}{character with format "YYYYMMDD" the final day of the season that the receivers were all turned off}
+
+\item{include_noise}{would user like to include \code{TRUE} or not \code{FALSE} any
+noise records ending in "995" when summarising receiver operational times. Default
+is \code{TRUE}.}
 }
 \value{
 summaries of operational times for each receiver

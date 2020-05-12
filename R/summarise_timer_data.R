@@ -9,6 +9,9 @@
 #'
 #' @param season_start character with format "YYYYMMDD" the first day of the season that the receivers were considered turned on
 #' @param season_end character with format "YYYYMMDD" the final day of the season that the receivers were all turned off
+#' @param include_noise would user like to include \code{TRUE} or not \code{FALSE} any
+#' noise records ending in "995" when summarising receiver operational times. Default
+#' is \code{TRUE}.
 #'
 #' @import dplyr lubridate ggplot2 forcats
 #' @export
@@ -17,13 +20,16 @@
 summarise_timer_data = function(compress_df = NULL,
                                 receiver_codes = NULL,
                                 season_start = NULL,
-                                season_end = NULL) {
+                                season_end = NULL,
+                                include_noise = c(TRUE, FALSE)) {
 
   cat("Parsing out timer tag data.\n")
 
+  if(include_noise == TRUE)  code_endings = "550$|575$|995$"
+  if(include_noise == FALSE) code_endings = "550$|575$"
+
   timer_df = compress_df %>%
-    parse_code_ending(code_ending = "550$|575$")
-    #parse_code_ending(code_ending = "575$")
+    parse_code_ending(code_ending = code_endings)
 
   # range of time among timer tags in timer_df
   hr_range = lubridate::floor_date(range(timer_df$start, na.rm = T), unit = "hours")
