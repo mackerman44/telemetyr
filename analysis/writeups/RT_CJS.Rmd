@@ -13,8 +13,8 @@ institute:
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
   bookdown::html_document2:
-    fig_height: 6
-    fig_width: 8
+    fig_height: 7
+    fig_width: 7
     toc: yes
     toc_depth: 3
     toc_float:
