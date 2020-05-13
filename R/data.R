@@ -64,11 +64,12 @@
 #' Data for tags deployed in the Lemhi River juvenile Chinook
 #' salmon winter telemetry project
 #'
-#' @format A data frame with 776 rows and 12 variables:
+#' @format A data frame with 776 rows and 13 variables:
 #' \describe{
 #'   \item{season}{the year/season the tag was deployed}
-#'   \item{tag_id}{tag ID including frequency and code}
+#'   \item{radio_tag_id}{tag ID including frequency, code, and letter denoting season}
 #'   \item{pit_tag_id}{the PIT tag number also injected into the fish}
+#'   \item{tag_id}{\code{radio_tag_id}, but with season letter trimmed off}
 #'   \item{srr}{species, run, rear, uses PTAGIS nomenclature}
 #'   \item{length}{length, millimeters}
 #'   \item{weight}{weight, grams}

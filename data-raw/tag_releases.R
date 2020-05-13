@@ -1,7 +1,10 @@
 ## code to prepare `tag_releases` dataset goes here
 
 library(telemetyr)
+library(dplyr)
+library(stringr)
 library(readxl)
+library(readr)
 
 tag_releases = read_excel("data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx") %>%
   mutate(tag_id = str_extract(radio_tag_id, "[:digit:]*"),
@@ -11,7 +14,8 @@ tag_releases = read_excel("data/prepped/tag_release/lemhi_winter_telemetry_tag_i
   mutate_at(vars(activation_time, release_time),
             list(janitor::excel_numeric_to_date),
             include_time = T) %>%
-  select(season, matches('tag_id'), everything())
+  select(season, matches('tag_id'), everything()) %>%
+  select(-fish_name)
 
 write_csv(tag_releases, "data-raw/tag_releases.csv")
 usethis::use_data(tag_releases, overwrite = TRUE)
