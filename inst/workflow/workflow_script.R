@@ -88,6 +88,48 @@ volt_p = plot_volt_temp_data(volt_temp_df,
                              receiver_codes = receiver_nms)
 
 #------------------------
-# CAPTURE HISTORIES AND CJS
+# CAPTURE HISTORIES
 #------------------------
+# prep tag list for capture histories
+fish_releases_1819 = tag_releases %>%
+  filter(season == "18_19",
+         tag_purpose == "fish")
 
+# prep site list for capture histories
+sites_1819 = site_metadata %>%
+  filter(use18_19 == TRUE,
+         site_type == "rt_fixed") %>%
+  select(site = site_code,
+         receivers) %>%
+  group_by(site) %>%
+  nest() %>%
+  ungroup() %>%
+  mutate(receiver = map(data,
+                        .f = function(x) {
+                          str_split(x, "\\,") %>%
+                            extract2(1) %>%
+                            str_trim()
+                        })) %>%
+  select(-data) %>%
+  unnest(cols = receiver) %>%
+  mutate_at(vars(site, receiver),
+            list(~ factor(., levels = unique(.))))
+
+# Note the above is just one way to go from the site_metadata down to a 2-column dataframe
+# with "site" and "receiver", but you could create or import this any way. You'll just want
+# it to be a factor with levels defining the order of sites.
+
+# prepare capture histories
+cap_hist_list = prep_capture_history(compressed,
+                                     tag_data = fish_releases_1819,
+                                     n_obs_valid = 3,
+                                     rec_site = sites_1819,
+                                     delete_upstream = T,
+                                     location = "site",
+                                     output_format = "all")
+
+save(cap_hist_list, file = "data/cap_hist_list.Rda")
+
+#------------------------
+# CJS MODEL
+#------------------------
