@@ -248,7 +248,7 @@ for(i in 1:3) {
   file_nm = paste0('RT_only_CJS_', names(y_list)[i], '.rda')
 
   save(jags_data, post, param_summ,
-       file = paste0("analysis/CJS_models/", file_nm))
+       file = paste0("../CJS_models/", file_nm))
 
   rm(y, jags_data, jags, post, param_summ, file_nm)
 }
