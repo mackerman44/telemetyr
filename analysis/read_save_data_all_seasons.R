@@ -77,14 +77,14 @@ tag_df_list = read_excel('data/prepped/tag_release/lemhi_winter_telemetry_tag_in
 # for Mike
 pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018"
 # for Kevin
-pilot_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018"
+pilot_path = "~/../../Volumes/ABS/data/telemetry/lemhi/fixed_site_downloads/2017_2018"
 
 # deal with data that had previously been missing in the pilot study due to errors when resetting receiver
 # timers after downloading data
 # for Mike
 miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
 # for Kevin
-miss_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
+miss_path = "~/../../Volumes/ABS/data/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
 
 # read in the "raw" .txt format data
 raw_df = read_txt_data(path = pilot_path)
@@ -157,7 +157,7 @@ pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 # for Mike
 # ssn_1819_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
 # for Kevin
-ssn_1819_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2018_2019"
+ssn_1819_path = "~/../../Volumes/ABS/data/telemetry/lemhi/fixed_site_downloads/2018_2019"
 
 # # read in and save the csv format data
 # ssn_1819_csv_df = read_csv_data(path = ssn_1819_path) %>%
@@ -199,10 +199,6 @@ save(compress_df,
 save(cap_hist_list,
      file = paste0(save_path, "cap_hist.rda"))
 
-
-# # save as a .rda object
-# save(ssn_1819_raw, file = "data/raw/ssn_1819_raw.rda")
-
 #-------------------------
 # 2019-2020 SEASON
 #-------------------------
@@ -210,7 +206,7 @@ save(cap_hist_list,
 # for Mike
 # ssn_1920_path = "S:/telemetry/lemhi/fixed_site_downloads/2019_2020"
 # for Kevin
-ssn_1920_path = "~/../../Volumes/ABS/telemetry/lemhi/fixed_site_downloads/2019_2020"
+ssn_1920_path = "~/../../Volumes/ABS/data/telemetry/lemhi/fixed_site_downloads/2019_2020"
 
 # # read in and save the csv format data
 # ssn_1920_csv_df = read_csv_data(path = ssn_1920_path) %>%
