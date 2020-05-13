@@ -10,6 +10,7 @@
 # load libraries
 library(telemetyr)
 library(tidyverse)
+library(ggplot2)
 
 # set working directory
 setwd("S:/mike/tmp/workflow_script")
@@ -133,3 +134,146 @@ save(cap_hist_list, file = "data/cap_hist_list.Rda")
 #------------------------
 # CJS MODEL
 #------------------------
+library(magrittr)
+library(postpack)
+
+# pull out the needed objects from cap_hist_list
+cap_hist = cap_hist_list$ch_wide
+tag_df = cap_hist_list$tag_df
+
+# add records for those fish that were never observed
+cap_hist %<>%
+  full_join(tag_df %>%
+              filter(duty_cycle == "batch_1") %>%
+              select(tag_id),
+            by = "tag_id") %>%
+  mutate(ch_width = nchar(cap_hist)) %>%
+  fill(ch_width) %>%
+  rowwise() %>%
+  mutate(cap_hist = if_else(is.na(cap_hist),
+                            as.character(paste0(rep(0, ch_width), collapse = '')),
+                            cap_hist)) %>%
+  select(-ch_width) %>%
+  mutate_at(vars(-tag_id, -cap_hist),
+            list(~ if_else(is.na(.), 0, .)))
+
+y = cap_hist %>%
+  mutate(Rel = 1) %>%
+  select(tag_id, cap_hist, Rel, everything()) %>%
+  select(-tag_id, -cap_hist) %>%
+  as.matrix()
+
+jags_data = list(
+  N = nrow(y),         # number of fish
+  J = ncol(y),         # number of sites
+  y = y,               # capture histories
+  z = known_alive(y)   # known alive matrix
+)
+
+# SPECIFY THE JAGS MODEL
+jags_model = function() {
+  # PRIORS
+  phi[1] <- 1
+  p[1] <- 1
+  for(j in 2:J) {
+    phi[j] ~ dbeta(1,1) # survival probability between arrays
+    p[j] ~ dbeta(1,1)   # detection probability at each array
+  }
+
+  # LIKELIHOOD - Here, p and phi are global
+  for (i in 1:N) {
+    # j = 1 is the release occasion - known alive; i.e., the mark event
+    for (j in 2:J) {
+      # survival process: must have been alive in j-1 to have non-zero pr(alive at j)
+      z[i,j] ~ dbern(phi[j] * z[i,j-1]) # fish i in period j is a bernoulli trial
+
+      # detection process: must have been alive in j to observe in j
+      y[i,j] ~ dbern(p[j] * z[i,j]) # another bernoulli trial
+    }
+  }
+
+  # DERIVED QUANTITIES
+  # survivorship is probability of surviving from release to a detection occasion
+  survship[1] <- 1 # the mark event; everybody survived to this point
+  for (j in 2:J) { # the rest of the events
+    survship[j] <- survship[j-1] * phi[j]
+  }
+}
+
+# write model to a text file
+jags_file = "model.txt"
+write_model(jags_model, jags_file)
+
+# specify which parameters to track
+jags_params = c("phi", "p", "survship")
+
+# FIT JAGS MODEL AND GET mcmc.list OF SAMPLES FROM POSTERIOR
+library(rjags)
+jags = jags.model(jags_file,
+                  data = jags_data,
+                  n.chains = 4,
+                  n.adapt = 1000)
+# burnin
+update(jags, n.iter = 2500)
+# posterior sampling
+post = coda.samples(jags,
+                    jags_params,
+                    n.iter = 2500,
+                    thin = 5)
+
+# CJS RESULTS
+param_summ = post_summ(post,
+                       jags_params,
+                       Rhat = T,
+                       ess = T) %>%
+  t() %>%
+  as_tibble(rownames = "param") %>%
+  mutate(cv = sd / mean)
+
+surv_p = param_summ %>%
+  filter(grepl('survship', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Cummulative Survival')
+
+phi_p = param_summ %>%
+  filter(grepl('phi', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Survival From Previous Site')
+
+det_p = param_summ %>%
+  filter(grepl('^p\\[', param)) %>%
+  mutate(site = factor(colnames(y),
+                       levels = colnames(y))) %>%
+  ggplot(aes(x = site,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  labs(x = 'Site',
+       y = 'Detection Probability')
+surv_p
+phi_p
+det_p
+
+# MODEL DIAGNOSTICS
+# looking for "grassy" plots here to assess convergence of chains. These look pretty good!
+diag_plots(post, "phi", layout = "5x3", ext_device = T)      # p(surv) between sites
+diag_plots(post, "survship", layout = "5x3", ext_device = T) # p(surv) to a location
+diag_plots(post, "^p[", layout = "5x3", ext_device = T)      # p(detetion)
