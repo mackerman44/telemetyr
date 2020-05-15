@@ -23,9 +23,23 @@ library(janitor)
 
 
 #-------------------------
-# Metadata about receivers
-#-------------------------
+# point to NAS based on operating system
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+}
+if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS"
+}
 
+#-------------------------
+# Where should data be saved?
+# save it to a raw folder under Nick's name on the NAS, to be QA/QC'd
+save_path = paste0(nas_prefix, "/Nick/telemetry/raw/")
+
+#-------------------------
+# Metadata about receivers and tags
+#-------------------------
+# used for constructing capture histories
 # read in some metadata associated with the receivers
 rec_meta = read_excel('data/prepped/site_metadata/rt_site_metadata.xlsx')
 
@@ -74,17 +88,11 @@ tag_df_list = read_excel('data/prepped/tag_release/lemhi_winter_telemetry_tag_in
 #-------------------------
 # path to the folder on Biomark NAS
 # be sure to be connected to the Biomark VPN
-# for Mike
-pilot_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018"
-# for Kevin
-pilot_path = "~/../../Volumes/ABS/data/telemetry/lemhi/fixed_site_downloads/2017_2018"
+pilot_path = paste0(nas_prefix, "/data/telemetry/lemhi/fixed_site_downloads/2017_2018")
 
 # deal with data that had previously been missing in the pilot study due to errors when resetting receiver
 # timers after downloading data
-# for Mike
-miss_path = "S:/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
-# for Kevin
-miss_path = "~/../../Volumes/ABS/data/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data"
+miss_path = paste0(nas_prefix, "/data/telemetry/lemhi/fixed_site_downloads/2017_2018_missing_A_data")
 
 # read in the "raw" .txt format data
 raw_df = read_txt_data(path = pilot_path)
@@ -128,14 +136,12 @@ cap_hist_list = prep_capture_history(compress_df,
 
 #--------------------------
 # save a couple objects
-save_path = "data/prepped/pilot/"
-
 save(raw_df,
-     file = paste0(save_path, "raw.rda"))
+     file = paste0(save_path, "raw_", yr_label, ".rda"))
 save(compress_df,
-     file = paste0(save_path, "compressed.rda"))
+     file = paste0(save_path, "compressed_", yr_label, ".rda"))
 save(cap_hist_list,
-     file = paste0(save_path, "cap_hist.rda"))
+     file = paste0(save_path, "cap_hist_", yr_label, ".rda"))
 
 # #--------------------------
 # # read in and save the csv format data
@@ -154,10 +160,7 @@ pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 # 2018-2019 SEASON
 #-------------------------
 # path to the folder on Biomark NAS; be sure to be connected to the Biomark VPN
-# for Mike
-# ssn_1819_path = "S:/telemetry/lemhi/fixed_site_downloads/2018_2019"
-# for Kevin
-ssn_1819_path = "~/../../Volumes/ABS/data/telemetry/lemhi/fixed_site_downloads/2018_2019"
+ssn_1819_path = paste0(nas_prefix, "/data/telemetry/lemhi/fixed_site_downloads/2018_2019")
 
 # # read in and save the csv format data
 # ssn_1819_csv_df = read_csv_data(path = ssn_1819_path) %>%
@@ -190,23 +193,18 @@ cap_hist_list = prep_capture_history(compress_df %>%
 
 #--------------------------
 # save a couple objects
-save_path = "data/prepped/2018_2019/"
-
 save(raw_df,
-     file = paste0(save_path, "raw.rda"))
+     file = paste0(save_path, "raw_", yr_label, ".rda"))
 save(compress_df,
-     file = paste0(save_path, "compressed.rda"))
+     file = paste0(save_path, "compressed_", yr_label, ".rda"))
 save(cap_hist_list,
-     file = paste0(save_path, "cap_hist.rda"))
+     file = paste0(save_path, "cap_hist_", yr_label, ".rda"))
 
 #-------------------------
 # 2019-2020 SEASON
 #-------------------------
 # path to the folder on Biomark NAS; be sure to be connected to the Biomark VPN
-# for Mike
-# ssn_1920_path = "S:/telemetry/lemhi/fixed_site_downloads/2019_2020"
-# for Kevin
-ssn_1920_path = "~/../../Volumes/ABS/data/telemetry/lemhi/fixed_site_downloads/2019_2020"
+ssn_1920_path = paste0(nas_prefix, "/data/telemetry/lemhi/fixed_site_downloads/2019_2020")
 
 # # read in and save the csv format data
 # ssn_1920_csv_df = read_csv_data(path = ssn_1920_path) %>%
@@ -242,11 +240,9 @@ cap_hist_list = prep_capture_history(compress_df %>%
 
 #--------------------------
 # save a couple objects
-save_path = "data/prepped/2019_2020/"
-
 save(raw_df,
-     file = paste0(save_path, "raw.rda"))
+     file = paste0(save_path, "raw_", yr_label, ".rda"))
 save(compress_df,
-     file = paste0(save_path, "compressed.rda"))
+     file = paste0(save_path, "compressed_", yr_label, ".rda"))
 save(cap_hist_list,
-     file = paste0(save_path, "cap_hist.rda"))
+     file = paste0(save_path, "cap_hist_", yr_label, ".rda"))
