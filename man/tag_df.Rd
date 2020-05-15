@@ -5,7 +5,7 @@
 \alias{tag_df}
 \title{Tag Releases - For Capture Histories}
 \format{
-A data frame with 101 rows and 13 variables:
+A data frame with 38 rows and 13 variables:
 \describe{
   \item{season}{the year/season the tag was deployed}
   \item{radio_tag_id}{the radio tag ID including frequency, code and letter}

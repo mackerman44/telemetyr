@@ -5,7 +5,7 @@
 \alias{ch_long}
 \title{Capture Histories - Long Format}
 \format{
-A data frame with 52 rows and 6 variables:
+A data frame with 54 rows and 6 variables:
 \describe{
   \item{tag_id}{tag ID including frequency and code}
   \item{loc}{observation location, site or receiver}

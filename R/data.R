@@ -89,7 +89,7 @@
 #' in \code{tag_df} from Lemhi River juvenile Chinook salmon winter
 #' telemetry project
 #'
-#' @format A data frame with 52 rows and 6 variables:
+#' @format A data frame with 54 rows and 6 variables:
 #' \describe{
 #'   \item{tag_id}{tag ID including frequency and code}
 #'   \item{loc}{observation location, site or receiver}
@@ -125,7 +125,7 @@
 #' A subset of \code{tag_releases} for those tags included
 #' in \code{ch_long} and \code{ch_wide}
 #'
-#' @format A data frame with 101 rows and 13 variables:
+#' @format A data frame with 38 rows and 13 variables:
 #' \describe{
 #'   \item{season}{the year/season the tag was deployed}
 #'   \item{radio_tag_id}{the radio tag ID including frequency, code and letter}
