@@ -17,9 +17,9 @@
 # load necessary libraries
 #-------------------------
 library(tidyverse)
-library(telemetyr)
-library(janitor)
 library(sf)
+library(janitor)
+#library(telemetyr)
 
 theme_set(theme_bw())
 
@@ -32,6 +32,106 @@ if(.Platform$OS.type != 'unix') {
 if(.Platform$OS.type == 'unix') {
   nas_prefix = "~/../../Volumes/ABS"
 }
+
+#-------------------------
+# read in centerline x xs intersections
+#-------------------------
+xs_pts = st_read(paste(nas_prefix,
+                          "data/habitat/lemhi_telemetry/availability/raw/Centerline_XS_Intersects.shp",
+                          sep = "/")) %>%
+  st_zm()
+my_crs = st_crs(xs_pts)
+
+#-------------------------
+# read in habitat availability data
+#-------------------------
+hab_avail_path = paste(nas_prefix, "data/habitat/lemhi_telemetry/availability/prepped/", sep = '/')
+avail_pts = read_csv(paste0(hab_avail_path, "Habitat_Avail_1.csv")) %>%
+  clean_names(case = "snake") %>%
+  select(global_id, adjacent_side_channel, x, y)
+
+# convert to sf object
+avail_pts_sf = avail_pts %>%
+  st_as_sf(coords = c("x", "y"),
+           crs = "+proj=longlat +datum=WGS84") %>%
+  st_transform(my_crs)
+
+# plot them to make sure we're good
+xs_avail_p = xs_pts %>%
+  ggplot() +
+  geom_sf(aes(color = Category,
+              fill = Category),
+          size = 0.25) +
+  geom_sf(data = avail_pts_sf,
+          size = 0.25) +
+  labs(fill = "Sinuosity\nCategory",
+       color = "Sinuosity\nCategory")
+xs_avail_p
+
+# for each availability pt, what is nearest xs?
+xs_2_avail = avail_pts_sf %>%
+  st_join(xs_pts,
+          join = st_nearest_feature,
+          left = T) %>%
+  st_drop_geometry()
+
+# left_join the availability global_ids to the xs_pts
+avail_2_xs = xs_pts %>%
+  left_join(xs_2_avail %>%
+              select(Name, avail_global_id = global_id))
+# make sure there's still 204
+sum(!is.na(avail_2_xs$avail_global_id))
+
+#-------------------------
+# read in habitat use data
+#-------------------------
+hab_use_path = paste(nas_prefix, "data/habitat/lemhi_telemetry/use/", sep = '/')
+use_pts = read_csv(paste0(hab_use_path, "Fish_Info_Master_NPedits.csv")) %>%
+  clean_names(case = "snake")
+
+# convert to sf object
+use_pts_sf = use_pts %>%
+  st_as_sf(coords = c("long", "lat"),
+           crs = "+proj=longlat +datum=WGS84") %>%
+  st_transform(my_crs)
+
+# plot again for verification
+xs_avail_p = xs_pts %>%
+  ggplot() +
+  geom_sf(aes(color = Category,
+              fill = Category),
+          size = 0.25) +
+  geom_sf(data = avail_pts_sf,
+          size = 0.25) +
+  geom_sf(data = use_pts_sf,
+          fill = "white",
+          color = "white",
+          size = 0.25) +
+  labs(fill = "Sinuosity\nCategory",
+       color = "Sinuosity\nCategory")
+xs_avail_p
+
+# for each use pt, what is nearest xs?
+xs_2_use = use_pts_sf %>%
+  st_join(xs_pts,
+          join = st_nearest_feature,
+          left = T) %>%
+  st_drop_geometry()
+
+use_avail_2_xs = avail_2_xs %>%
+  left_join(xs_2_use %>%
+              select(Name, use_global_id = global_id))
+sum(!is.na(use_avail_2_xs$avail_global_id)) # 204
+sum(!is.na(use_avail_2_xs$use_global_id))   # 212
+# I lost one record!? Need to sleuth
+
+# write results
+st_write(use_avail_2_xs,
+         paste(nas_prefix,
+               "data/habitat/lemhi_telemetry/prepped/use_avail_2_xs.shp",
+               sep = "/"))
+
+paste(nas_prefix, "data/habitat/lemhi_telemetry/prepped/use_avail_2_xs.shp", sep = '/')
 
 #-------------------------
 # read in all possible transects
