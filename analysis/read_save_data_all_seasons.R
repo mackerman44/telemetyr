@@ -152,9 +152,9 @@ save(cap_hist_list,
 # save(pilot_csv_df, file = "data/raw/pilot_csv_df.rda")
 
 
-# read in pilot study receiver on/off and volt/temp data from NAS
-pilot_on_off_df = read_on_off_data(path = pilot_path)
-pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
+# # read in pilot study receiver on/off and volt/temp data from NAS
+# pilot_on_off_df = read_on_off_data(path = pilot_path)
+# pilot_volt_temp_df = read_volt_temp_data(path = pilot_path)
 
 #-------------------------
 # 2018-2019 SEASON
