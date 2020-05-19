@@ -41,5 +41,8 @@ Imports:
 Suggests: 
     knitr,
     rmarkdown,
-    rjags
+    rjags,
+    postpack (>= 0.1.16)
 VignetteBuilder: knitr
+Remotes: git::https://github.com/bstaton1/postpack.git
+
