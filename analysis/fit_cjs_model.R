@@ -302,10 +302,11 @@ surv_summ = post %>%
   as.matrix(chain = T,
             iter = T) %>%
   as_tibble() %>%
-  select(-(`p[1]`:`phi[8]`),
-         -(`survship[1]`:`survship[8]`)) %>%
-  mutate(`survship[9]` = 1) %>%
-  mutate(`survship[10]` = `survship[9]` * `phi[10]`,
+  select(-(`p[1]`:`phi[7]`),
+         -(`survship[1]`:`survship[7]`)) %>%
+  mutate(`survship[8]` = 1) %>%
+  mutate(`survship[9]` = `survship[8]` * `phi[9]`,
+         `survship[10]` = `survship[9]` * `phi[10]`,
          `survship[11]` = `survship[10]` * `phi[11]`,
          `survship[12]` = `survship[11]` * `phi[12]`,
          `survship[13]` = `survship[12]` * `phi[13]`,
@@ -313,34 +314,18 @@ surv_summ = post %>%
          `survship[15]` = `survship[14]` * `phi[15]`,
          `survship[16]` = `survship[15]` * `phi[16]`,
          `survship[17]` = `survship[16]` * `phi[17]`) %>%
-  select(ssurv_summ = post %>%
-           as.matrix(chain = T,
-                     iter = T) %>%
-           as_tibble() %>%
-           select(-(`p[1]`:`phi[7]`),
-                  -(`survship[1]`:`survship[7]`)) %>%
-           mutate(`survship[8]` = 1) %>%
-           mutate(`survship[9]` = `survship[8]` * `phi[9]`,
-                  `survship[10]` = `survship[9]` * `phi[10]`,
-                  `survship[11]` = `survship[10]` * `phi[11]`,
-                  `survship[12]` = `survship[11]` * `phi[12]`,
-                  `survship[13]` = `survship[12]` * `phi[13]`,
-                  `survship[14]` = `survship[13]` * `phi[14]`,
-                  `survship[15]` = `survship[14]` * `phi[15]`,
-                  `survship[16]` = `survship[15]` * `phi[16]`,
-                  `survship[17]` = `survship[16]` * `phi[17]`) %>%
-           select(starts_with('surv')) %>%
-           gather(param, value) %>%
-           group_by(param) %>%
-           summarise(mean = mean(value),
-                     sd = sd(value),
-                     `50%` = quantile(value, 0.5),
-                     `2.5%` = quantile(value, 0.025),
-                     `97.5%` = quantile(value, 0.975),
-                     cv = sd / mean) %>%
-           ungroup() %>%
-           mutate(season = '19_20') %>%
-           select(season, everything())
+  select(starts_with('surv')) %>%
+  gather(param, value) %>%
+  group_by(param) %>%
+  summarise(mean = mean(value),
+            sd = sd(value),
+            `50%` = quantile(value, 0.5),
+            `2.5%` = quantile(value, 0.025),
+            `97.5%` = quantile(value, 0.975),
+            cv = sd / mean) %>%
+  ungroup() %>%
+  mutate(season = '19_20') %>%
+  select(season, everything())
 
 surv_p2 = param_summ_all %>%
   anti_join(surv_summ %>%
