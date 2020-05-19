@@ -19,6 +19,7 @@
 library(tidyverse)
 library(sf)
 library(janitor)
+library(lubridate)
 #library(telemetyr)
 
 theme_set(theme_bw())
@@ -36,19 +37,43 @@ if(.Platform$OS.type == 'unix') {
 #-------------------------
 # read in centerline x xs intersections
 #-------------------------
-xs_pts = st_read(paste(nas_prefix,
+xs_center_pts = st_read(paste(nas_prefix,
                           "data/habitat/lemhi_telemetry/availability/raw/Centerline_XS_Intersects.shp",
                           sep = "/")) %>%
-  st_zm()
-my_crs = st_crs(xs_pts)
+  st_zm() %>%
+  mutate(Category = fct_relevel(Category, "High", after = Inf))
+my_crs = st_crs(xs_center_pts)
+
+xs_center_pts %>%
+  st_drop_geometry() %>%
+  as_tibble() %>%
+  group_by(Category) %>%
+  summarise(n_pts = n(),
+            min_sin = min(Sinuosity),
+            max_sin = max(Sinuosity))
 
 #-------------------------
 # read in habitat availability data
 #-------------------------
 hab_avail_path = paste(nas_prefix, "data/habitat/lemhi_telemetry/availability/prepped/", sep = '/')
-avail_pts = read_csv(paste0(hab_avail_path, "Habitat_Avail_1.csv")) %>%
+
+# "0" points on transects, meant to match the xs_center_pts
+avail_pts_org = read_csv(paste0(hab_avail_path, "Habitat_Avail_1.csv")) %>%
   clean_names(case = "snake") %>%
-  select(global_id, adjacent_side_channel, x, y)
+  mutate_at(vars(creation_date, edit_date),
+            list(mdy_hm))
+
+# some duplicated cross sections. Filter these out
+# Based on conversations with Richie, we decided to keep the first "creation_date".
+# There were two more duplicates, with slightly different x/y coordinates. I just grabbed the first
+avail_pts = avail_pts_org %>%
+  group_by(cross_section_number) %>%
+  filter(creation_date == min(creation_date)) %>%
+  slice(1) %>%
+  ungroup() %>%
+  select(parent_global_id = global_id,
+         cross_section_number,
+         adjacent_side_channel, x, y)
 
 # convert to sf object
 avail_pts_sf = avail_pts %>%
@@ -57,7 +82,7 @@ avail_pts_sf = avail_pts %>%
   st_transform(my_crs)
 
 # plot them to make sure we're good
-xs_avail_p = xs_pts %>%
+xs_avail_p = xs_center_pts %>%
   ggplot() +
   geom_sf(aes(color = Category,
               fill = Category),
@@ -70,17 +95,167 @@ xs_avail_p
 
 # for each availability pt, what is nearest xs?
 xs_2_avail = avail_pts_sf %>%
-  st_join(xs_pts,
+  st_join(xs_center_pts,
           join = st_nearest_feature,
           left = T) %>%
   st_drop_geometry()
 
-# left_join the availability global_ids to the xs_pts
-avail_2_xs = xs_pts %>%
+# left_join the availability global_ids to the xs_center_pts
+avail_2_xs = xs_center_pts %>%
   left_join(xs_2_avail %>%
-              select(Name, avail_global_id = global_id))
-# make sure there's still 204
+              select(Name, avail_global_id = parent_global_id))
+# make sure there's still 179
 sum(!is.na(avail_2_xs$avail_global_id))
+
+# how many transects in each sinuosity category?
+xs_2_avail %>%
+  group_by(Category) %>%
+  summarise(n_xs = n_distinct(parent_global_id))
+
+#-------------------------
+# read in habitat availability data
+#-------------------------
+xs_pts = read_csv(paste0(hab_avail_path, "Point_Number_2.csv")) %>%
+  clean_names(case = 'snake') %>%
+  select(-object_id,
+         -creation_date,
+         -creator,
+         -edit_date,
+         -editor)
+
+sc_pts = read_csv(paste0(hab_avail_path, "Side_Channel_Info_3.csv")) %>%
+  clean_names(case = 'snake') %>%
+  select(-object_id,
+         -creation_date,
+         -creator,
+         -edit_date,
+         -editor)
+
+# test = read_csv(paste0(hab_avail_path, "surveyPoint_0.csv")) %>%
+#   clean_names(case = 'snake') %>%
+#   select(-creation_date,
+#          -creator,
+#          -edit_date,
+#          -editor)
+
+# join center points and associated transect points
+xs_avail = xs_2_avail %>%
+  left_join(xs_pts %>%
+              mutate(point_source = 'MainChannel')) %>%
+  bind_rows(sc_pts %>%
+              mutate(point_source = 'SideChannel',
+                     channel_unit_type = 'SC') %>%
+              inner_join(xs_2_avail)) %>%
+  mutate(bank_type_condition_closest = recode(bank_type_condition_closest,
+                                             "riprap" = "Riprap",
+                                             "Bar_Island" = "Bar/Island"),
+         dominant_cover_type_1_5m_radius = recode(dominant_cover_type_1_5m_radius,
+                                                  'other' = "Other",
+                                                  'Aqu_Veg_I' = "Aquatic Veg.",
+                                                  "Terr_Veg" = 'Terrestrial Veg.',
+                                                  'UC_bank' = 'Undercut Bank',
+                                                  'LargeWood' = 'Large Wood',
+                                                  'SmallWood' = 'Small Wood',
+                                                  'NoCover' = 'No Cover'),
+         channel_unit_type = recode(channel_unit_type,
+                                    "Rapid_Plus" = "Rapid+")) %>%
+  mutate_at(vars(channel_unit_type,
+                 bank_type_condition_closest,
+                 dominant_cover_type_1_5m_radius,
+                 dominant_substrate_1mx1m,
+                 substrate_concealment,
+                 point_source),
+            list(as.factor)) %>%
+  mutate(dominant_cover_type_1_5m_radius = fct_relevel(dominant_cover_type_1_5m_radius,
+                                                       "Large Wood",
+                                                       after = 5),
+         dominant_cover_type_1_5m_radius = fct_relevel(dominant_cover_type_1_5m_radius,
+                                                       "Other", "No Cover",
+                                                       after = Inf),
+         channel_unit_type = factor(channel_unit_type,
+                                    levels = c('Pool', 'Riffle', 'Run', 'Rapid+', 'SC', 'OCA')))
+
+xs_avail %>%
+  group_by(Category) %>%
+  summarise(n_xs = n_distinct(parent_global_id))
+
+# save for later
+save(xs_avail,
+     avail_pts_sf,
+     file = paste(nas_prefix,
+                  "data/habitat/lemhi_telemetry/prepped/habitat_available.rda",
+                  sep = "/"))
+
+avail_pts_sf %>%
+  left_join(xs_avail)
+
+#-------------------------
+# Examine xs_avail for QA/QC issues
+#-------------------------
+summary(xs_avail)
+
+#-------------------------
+# Make a few plots
+#-------------------------
+xs_avail %>%
+  group_by(Category, channel_unit_type) %>%
+  summarise(n_pts = n()) %>%
+  group_by(Category) %>%
+  mutate(perc = n_pts / sum(n_pts)) %>%
+  select(-n_pts) %>%
+  pivot_wider(names_from = 'Category',
+              values_from = 'perc')
+
+xs_avail %>%
+  ggplot(aes(x = Category,
+             fill = channel_unit_type)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'CU Type') +
+  labs(x = 'Sinuousity Class',
+       y = 'Percentage')
+
+
+xs_avail %>%
+  ggplot(aes(x = Category,
+             fill = substrate_concealment)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Concealment') +
+  labs(x = 'Sinuousity Class',
+       y = 'Percentage')
+
+xs_avail %>%
+  ggplot(aes(x = Category,
+             fill = dominant_cover_type_1_5m_radius)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Cover') +
+  labs(x = 'Sinuousity Class',
+       y = 'Percentage')
+
+xs_avail %>%
+  ggplot(aes(x = Category,
+             fill = dominant_substrate_1mx1m)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Substrate') +
+  labs(x = 'Sinuousity Class',
+       y = 'Percentage')
+
+
+xs_avail %>%
+  select(parent_global_id:Category,
+          bank_type_condition_closest) %>%
+  distinct() %>%
+  ggplot(aes(x = Category,
+             fill = bank_type_condition_closest)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Bank Cover') +
+  labs(x = 'Sinuousity Class',
+       y = 'Percentage')
+
 
 #-------------------------
 # read in habitat use data
@@ -96,7 +271,7 @@ use_pts_sf = use_pts %>%
   st_transform(my_crs)
 
 # plot again for verification
-xs_avail_p = xs_pts %>%
+xs_avail_p = xs_center_pts %>%
   ggplot() +
   geom_sf(aes(color = Category,
               fill = Category),
@@ -113,7 +288,7 @@ xs_avail_p
 
 # for each use pt, what is nearest xs?
 xs_2_use = use_pts_sf %>%
-  st_join(xs_pts,
+  st_join(xs_center_pts,
           join = st_nearest_feature,
           left = T) %>%
   st_drop_geometry()
@@ -121,196 +296,157 @@ xs_2_use = use_pts_sf %>%
 use_avail_2_xs = avail_2_xs %>%
   left_join(xs_2_use %>%
               select(Name, use_global_id = global_id))
-sum(!is.na(use_avail_2_xs$avail_global_id)) # 204
+sum(!is.na(use_avail_2_xs$avail_global_id)) # 179
 sum(!is.na(use_avail_2_xs$use_global_id))   # 212
 # I lost one record!? Need to sleuth
 
-# write results
-st_write(use_avail_2_xs,
-         paste(nas_prefix,
-               "data/habitat/lemhi_telemetry/prepped/use_avail_2_xs.shp",
-               sep = "/"))
-
-paste(nas_prefix, "data/habitat/lemhi_telemetry/prepped/use_avail_2_xs.shp", sep = '/')
-
-#-------------------------
-# read in all possible transects
-#-------------------------
-xs_all = st_read(paste(nas_prefix, "data/habitat/lemhi_telemetry/availability/raw/XS_JenksBreaks_SinClass.shp", sep = "/")) %>%
-  st_drop_geometry() %>%
-  as_tibble()
-
-sin_cls_tot = xs_all %>%
-  group_by(Category) %>%
-  summarise(n_xs = n())
-
-#-------------------------
-# read in center points of all possible sample transects
-#-------------------------
-xs_sample = st_read(paste(nas_prefix, "data/habitat/lemhi_telemetry/availability/cross_sections/XS_High_center_points.shp", sep = "/")) %>%
-  rbind(st_read(paste(nas_prefix, "data/habitat/lemhi_telemetry/availability/cross_sections/XS_Med_center_points.shp", sep = "/"))) %>%
-  rbind(st_read(paste(nas_prefix, "data/habitat/lemhi_telemetry/availability/cross_sections/XS_Low_center_points.shp", sep = "/")))
-
-xs_sample %>%
-  select(Name:Category) %>%
-  select(Category) %>%
-  ggplot(aes(color = Category)) +
-  geom_sf()
-
-#-------------------------
-# read in habitat availability data
-#-------------------------
-hab_data_raw = paste(nas_prefix, "data/habitat/lemhi_telemetry/availability/raw/transects/", sep = '/')
-hab_data_path = paste(nas_prefix, "data/habitat/lemhi_telemetry/availability/prepped/", sep = '/')
+# # write results
+# st_write(use_avail_2_xs,
+#          paste(nas_prefix,
+#                "data/habitat/lemhi_telemetry/prepped/use_avail_2_xs.shp",
+#                sep = "/"))
 
 
-my_crs = 32612
-xs_sf = st_read(paste0(hab_data_raw, "XS_Sin_Low.shp")) %>%
-  st_transform(crs = my_crs) %>%
-  rbind(st_read(paste0(hab_data_raw, "XS_Sin_Med.shp")) %>%
-          st_transform(crs = my_crs)) %>%
-  rbind(st_read(paste0(hab_data_raw, "XS_Sin_High.shp")) %>%
-          st_transform(crs = my_crs)) %>%
-  st_zm()
-
-xs_sf %>%
-  st_drop_geometry() %>%
-  as_tibble() %>%
-  group_by(Category) %>%
-  summarise(n_xs = n())
-
-center_pts = read_csv(paste0(hab_data_path, "Habitat_Avail_1.csv")) %>%
-  clean_names(case = 'snake') %>%
-  select(parent_global_id = global_id,
-         cross_section_number, adjacent_side_channel, x, y)
-
-# add sinuosity class by joining to xs_sample
-center_pts %>%
-  st_join(xs_sample %>%
-            st_transform(st_crs(center_pts)) %>%
-            select(Name, Sinuosity, Category))
-
-
-
-xs_pts = read_csv(paste0(hab_data_path, "Point_Number_2.csv")) %>%
-  clean_names(case = 'snake') %>%
-  select(-creation_date,
-         -creator,
-         -edit_date,
-         -editor)
-
-sc_pts = read_csv(paste0(hab_data_path, "Side_Channel_Info_3.csv")) %>%
-  clean_names(case = 'snake') %>%
-  select(-creation_date,
-         -creator,
-         -edit_date,
-         -editor)
-
-test = read_csv(paste0(hab_data_path, "surveyPoint_0.csv")) %>%
-  clean_names(case = 'snake') %>%
-  select(-creation_date,
-         -creator,
-         -edit_date,
-         -editor)
-
-# join center points and associated transect points
-xs_avail = center_pts %>%
-  full_join(xs_pts %>%
-              mutate(point_source = 'MainChannel')) %>%
-  bind_rows(sc_pts %>%
-              mutate(point_source = 'SideChannel',
-                     channel_unit_type = 'SC') %>%
-              inner_join(center_pts)) %>%
+xs_use = xs_2_use %>%
+  rename(bank_type_condition_closest = bank_type_condition,
+         dominant_cover_type_1_5m_radius = dominant_cover_1_5m_radius,
+         distance_to_cover_round_to_nearest_0_1m = distance_to_cover_m) %>%
+  select(global_id,
+         date:habitat_selected,
+         one_of(names(xs_avail)),
+         depth_m:notes,
+         x, y) %>%
+  mutate(channel_unit_type = recode(channel_unit_type,
+                                    "Rapid Plus" = "Rapid+",
+                                    "Off Channel Area" = 'OCA',
+                                    'Side Channel' = 'SC'),
+         channel_unit_type = factor(channel_unit_type,
+                                    levels = c('Pool', 'Riffle', 'Run', 'Rapid+', 'SC', 'OCA')),
+         substrate_concealment = recode(substrate_concealment,
+                                        'no' = 'N',
+                                        'No' = 'N',
+                                        'yes' = 'Y',
+                                        'Yes' = 'Y'),
+         bank_type_condition_closest = recode(bank_type_condition_closest,
+                                              "riprap" = "Riprap",
+                                              "Bar_Island" = "Bar/Island",
+                                              'Bar Island' = "Bar/Island"),
+         dominant_cover_type_1_5m_radius = recode(dominant_cover_type_1_5m_radius,
+                                                  'Aquatic Vegetation' = 'Aquatic Veg.',
+                                                  'Terrestrial Vegetation' = 'Terrestrial Veg.')) %>%
+  mutate(date = mdy(date)) %>%
   mutate_at(vars(channel_unit_type,
                  bank_type_condition_closest,
                  dominant_cover_type_1_5m_radius,
                  dominant_substrate_1mx1m,
-                 substrate_concealment,
-                 point_source),
-            list(as.factor))
+                 substrate_concealment),
+            list(as.factor)) %>%
+  mutate(dominant_cover_type_1_5m_radius = factor(dominant_cover_type_1_5m_radius,
+                                                  levels = c(levels(xs_avail$dominant_cover_type_1_5m_radius), "Unknown"))) %>%
+  arrange(radio_frequency, date)
 
 
-#-------------------------
-# Examine xs_avail for QA/QC issues
-#-------------------------
+# save for later
+save(xs_use,
+     use_pts_sf,
+     file = paste(nas_prefix,
+                  "data/habitat/lemhi_telemetry/prepped/habitat_use.rda",
+                  sep = "/"))
 
-# these points are not in the Habitat_Avail_1 file
-xs_avail %>%
-  anti_join(center_pts)
-# these points are not in the Point_Number_2 file
-xs_avail %>%
-  filter(point_source == 'MainChannel') %>%
-  anti_join(xs_pts)
+# make spatial again
+xs_use_sf = xs_use %>%
+  left_join(use_pts_sf %>%
+              select(global_id)) %>%
+  st_as_sf()
 
-summary(xs_avail)
+xs_use_sf %>%
+  ggplot() +
+  geom_sf(aes(color = habitat_selected))
 
-xs_avail %>%
-  filter(is.na(cross_section_number)) %>%
-  as.data.frame()
-xs_avail %>%
-  filter(is.na(object_id))
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  filter(is.na(xs_point_number)) %>%
-  tabyl(point_source)
+xs_use %>%
+  group_by(radio_frequency) %>%
+  summarise(n_dets = n_distinct(date)) %>%
+  arrange(desc(n_dets))
 
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  filter(is.na(channel_unit_type)) %>%
-  summary()
-# tabyl(point_source)
+xs_use %>%
+  group_by(Category) %>%
+  summarise(n_fish = n_distinct(radio_frequency))
 
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  filter(is.na(dominant_cover_type_1_5m_radius)) %>%
-  # summary()
-  tabyl(point_source)
+xs_use %>%
+  tabyl(Category, tag_status) %>%
+  adorn_totals(where = 'col') %>%
+  adorn_percentages() %>%
+  adorn_pct_formatting()
 
 
-tabyl(xs_avail,
-      channel_unit_type)
 
-xs_avail %>%
-  filter(!is.na(other_bank_type)) %>%
-  tabyl(xs_point_number)
+xs_use %>%
+  filter(tag_status != 'Mortality') %>%
+  ggplot(aes(x = Category,
+             fill = channel_unit_type)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'CU Type') +
+  labs(x = 'Sinuousity Class',
+       y = 'Percentage')
 
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  filter(is.na(distance_to_cover_round_to_nearest_0_1m)) %>%
-  # filter(distance_to_cover_round_to_nearest_0_1m == 0) %>%
-  tabyl(dominant_cover_type_1_5m_radius)
-
-xs_avail %>%
-  filter(dominant_cover_type_1_5m_radius == 'NoCover') %>%
-  xtabs(~ is.na(distance_to_cover_round_to_nearest_0_1m), .)
-
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  filter(is.na(dominant_substrate_1mx1m)) %>%
-  # as.data.frame()
-  tabyl(point_source)
-
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  filter(dominant_cover_type_1_5m_radius == 'NoCover') %>%
-  tabyl(distance_to_cover_round_to_nearest_0_1m)
-
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  filter(is.na(substrate_concealment)) %>%
-  as.data.frame()
-
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  summary()
+xs_use %>%
+  ggplot(aes(x = Category,
+             fill = tag_status)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Tag Status') +
+  labs(x = 'Sinuousity Class',
+       y = 'Percentage')
 
 
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
-  select(cross_section_number, channel_unit_type, point_source) %>%
-  distinct() %>%
-  tabyl(channel_unit_type) %>%
-  adorn_totals()
 
-xs_avail %>%
-  filter(!is.na(cross_section_number)) %>%
+xs_use %>%
+  mutate(source = 'Use') %>%
+  bind_rows(xs_avail %>%
+              mutate(source = 'Avail.')) %>%
+  filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  ggplot(aes(x = source,
+             fill = channel_unit_type)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'CU Type') +
+  facet_wrap(~ Category) +
+  labs(x = 'Data Set',
+       y = 'Percentage')
+
+
+xs_use %>%
+  mutate(source = 'Use') %>%
+  bind_rows(xs_avail %>%
+              mutate(source = 'Avail.')) %>%
+  filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  filter(!is.na(substrate_concealment)) %>%
+  ggplot(aes(x = source,
+             fill = substrate_concealment)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Concealment') +
+  facet_wrap(~ Category) +
+  labs(x = 'Data Set',
+       y = 'Percentage')
+
+
+xs_use %>%
+  mutate(source = 'Use') %>%
+  bind_rows(xs_avail %>%
+              mutate(source = 'Avail.')) %>%
+  mutate(dominant_cover_type_1_5m_radius=  factor(dominant_cover_type_1_5m_radius,
+                                                  levels = levels(xs_use$dominant_cover_type_1_5m_radius))) %>%
+  filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  filter(!is.na(dominant_cover_type_1_5m_radius)) %>%
+  ggplot(aes(x = source,
+             fill = dominant_cover_type_1_5m_radius)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Concealment') +
+  facet_wrap(~ Category) +
+  labs(x = 'Data Set',
+       y = 'Percentage')
+
+
