@@ -436,7 +436,7 @@ xs_use %>%
   mutate(source = 'Use') %>%
   bind_rows(xs_avail %>%
               mutate(source = 'Avail.')) %>%
-  mutate(dominant_cover_type_1_5m_radius=  factor(dominant_cover_type_1_5m_radius,
+  mutate(dominant_cover_type_1_5m_radius = factor(dominant_cover_type_1_5m_radius,
                                                   levels = levels(xs_use$dominant_cover_type_1_5m_radius))) %>%
   filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
   filter(!is.na(dominant_cover_type_1_5m_radius)) %>%
@@ -444,9 +444,35 @@ xs_use %>%
              fill = dominant_cover_type_1_5m_radius)) +
   geom_bar(position = position_fill()) +
   scale_fill_brewer(palette = 'Set1',
-                    name = 'Concealment') +
+                    name = 'Cover Type') +
   facet_wrap(~ Category) +
   labs(x = 'Data Set',
        y = 'Percentage')
+
+
+xs_use %>%
+  mutate(source = 'Use') %>%
+  bind_rows(xs_avail %>%
+              mutate(source = 'Avail.')) %>%
+  mutate(dominant_substrate_1mx1m = fct_recode(dominant_substrate_1mx1m,
+                                               Boulder = "boulder",
+                                               Cobble = "cobble",
+                                               Fines = "silt_fines",
+                                               Sand = "sand",
+                                               Gravel = 'gravel'),
+         dominant_substrate_1mx1m = fct_relevel(dominant_substrate_1mx1m,
+                                                "Gravel",
+                                                after = 2)) %>%
+  filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  filter(!is.na(dominant_substrate_1mx1m)) %>%
+  ggplot(aes(x = source,
+             fill = dominant_substrate_1mx1m)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Substrate') +
+  facet_wrap(~ Category) +
+  labs(x = 'Data Set',
+       y = 'Percentage')
+
 
 
