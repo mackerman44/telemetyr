@@ -10,7 +10,6 @@
 # load libraries
 library(telemetyr)
 library(tidyverse)
-library(ggplot2)
 
 # set working directory
 setwd("S:/mike/tmp/workflow_script")
@@ -132,45 +131,92 @@ cap_hist_list = prep_capture_history(compressed,
 save(cap_hist_list, file = "data/cap_hist_list.Rda")
 
 #------------------------
+# Unique fish detected at a site per week
+#------------------------
+uniq_tags = cap_hist_list$ch_long %>%
+  group_by(loc, week) %>%
+  summarise(n_tags = n_distinct(tag_id)) %>%
+  group_by(loc) %>%
+  # cummulative number of unique tags at each site
+  mutate(cum_tags = cumsum(n_tags)) %>%
+  ungroup()
+
+uniq_tags %>%
+  ggplot(aes(x = week,
+             y = cum_tags,
+             color = loc)) +
+  geom_line() +
+  geom_point() +
+  theme_classic()
+
+
+#------------------------
 # CJS MODEL
 #------------------------
 library(magrittr)
 library(postpack)
 
+# read in RT site metadata
+rec_meta = read_excel('data/prepped/site_metadata/rt_site_metadata.xlsx')
+
+# which RT receivers were used each year?
+rec_df = rec_meta %>%
+  filter(site_type == 'rt_fixed') %>%
+  filter(as.integer(str_sub(rt_rkm, end = 3)) <= 274) %>%
+  mutate_at(vars(site_code),
+            list(~ factor(., levels = unique(.)))) %>%
+  gather(season, use, starts_with("use")) %>%
+  mutate(season = str_remove(season, "use")) %>%
+  filter(use) %>%
+  select(-use) %>%
+  select(season, everything())
+
+
 # pull out the needed objects from cap_hist_list
-cap_hist = cap_hist_list$ch_wide
+cap_hist = cap_hist_list$tag_df %>%
+  left_join(cap_hist_list$ch_wide) %>%
+  mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
+  # use either batch 1 tags, or tags detected at least once
+  filter(duty_cycle == 'batch_1' | some_det) %>%
+  select(-some_det) %>%
+  select(-cap_hist) %>%
+  # filter out releases from PAHTRP and HYDTRP
+  filter(release_site %in% c("LEMTRP", "LLRTP")) %>%
+  # filter out on-off duty cycles
+  filter(duty_cycle != "on_off") %>%
+  mutate(LLRTP = if_else(release_site == 'LLRTP',
+                         1, 0),
+         LEMTRP = if_else(release_site == 'LEMTRP',
+                          1, 0)) %>%
+  # put sites in correct order for CJS model
+  pivot_longer(-(season:tag_id),
+               names_to = "site",
+               values_to = "seen") %>%
+  mutate(site = factor(site,
+                       levels = c("LEMTRP", levels(rec_df$site_code), "LLRTP")),
+         site = fct_relevel(site, "LLRTP", after = 8)) %>%
+  filter(!is.na(site)) %>%
+  spread(site, seen,
+         fill = 0)
+
 tag_df = cap_hist_list$tag_df
 
-# add records for those fish that were never observed
-cap_hist %<>%
-  full_join(tag_df %>%
-              filter(duty_cycle == "batch_1") %>%
-              select(tag_id),
-            by = "tag_id") %>%
-  mutate(ch_width = nchar(cap_hist)) %>%
-  fill(ch_width) %>%
-  rowwise() %>%
-  mutate(cap_hist = if_else(is.na(cap_hist),
-                            as.character(paste0(rep(0, ch_width), collapse = '')),
-                            cap_hist)) %>%
-  select(-ch_width) %>%
-  mutate_at(vars(-tag_id, -cap_hist),
-            list(~ if_else(is.na(.), 0, .)))
 
 y = cap_hist %>%
-  mutate(Rel = 1) %>%
-  select(tag_id, cap_hist, Rel, everything()) %>%
-  select(-tag_id, -cap_hist) %>%
+  select(-(season:tag_id)) %>%
+  select(-LEMTRP) %>%
   as.matrix()
 
 jags_data = list(
   N = nrow(y),         # number of fish
   J = ncol(y),         # number of sites
   y = y,               # capture histories
-  z = known_alive(y)   # known alive matrix
+  z = known_alive(y),  # known alive matrix
+  f = first_alive(y)   # first time known alive (for batch 2 and 3 tags)
 )
 
 # SPECIFY THE JAGS MODEL
+# specify model in JAGS
 jags_model = function() {
   # PRIORS
   phi[1] <- 1
@@ -182,8 +228,10 @@ jags_model = function() {
 
   # LIKELIHOOD - Here, p and phi are global
   for (i in 1:N) {
+    # first known occasion must be z == 1
+    # z[i, f[i]] <- 1
     # j = 1 is the release occasion - known alive; i.e., the mark event
-    for (j in 2:J) {
+    for (j in (f[i] + 1):J) {
       # survival process: must have been alive in j-1 to have non-zero pr(alive at j)
       z[i,j] ~ dbern(phi[j] * z[i,j-1]) # fish i in period j is a bernoulli trial
 
