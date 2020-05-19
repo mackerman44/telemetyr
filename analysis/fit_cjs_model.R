@@ -23,6 +23,17 @@ library(postpack)
 theme_set(theme_bw())
 
 #-------------------------
+# set NAS prefix, depending on operating system
+#-------------------------
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+}
+if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS"
+}
+
+
+#-------------------------
 # read in RT site metadata
 #-------------------------
 rec_meta = read_excel('data/prepped/site_metadata/rt_site_metadata.xlsx')
@@ -43,13 +54,13 @@ rec_df = rec_meta %>%
 # load capture histories for all years
 #-------------------------
 # load all years of data
-rt_ch = list('pilot',
-     '2018_2019',
-     '2019_2020') %>%
+rt_ch = list('17_18',
+             '18_19',
+             '19_20') %>%
   rlang::set_names() %>%
   map_df(.id = 'Year',
-         .f = function(x) {
-           load(paste0('data/prepped/', x, '/cap_hist.rda'))
+         .f = function(yr) {
+           load(paste0(nas_prefix, "/Nick/telemetry/raw/cap_hist_", yr, ".rda"))
            ch = cap_hist_list$tag_df %>%
              left_join(cap_hist_list$ch_wide) %>%
              mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
