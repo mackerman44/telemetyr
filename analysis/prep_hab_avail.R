@@ -50,7 +50,9 @@ xs_center_pts %>%
   group_by(Category) %>%
   summarise(n_pts = n(),
             min_sin = min(Sinuosity),
-            max_sin = max(Sinuosity))
+            max_sin = max(Sinuosity)) %>%
+  ungroup() %>%
+  mutate(perc = n_pts / sum(n_pts))
 
 #-------------------------
 # read in habitat availability data
@@ -293,12 +295,12 @@ xs_2_use = use_pts_sf %>%
           left = T) %>%
   st_drop_geometry()
 
-use_avail_2_xs = avail_2_xs %>%
-  left_join(xs_2_use %>%
-              select(Name, use_global_id = global_id))
-sum(!is.na(use_avail_2_xs$avail_global_id)) # 179
-sum(!is.na(use_avail_2_xs$use_global_id))   # 212
-# I lost one record!? Need to sleuth
+# use_avail_2_xs = avail_2_xs %>%
+#   left_join(xs_2_use %>%
+#               select(Name, use_global_id = global_id))
+# sum(!is.na(use_avail_2_xs$avail_global_id)) # 179
+# sum(!is.na(use_avail_2_xs$use_global_id))   # 212
+# # I lost one record!? Need to sleuth
 
 # # write results
 # st_write(use_avail_2_xs,
@@ -333,7 +335,9 @@ xs_use = xs_2_use %>%
                                               'Bar Island' = "Bar/Island"),
          dominant_cover_type_1_5m_radius = recode(dominant_cover_type_1_5m_radius,
                                                   'Aquatic Vegetation' = 'Aquatic Veg.',
-                                                  'Terrestrial Vegetation' = 'Terrestrial Veg.')) %>%
+                                                  'Terrestrial Vegetation' = 'Terrestrial Veg.'),
+         habitat_selected = recode(habitat_selected,
+                                   'Not selected' = 'Not Selected')) %>%
   mutate(date = mdy(date)) %>%
   mutate_at(vars(channel_unit_type,
                  bank_type_condition_closest,
@@ -399,13 +403,27 @@ xs_use %>%
   labs(x = 'Sinuousity Class',
        y = 'Percentage')
 
-
-
-xs_use %>%
+xs_all = xs_use %>%
   mutate(source = 'Use') %>%
   bind_rows(xs_avail %>%
               mutate(source = 'Avail.')) %>%
-  filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  mutate(dominant_cover_type_1_5m_radius = factor(dominant_cover_type_1_5m_radius,
+                                                  levels = levels(xs_use$dominant_cover_type_1_5m_radius))) %>%
+  mutate(dominant_substrate_1mx1m = fct_recode(dominant_substrate_1mx1m,
+                                               Boulder = "boulder",
+                                               Cobble = "cobble",
+                                               Fines = "silt_fines",
+                                               Sand = "sand",
+                                               Gravel = 'gravel'),
+         dominant_substrate_1mx1m = fct_relevel(dominant_substrate_1mx1m,
+                                                "Gravel",
+                                                after = 2))
+
+
+# some preliminary plots comparing use and availability
+xs_all %>%
+  # filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  filter(source == 'Avail.' |  habitat_selected == 'Selected') %>%
   ggplot(aes(x = source,
              fill = channel_unit_type)) +
   geom_bar(position = position_fill()) +
@@ -416,11 +434,9 @@ xs_use %>%
        y = 'Percentage')
 
 
-xs_use %>%
-  mutate(source = 'Use') %>%
-  bind_rows(xs_avail %>%
-              mutate(source = 'Avail.')) %>%
-  filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+xs_all %>%
+  # filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  filter(source == 'Avail.' |  habitat_selected == 'Selected') %>%
   filter(!is.na(substrate_concealment)) %>%
   ggplot(aes(x = source,
              fill = substrate_concealment)) +
@@ -432,13 +448,9 @@ xs_use %>%
        y = 'Percentage')
 
 
-xs_use %>%
-  mutate(source = 'Use') %>%
-  bind_rows(xs_avail %>%
-              mutate(source = 'Avail.')) %>%
-  mutate(dominant_cover_type_1_5m_radius = factor(dominant_cover_type_1_5m_radius,
-                                                  levels = levels(xs_use$dominant_cover_type_1_5m_radius))) %>%
-  filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+xs_all %>%
+  # filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  filter(source == 'Avail.' |  habitat_selected == 'Selected') %>%
   filter(!is.na(dominant_cover_type_1_5m_radius)) %>%
   ggplot(aes(x = source,
              fill = dominant_cover_type_1_5m_radius)) +
@@ -450,20 +462,9 @@ xs_use %>%
        y = 'Percentage')
 
 
-xs_use %>%
-  mutate(source = 'Use') %>%
-  bind_rows(xs_avail %>%
-              mutate(source = 'Avail.')) %>%
-  mutate(dominant_substrate_1mx1m = fct_recode(dominant_substrate_1mx1m,
-                                               Boulder = "boulder",
-                                               Cobble = "cobble",
-                                               Fines = "silt_fines",
-                                               Sand = "sand",
-                                               Gravel = 'gravel'),
-         dominant_substrate_1mx1m = fct_relevel(dominant_substrate_1mx1m,
-                                                "Gravel",
-                                                after = 2)) %>%
-  filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+xs_all %>%
+  # filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  filter(source == 'Avail.' |  habitat_selected == 'Selected') %>%
   filter(!is.na(dominant_substrate_1mx1m)) %>%
   ggplot(aes(x = source,
              fill = dominant_substrate_1mx1m)) +
@@ -475,4 +476,27 @@ xs_use %>%
        y = 'Percentage')
 
 
+xs_all %>%
+  # filter(source == 'Avail.' |  tag_status != 'Mortality') %>%
+  filter(source == 'Avail.' |  habitat_selected == 'Selected') %>%
+  filter(!is.na(bank_type_condition_closest)) %>%
+  ggplot(aes(x = source,
+             fill = bank_type_condition_closest)) +
+  geom_bar(position = position_fill()) +
+  scale_fill_brewer(palette = 'Set1',
+                    name = 'Bank Type') +
+  facet_wrap(~ Category) +
+  labs(x = 'Data Set',
+       y = 'Percentage')
 
+
+xs_all %>%
+  filter(source == 'Use',
+         habitat_selected == 'Selected') %>%
+  tabyl(Category) %>%
+  adorn_pct_formatting()
+
+xs_center_pts %>%
+  st_drop_geometry() %>%
+  tabyl(Category) %>%
+  adorn_pct_formatting()
