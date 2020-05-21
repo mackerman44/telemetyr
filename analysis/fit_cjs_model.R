@@ -88,6 +88,7 @@ rt_ch = list('17_18',
          fill = 0)
 
 
+
 # # which year of data to load?
 # load('data/prepped/pilot/cap_hist.rda')
 # load('data/prepped/2018_2019/cap_hist.rda')
@@ -145,7 +146,7 @@ jags_params = c("phi", "p", "survship")
 y_list = rt_ch %>%
   split(list(.$season)) %>%
   map(.f = function(x) {
-    if(x$season %in% c('17_18', '18_19')) {
+    if(x$season[1] %in% c('17_18', '18_19')) {
       sites = rec_df %>%
         filter(season == unique(x$season)) %>%
         pull(site_code) %>%

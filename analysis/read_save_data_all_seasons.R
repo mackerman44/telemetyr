@@ -210,9 +210,17 @@ compress_df = compress_raw_data(raw_df,
 # prep some fish capture history data
 yr_label = "18_19"
 
+# look for detections of batch 2 and 3 tags within 24 hrs of activation, and delete those (these tags run for 24 hrs, then shut off)
+ch_compress = compress_df %>%
+  anti_join(tag_df_list[[yr_label]] %>%
+              filter(tag_purpose == 'fish',
+                     duty_cycle != 'batch_1') %>%
+              select(tag_id, release_time) %>%
+              inner_join(compress_df) %>%
+              filter(end <= release_time + lubridate::hours(1)))
+
 # list with wide, long capture histories and tag info
-cap_hist_list = prep_capture_history(compress_df %>%
-                                       filter(!is.na(start)),
+cap_hist_list = prep_capture_history(ch_compress,
                                      tag_data = tag_df_list[[yr_label]],
                                      n_obs_valid = 3,
                                      rec_site = rec_site_list[[yr_label]],
