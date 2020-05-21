@@ -49,7 +49,8 @@ summarise_timer_data = function(compress_df = NULL,
 
   # if user provides a list of receiver codes
   if(!is.null(receiver_codes)) {
-    receiver_nms = receiver_nms[receiver_nms %in% receiver_codes]
+    receiver_nms = factor(receiver_nms[receiver_nms %in% receiver_codes],
+                          levels = receiver_codes)
   }
 
   cat("Summarizing hours that receivers are operational.\n")
