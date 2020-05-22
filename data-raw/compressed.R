@@ -2,13 +2,23 @@
 
 library(telemetyr)
 library(dplyr)
+library(readr)
+
+# set Biomark NAS prefix, depending on operating system
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+}
+if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS"
+}
 
 # Biomark NAS mapped to S:/
-download_path = "S:/data/telemetry/lemhi/fixed_site_downloads/2018_2019"
+download_path = paste0(nas_prefix, "/data/telemetry/lemhi/fixed_site_downloads/2018_2019")
 
 rec_nms = c("LH1", "CA1", "TR1", "RR1", "NF1")
 compressed = read_txt_data(path = download_path,
                            receiver_codes = rec_nms) %>%
+  # use only frequency 5
   filter(frequency == 5) %>%
   compress_raw_data(min_yr = 2018,
                     max_yr = 2019,
