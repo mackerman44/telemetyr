@@ -225,31 +225,21 @@ Now that we have our `compressed` dataset, the next major step towards many (or 
 
 ## Telemetry Sites
 
-Next, let's pull in some metadata related to the receivers we used. We've included metadata for all release and observation sites used in the Lemhi River study, as an example, in an object called `site_metadata`. Using the following we can pull out metadata for those telemetry sites we've been using thus far (i.e. sites with receivers in `rec_nms`), plus the lower Lemhi River screw trap where tag releases occurred during the 2017/2018 season.
+Next, let's pull in some metadata related to the receivers we used. We've included example metadata for a small handful of fixed telemetry sites used in the Lemhi River study, as an example, in an object called `site_metadata`. 
 
 ```{r site-meta}
-# pull our sites out of site_metadata
-example_sites = site_metadata %>%
-  filter(site_code %in% c("LH", "CA", "TR", "RR", "NF"))
-
-# view example_sites
-example_sites
+# view example site metadata
+site_metadata
 
 ```
 
 ## Released tags
 
-We also need data about the tags releases each year. Similar to our site information, we've included tag release information from the Lemhi River study in an object `tag_releases` within the `telemetyr` package. Let's extract information from `tag_releases` for those tags released during the 2018/2019 season. In addition, our example `raw` and `compressed` datasets only contain records for radio tag IDs that start with (i.e. frequencies) 5. This was simply done to reduce the example dataset to a more reasonable size. That is reflected in the following. We also provide an example if the user would, for example, like to extract tag codes starting with 2, 5 or 8:
+We also need data about the tags released each year. Similar to our site information, we've included example tag release information from the Lemhi River study in an object `tag_releases` within the `telemetyr` package. In our example, we include information for tags released from the 2018/2019 season and only those tag IDs that start with (i.e. frequencies) 5. This was simply done to reduce the example dataset to a more reasonable size.
 
 ```{r tag_release_data}
-# extract 2018/2019 tag releases
-example_tags = tag_releases %>%
-  filter(season == "18_19") %>%
-  filter(str_detect(tag_id, "^5"))
-  # filter(str_detect(tag_id, "^2|^5|^8"))
-
 # view example_tags
-head(example_tags)
+head(tag_releases)
 
 ```
 
@@ -259,7 +249,7 @@ Combining the above with the `compressed` detections, we can put together captur
 
 ```{r prep-cap-hist}
 # prep sites for prep_capture_history()
-cjs_sites = example_sites %>%
+cjs_sites = site_metadata %>%
   select(site = site_code, 
          receivers) %>%
   group_by(site) %>%
@@ -278,7 +268,7 @@ cjs_sites = example_sites %>%
 
 # prepare capture histories
 cap_hist_list = prep_capture_history(compressed,
-                                     tag_data = example_tags,
+                                     tag_data = tag_releases,
                                      n_obs_valid = 3,
                                      rec_site = cjs_sites,
                                      delete_upstream = T,
