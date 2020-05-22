@@ -1,7 +1,6 @@
 ## code to prepare `site_metadata` dataset goes here
 
 library(readxl)
-library(magrittr)
 library(dplyr)
 library(readr)
 
