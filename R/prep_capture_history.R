@@ -5,7 +5,7 @@
 #' @author Kevin See and Mike Ackerman
 #'
 #' @param compress_df compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.
-#' @param tag_data dataframe with metadata for each tag, including columns named \code{tag_id}, \code{tag_purpose} (with some tags having "\code{fish}" in this column), and \code{release_time}.
+#' @param tag_data dataframe with metadata for each tag, including columns named \code{tag_id}, \code{tag_purpose} (with some tags having "\code{fish}" in this column), \code{release_site} (which is one of the sites in the \code{rec_site} input) and \code{release_time}.
 #' @param n_obs_valid minumum number of observations made at a location to be considered valid.
 #' @param rec_site data.frame with 2 columns, \code{site} and \code{receiver}, with sites and and receivers as factors with levels in order.
 #' @param delete_upstream should detections that indicate upstream movement be deleted?
@@ -21,7 +21,6 @@
 prep_capture_history = function(compress_df = NULL,
                                 tag_data = NULL,
                                 n_obs_valid = 3,
-                                # remove_sites = c('MT','AC','TT'),
                                 rec_site = NULL,
                                 delete_upstream = T,
                                 location = c('site', 'receiver'),
@@ -110,6 +109,18 @@ prep_capture_history = function(compress_df = NULL,
         arrange(tag_id, first_obs)
     }
 
+    # add release site
+    first_last %<>%
+      bind_rows(tag_data %>%
+                  filter(release_site != "NA" & !is.na(release_site)) %>%
+                  select(tag_id, loc = release_site,
+                         first_obs = release_time) %>%
+                  mutate(last_obs = first_obs,
+                         n = 1)) %>%
+      mutate(loc = factor(loc,
+                          levels = levels(rec_site$receiver))) %>%
+      arrange(tag_id, first_obs)
+
     # remove detections that indicate upstream movement?
     if(delete_upstream) {
       first_last %<>%
@@ -158,6 +169,18 @@ prep_capture_history = function(compress_df = NULL,
         rename(loc = site) %>%
         arrange(tag_id, first_obs)
     }
+
+    # add release site
+    first_last %<>%
+      bind_rows(tag_data %>%
+                  filter(release_site != "NA" & !is.na(release_site)) %>%
+                  select(tag_id, loc = release_site,
+                         first_obs = release_time) %>%
+                  mutate(last_obs = first_obs,
+                         n = 1)) %>%
+      mutate(loc = factor(loc,
+                          levels = levels(rec_site$site))) %>%
+      arrange(tag_id, first_obs)
 
     # remove detections that indicate upstream movement?
     if(delete_upstream) {
