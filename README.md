@@ -1,12 +1,10 @@
 # telemetyr
 
-`telemetyr` is an R package to ease the burden of processing and interpreting oodles of telemetry observation data. More specifically, `telemetyr` aims to provide tools to ease the reading, cleaning, reduction, analysis, and visualization of telemetry observational data. The package is initially being built using data from a radio telemetry project to characterize the distribution, movement, and survival of juvenile Chinook salmon in the Lemhi and Salmon rivers, Idaho, during winter months, but the hope is that functions and tools within can be applied elsewhere to any type of telemetry data.
+`telemetyr` is an R package to ease the burden of processing and interpreting oodles of telemetry observation data. More specifically, `telemetyr` aims to provide tools to ease the reading, cleaning, reduction, analysis, and visualization of telemetry observational data. The package is initially being developed as part of a radio telemetry project to characterize the distribution, movement, and survival of juvenile Chinook salmon in the Lemhi and Salmon rivers, Idaho, USA, during winter months, but the hope is that functions and tools within will eventually be developed further and can be applied elsewhere to any type of telemetry observation data.
 
-The project consists of two parts and functions and analyses within are build to support those:
+At the moment, the package includes functionality to import, clean, and compress telemetry observations in preparation for analysis. Cleaned observations can then easily be turned into long- or wide-form capture histories which can then be used for data analysis and visualization. Some functions and documentation are also included to help the user run a Cormack-Jolly-Seber model. We also include functions that can be used for perform simple telemetry site "diagnostics" including evaluations of site operation times, noise, and the like.
 
-1. Evaluation of the movement, distribution, and survival of Chinook salmon presmolts that winter in the mainstem Salmon River downstream of their natal Lemhi River. This life-history is alternatively termed as downstream rearing (DSR) juveniles. The `telemetyr` package contains functions to generate capture histories from raw telemetry data to be used, in our case, a Cormack-Jolly-Seber model.
-
-2. Quantify habitat availablity and habitat use of juvenile Chinook salmon that remain in the Lemhi River to rear during winter months. This life history is alternatively termed as natal reach rearing (NRR) juveniles. The goal is that by comparing available versus used habitat we can infer habitat preference or target habitat conditions for juvenile Chinook winter rearing; this information can be used in habitat rehabilitation efforts. The `telemetyr` R package contains functions to summarize and analyze habitat use and availability.
+`telemetyr` is currently designed to work with data downloaded from NOAA radio receivers and using the Tracker software, but our hope to is eventually improve `telemetyr` to accept data from a variety of receivers, be it radio, acoustic, or otherwise.
 
 ## Getting Started
 
@@ -31,6 +29,22 @@ Be sure to include the `build_vignettes = TRUE` argument, as this will ensure th
 
 The `telemetyr` R package includes the functionality to create capture histories to be used in a Cormack-Jolly-Seber (CJS) capture-recapture model including a vignette on how to implement the model in
 the JAGS (Just Another Gibbs Sampler) software. JAGS can be downloaded [here](https://sourceforge.net/projects/mcmc-jags/files/).
+
+## `postpack`
+
+In addition, we use the `postpack` R package available [here](https://github.com/bstaton1/postpack) for working with the class \code{mcmc.list} object resulting from the CJS performed in JAGS. To install the current working version of `postpack` you can use:
+```
+devtools::install_github("bstaton1/postpack")
+```
+The `build_vignettes = TRUE` option can also be invoked there to build vignettes upon installation.
+
+## Vignettes
+
+Because the R packages `rmarkdown` and `knitr` are used to build this vignette to HTML output, you are required to have these packages installed before running `install_github()` with the `build_vignettes = TRUE` argument. After building vignettes, they can then be accessed using the following, for example:
+
+```
+vignette("Data_Prep", package = "telemetyr")
+```
 
 ## Making Contributions
 
