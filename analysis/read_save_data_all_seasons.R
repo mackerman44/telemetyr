@@ -73,7 +73,6 @@ rec_site_list = rec_meta %>%
 # metadata about each tag, split by year
 # get data about each released tag, including code
 tag_df_list = read_excel(paste0(nas_prefix, '/data/telemetry/lemhi/tag_release/lemhi_winter_telemetry_tag_info.xlsx')) %>%
-# tag_df_list = read_excel('data/prepped/tag_release/lemhi_winter_telemetry_tag_info.xlsx') %>%
   mutate(tag_id = str_extract(radio_tag_id, "[:digit:]*"),
          tag_id = as.numeric(tag_id)) %>%
   mutate_at(vars(activation_time, release_time),
@@ -82,35 +81,6 @@ tag_df_list = read_excel(paste0(nas_prefix, '/data/telemetry/lemhi/tag_release/l
             list(excel_numeric_to_date),
             include_time = T) %>%
   split(list(.$season))
-
-
-# fix release times for 19-20 (issue with timezones)
-# read in correct release times
-rel_19_20 = read_csv("~/Merck Sharp & Dohme, Corp/Biomark Radio Telemetry - General/Data/Tags/2019_2020/TagReleases2019_2020.csv") %>%
-  clean_names(case = 'snake') %>%
-  rename(radio_tag_id = radio_tag,
-         pit_tag_id = pit_tag_num,
-         release_site = location,
-         tag_purpose = tag_type,
-         release_time = release,
-         activation_time = activation) %>%
-  mutate(tag_id = str_extract(radio_tag_id, "[:digit:]*"),
-         tag_id = as.numeric(tag_id)) %>%
-  mutate_at(vars(activation_time, release_time),
-            list(lubridate::mdy_hm)) %>%
-  select(one_of(names(tag_df_list[['19_20']])))
-
-lubridate::tz(rel_19_20$release_time) <- "UTC"
-lubridate::tz(rel_19_20$activation_time) <- "UTC"
-
-tag_df_fix = tag_df_list[["19_20"]] %>%
-  select(-release_time) %>%
-  left_join(rel_19_20 %>%
-              select(tag_id, release_time)) %>%
-  select(one_of(names(tag_df_list[["19_20"]])))
-
-tag_df_list[["19_20"]] = tag_df_fix
-
 
 #-------------------------
 # PILOT STUDY
