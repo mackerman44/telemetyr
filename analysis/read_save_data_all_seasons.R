@@ -41,7 +41,7 @@ save_path = paste0(nas_prefix, "/Nick/telemetry/raw/")
 #-------------------------
 # used for constructing capture histories
 # read in some metadata associated with the receivers
-rec_meta = read_excel('data/prepped/site_metadata/rt_site_metadata.xlsx')
+rec_meta = read_excel(paste0(nas_prefix, '/data/telemetry/lemhi/site_metadata/rt_site_metadata.xlsx'))
 
 # which receivers were used each year?
 rec_site_list = rec_meta %>%
@@ -52,9 +52,11 @@ rec_site_list = rec_meta %>%
   split(list(.$season)) %>%
   map(.f = function(x) {
     x %>%
-      filter(site_type == 'rt_fixed') %>%
+      # filter(site_type == 'rt_fixed') %>%
+      filter(site_type %in% c('rt_fixed', 'rst')) %>%
+      arrange(desc(rt_rkm)) %>%
       select(site = site_code,
-             receivers) %>%
+             receivers, rt_rkm) %>%
       group_by(site) %>%
       nest() %>%
       ungroup() %>%
@@ -124,6 +126,13 @@ compress_df = compress_raw_data(raw_df,
 # prep some fish capture history data
 yr_label = "17_18"
 
+# drop all "on-off" tags for capture history
+ch_compress = compress_df %>%
+  anti_join(tag_df_list[[yr_label]] %>%
+              filter(duty_cycle == 'on_off') %>%
+              select(tag_id))
+
+
 # list with wide, long capture histories and tag info
 cap_hist_list = prep_capture_history(compress_df,
                                      tag_data = tag_df_list[[yr_label]],
@@ -190,10 +199,15 @@ ch_compress = compress_df %>%
               filter(end <= release_time + lubridate::hours(1)))
 
 # list with wide, long capture histories and tag info
+# for this year, drop releases at Pahsimeroi trap
 cap_hist_list = prep_capture_history(ch_compress,
-                                     tag_data = tag_df_list[[yr_label]],
+                                     tag_data = tag_df_list[[yr_label]] %>%
+                                       filter(release_site != 'PAHTRP'),
                                      n_obs_valid = 3,
-                                     rec_site = rec_site_list[[yr_label]],
+                                     rec_site = rec_site_list[[yr_label]] %>%
+                                       filter(!site %in% c('PAHTRP', 'DG', 'KP', 'DC')) %>%
+                                       mutate_at(vars(site, receiver),
+                                                 list(fct_drop)),
                                      delete_upstream = T,
                                      location = 'site',
                                      output_format = 'all')
@@ -245,10 +259,15 @@ ch_compress = compress_df %>%
 
 
 # list with wide, long capture histories and tag info
+# for this year, drop releases at Hayden trap
 cap_hist_list = prep_capture_history(ch_compress,
-                                     tag_data = tag_df_list[[yr_label]],
+                                     tag_data = tag_df_list[[yr_label]] %>%
+                                       filter(release_site != 'HYDTRP'),
                                      n_obs_valid = 3,
-                                     rec_site = rec_site_list[[yr_label]],
+                                     rec_site = rec_site_list[[yr_label]] %>%
+                                       filter(site != 'HYDTRP') %>%
+                                       mutate_at(vars(site, receiver),
+                                                 list(fct_drop)),
                                      delete_upstream = T,
                                      location = 'site',
                                      output_format = 'all')
