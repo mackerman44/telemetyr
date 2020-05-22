@@ -11,7 +11,7 @@
 
 <meta name="author" content="Mike Ackerman1, and Kevin See1,✉" />
 
-<meta name="date" content="2020-05-04" />
+<meta name="date" content="2020-05-22" />
 
 <title>PIT Tag-Only CJS Models</title>
 
@@ -1539,7 +1539,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">PIT Tag-Only CJS Models</h1>
 <h4 class="author">Mike Ackerman<sup>1</sup>, and Kevin See<sup>1,✉</sup></h4>
-<h4 class="date">May 04, 2020</h4>
+<h4 class="date">May 22, 2020</h4>
 
 </div>
 
@@ -1560,6 +1560,14 @@ library(postpack)
 library(kableExtra)
 
 theme_set(theme_bw())</code></pre>
+<pre class="r"><code>#-------------------------
+# point to NAS based on operating system
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = &quot;S:&quot;
+}
+if(.Platform$OS.type == 'unix') {
+  nas_prefix = &quot;~/../../Volumes/ABS&quot;
+}</code></pre>
 <div id="introduction" class="section level1">
 <h1><span class="header-section-number">1</span> Introduction</h1>
 <p>We are interested primarily in estimating survival of fish from release (e.g. at the Lower Lemhi screw trap) to arrival at Lower Granite dam, using a Cormack Jolly-Seber (CJS) model. In particular, we want to investigate whether there is any difference in survival between fish tagged with a radio tag, and other PIT tagged fish.</p>
@@ -1584,13 +1592,13 @@ theme_set(theme_bw())</code></pre>
 <h2><span class="header-section-number">2.2</span> Model</h2>
 <p>We used a Cormack Jolly-Seber model to estimate survival between reaches and detection probability at each detection point. The detection probability at the last site and the survival to that site are confounded in the model, and cannot be estimated separately. This is why we ensured our last site was below Lower Granite dam.</p>
 <pre class="r"><code># read in all the information about radio tagged fish
-rt_fish_df = list('pilot',
-                  '2018_2019',
-                  '2019_2020') %&gt;%
+rt_fish_df = list('17_18',
+                  '18_19',
+                  '19_20') %&gt;%
   rlang::set_names() %&gt;%
   map_df(.id = 'Year',
-         .f = function(x) {
-           load(paste0('../../data/prepped/', x, '/cap_hist.rda'))
+         .f = function(yr) {
+           load(paste0(nas_prefix, &quot;/Nick/telemetry/raw/cap_hist_&quot;, yr, &quot;.rda&quot;))
            return(cap_hist_list$tag_df)
          }) %&gt;%
   # filter out fish with no PIT tag information
@@ -1603,7 +1611,7 @@ org_config = buildConfig()
 #&gt; [1] &quot;Querying MRR sites' metadata&quot;
 
 # read in detections from PTAGIS
-observations = read_csv('../../data/raw/PITcleanr_query.csv')
+observations = read_csv(paste0(nas_prefix, '/data/telemetry/lemhi/PIT_observations/PITcleanr_query.csv'))
 
 # compress observations
 comp_df = observations %&gt;%

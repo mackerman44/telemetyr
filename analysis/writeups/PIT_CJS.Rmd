@@ -69,6 +69,18 @@ library(kableExtra)
 theme_set(theme_bw())
 ```
 
+```{r nas-path}
+#-------------------------
+# point to NAS based on operating system
+if(.Platform$OS.type != 'unix') {
+  nas_prefix = "S:"
+}
+if(.Platform$OS.type == 'unix') {
+  nas_prefix = "~/../../Volumes/ABS"
+}
+```
+
+
 # Introduction
 
 We are interested primarily in estimating survival of fish from release (e.g. at the Lower Lemhi screw trap) to arrival at Lower Granite dam, using a Cormack Jolly-Seber (CJS) model. In particular, we want to investigate whether there is any difference in survival between fish tagged with a radio tag, and other PIT tagged fish.
@@ -95,13 +107,13 @@ We used a Cormack Jolly-Seber model to estimate survival between reaches and det
 
 ```{r prep-data}
 # read in all the information about radio tagged fish
-rt_fish_df = list('pilot',
-                  '2018_2019',
-                  '2019_2020') %>%
+rt_fish_df = list('17_18',
+                  '18_19',
+                  '19_20') %>%
   rlang::set_names() %>%
   map_df(.id = 'Year',
-         .f = function(x) {
-           load(paste0('../../data/prepped/', x, '/cap_hist.rda'))
+         .f = function(yr) {
+           load(paste0(nas_prefix, "/Nick/telemetry/raw/cap_hist_", yr, ".rda"))
            return(cap_hist_list$tag_df)
          }) %>%
   # filter out fish with no PIT tag information
@@ -111,7 +123,7 @@ rt_fish_df = list('pilot',
 org_config = buildConfig()
 
 # read in detections from PTAGIS
-observations = read_csv('../../data/raw/PITcleanr_query.csv')
+observations = read_csv(paste0(nas_prefix, '/data/telemetry/lemhi/PIT_observations/PITcleanr_query.csv'))
 
 # compress observations
 comp_df = observations %>%
