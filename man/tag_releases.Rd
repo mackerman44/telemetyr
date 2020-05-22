@@ -3,9 +3,9 @@
 \docType{data}
 \name{tag_releases}
 \alias{tag_releases}
-\title{Tag Release Information}
+\title{Example Tag Release Data}
 \format{
-A data frame with 776 rows and 13 variables:
+A data frame with 38 rows and 13 variables:
 \describe{
   \item{season}{the year/season the tag was deployed}
   \item{radio_tag_id}{tag ID including frequency, code, and letter denoting season}
@@ -23,13 +23,14 @@ A data frame with 776 rows and 13 variables:
 }
 }
 \source{
-Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+Biomark NAS - data/telemetry/lemhi/tag_release/
 }
 \usage{
 tag_releases
 }
 \description{
-Data for tags deployed in the Lemhi River juvenile Chinook
-salmon winter telemetry project
+Example tag release data; \code{tag_releases} includes information
+from 38 tags released in fall 2018 in a juvenile Chinook salmon
+radio telemetry project on the Lemhi and Salmon Rivers, Idaho
 }
 \keyword{datasets}

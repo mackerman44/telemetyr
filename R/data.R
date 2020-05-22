@@ -60,12 +60,13 @@
 #' @source Biomark NAS - data/telemetry/lemhi/site_metadata/
 "site_metadata"
 
-#' Tag Release Information
+#' Example Tag Release Data
 #'
-#' Data for tags deployed in the Lemhi River juvenile Chinook
-#' salmon winter telemetry project
+#' Example tag release data; \code{tag_releases} includes information
+#' from 38 tags released in fall 2018 in a juvenile Chinook salmon
+#' radio telemetry project on the Lemhi and Salmon Rivers, Idaho
 #'
-#' @format A data frame with 776 rows and 13 variables:
+#' @format A data frame with 38 rows and 13 variables:
 #' \describe{
 #'   \item{season}{the year/season the tag was deployed}
 #'   \item{radio_tag_id}{tag ID including frequency, code, and letter denoting season}
@@ -81,7 +82,7 @@
 #'   \item{release_time}{the release time for the fish, Pacific Standard}
 #'   \item{notes}{relevant notes}
 #' }
-#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+#' @source Biomark NAS - data/telemetry/lemhi/tag_release/
 "tag_releases"
 
 #' Capture Histories - Long Format
@@ -120,30 +121,6 @@
 #' }
 #' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
 "ch_wide"
-
-#' Tag Releases - For Capture Histories
-#'
-#' A subset of \code{tag_releases} for those tags included
-#' in \code{ch_long} and \code{ch_wide}
-#'
-#' @format A data frame with 38 rows and 13 variables:
-#' \describe{
-#'   \item{season}{the year/season the tag was deployed}
-#'   \item{radio_tag_id}{the radio tag ID including frequency, code and letter}
-#'   \item{pit_tag_id}{the PIT tag number also injected into the fish}
-#'   \item{tag_id}{tag ID including frequency and code}
-#'   \item{srr}{species, run, rear, uses PTAGIS nomenclature}
-#'   \item{length}{length, millimeters}
-#'   \item{weight}{weight, grams}
-#'   \item{tag_purpose}{Was tag deployed in a fish, used as test tag, or other?}
-#'   \item{release_site}{location that a fish was released at}
-#'   \item{duty_cycle}{the batch or duty cycle of the fish}
-#'   \item{activation_time}{the activation time of the tag, Pacific Standard}
-#'   \item{release_time}{the release time for the fish, Pacific Standard}
-#'   \item{notes}{relevant notes}
-#' }
-#' @source Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
-"tag_df"
 
 #' Volt & Temperature Data
 #'
