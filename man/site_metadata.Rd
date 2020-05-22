@@ -3,9 +3,9 @@
 \docType{data}
 \name{site_metadata}
 \alias{site_metadata}
-\title{Site Metadata}
+\title{Example Site Metadata}
 \format{
-A data frame with 45 rows and 12 variables:
+A data frame with 5 rows and 12 variables:
 \describe{
   \item{site_name}{name of release or observation site}
   \item{site_code}{site code, PTAGIS code in the case of \code{site_type == rst} | \code{site_type == pit_array}}
@@ -22,13 +22,14 @@ A data frame with 45 rows and 12 variables:
 }
 }
 \source{
-Biomark NAS - data/telemetry/lemhi/fixed_site_downloads/2018_2019/
+Biomark NAS - data/telemetry/lemhi/site_metadata/
 }
 \usage{
 site_metadata
 }
 \description{
-Metadata for tag release and observation sites for the Lemhi River
-juvenile Chinook salmon winter telemetry project
+Example site metadata; \code{site_metadata} includes information
+from 5 sites used in a juvenile Chinook salmon radio telemetry
+project on the Lemhi and Salmon Rivers, Idaho
 }
 \keyword{datasets}
