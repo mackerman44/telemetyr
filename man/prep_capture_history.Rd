@@ -17,7 +17,7 @@ prep_capture_history(
 \arguments{
 \item{compress_df}{compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.}
 
-\item{tag_data}{dataframe with metadata for each tag, including columns named \code{tag_id}, \code{tag_purpose} (with some tags having "\code{fish}" in this column), and \code{release_time}.}
+\item{tag_data}{dataframe with metadata for each tag, including columns named \code{tag_id}, \code{tag_purpose} (with some tags having "\code{fish}" in this column), \code{release_site} (which is one of the sites in the \code{rec_site} input) and \code{release_time}.}
 
 \item{n_obs_valid}{minumum number of observations made at a location to be considered valid.}
 
