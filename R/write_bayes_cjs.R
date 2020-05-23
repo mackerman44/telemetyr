@@ -6,6 +6,7 @@
 #'
 #' @param file_path name (with file path) to save the model as. Probably a .txt file
 #'
+#' @importFrom postpack write_model
 #' @export
 #' @return NULL
 
