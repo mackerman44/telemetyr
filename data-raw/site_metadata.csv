@@ -1,4 +1,5 @@
 site_name,site_code,site_type,receivers,rt_site_type,point_y,point_x,use17_18,use18_19,use19_20,ptagis_rkm,rt_rkm
+Lower Lemhi RST,LLRTP,rst,"NA","NA",45.1595,-113.8331,TRUE,TRUE,TRUE,522.303.416.007,274.006
 Lemhi Hole,LH,rt_fixed,"LH1, LH2",pod,45.1863794169,-113.891305307,TRUE,TRUE,TRUE,"NA",274.000
 Carmen Creek,CA,rt_fixed,CA1,pod,45.231564,-113.894692,FALSE,TRUE,FALSE,"NA",269
 Tower Rock,TR,rt_fixed,"TR1, TR2",pod,45.3109427049,-113.906460821,TRUE,TRUE,TRUE,"NA",261

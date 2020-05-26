@@ -11,7 +11,6 @@ data("tag_releases")
 data("site_metadata")
 
 example_sites = site_metadata %>%
-  filter(site_code %in% c("LH", "CA", "TR", "RR", "NF")) %>%
   select(site = site_code,
          receivers) %>%
   group_by(site) %>%
@@ -30,7 +29,8 @@ example_sites = site_metadata %>%
 
 # prepare capture histories
 ch_wide = prep_capture_history(compressed,
-                               tag_data = tag_releases,
+                               tag_data = tag_releases %>%
+                                 filter(release_site == 'LLRTP'),
                                n_obs_valid = 3,
                                rec_site = example_sites,
                                delete_upstream = T,

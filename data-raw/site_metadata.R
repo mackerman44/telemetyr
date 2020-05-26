@@ -13,7 +13,7 @@ if(.Platform$OS.type == 'unix') {
 }
 
 site_metadata = read_excel(paste0(nas_prefix, "/data/telemetry/lemhi/site_metadata/rt_site_metadata.xlsx")) %>%
-  filter(site_code %in% c("LH", "CA", "TR", "RR", "NF"))
+  filter(site_code %in% c("LLRTP", "LH", "CA", "TR", "RR", "NF"))
 
 write_csv(site_metadata, "data-raw/site_metadata.csv")
 usethis::use_data(site_metadata, overwrite = TRUE)
