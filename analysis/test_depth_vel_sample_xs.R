@@ -12,6 +12,7 @@
 #-------------------------
 library(tidyverse)
 library(sf)
+library(raster)
 
 #-------------------------
 # set NAS prefix, depending on operating system
@@ -23,7 +24,6 @@ if(.Platform$OS.type == 'unix') {
   nas_prefix = "~/../../Volumes/ABS"
 }
 
-
 #-------------------------
 # read in depth & velocities
 # from sampled transects
@@ -34,8 +34,8 @@ xs_raster = crossing(metric = c('depth', 'velocity'),
                           sin_class,
                           .f = function(x, y) {
                             st_read(paste0(nas_prefix, "/data/habitat/lemhi_telemetry/availability/cross_sections/DV_extract/", y, "_", str_sub(x, 0, 1), ".shp")) %>%
-                              select(Name:Sinuosity, Category,
-                                     raster_val = RASTERVALU) %>%
+                              dplyr::select(Name:Sinuosity, Category,
+                                            raster_val = RASTERVALU) %>%
                               mutate_at(vars(raster_val),
                                         list(~ if_else(. == -9999,
                                                        NA_real_,
@@ -43,6 +43,7 @@ xs_raster = crossing(metric = c('depth', 'velocity'),
                               mutate(metric = x)
                           }))
 
+# depth & velocity cross section values - sf object
 dv_sf = xs_raster %>%
   select(-metric) %>%
   unnest(cols = sample_xs) %>%
@@ -57,6 +58,7 @@ dv_sf %>%
   geom_sf() +
   theme_bw()
 
+# depth & velocity cross section values - data frame
 dv_df = dv_sf %>%
   st_drop_geometry() %>%
   as_tibble()
