@@ -74,3 +74,57 @@ dv_df %>%
              nrow = 2) +
   theme_classic() +
   labs(x = 'Raster Value')
+
+#-------------------------
+# read in depth & velocities
+# from entire raster
+#-------------------------
+load(paste0(nas_prefix, "/data/habitat/lemhi_telemetry/prepped/depth_extract.rda"))
+
+depth_extract %>%
+  ggplot(aes(x = value,
+             color = sin_class,
+             fill = sin_class)) +
+  geom_density(alpha = 0.2) +
+  # geom_histogram(position = 'dodge') +
+  scale_color_viridis_d() +
+  scale_fill_viridis_d() +
+  theme_classic() +
+  labs(x = 'Raster Value')
+
+
+dv_df %>%
+  filter(metric == 'depth') %>%
+  select(sin_class, raster_val) %>%
+  mutate(source = 'Sampled') %>%
+  bind_rows(depth_extract %>%
+              as_tibble() %>%
+              select(-ID) %>%
+              rename(raster_val = value) %>%
+              mutate(source = 'All')) %>%
+  ggplot(aes(x = raster_val,
+             color = source,
+             fill = source)) +
+  geom_density(alpha = 0.2) +
+  # geom_histogram(position = 'dodge') +
+  scale_color_viridis_d() +
+  scale_fill_viridis_d() +
+  facet_wrap(~ sin_class,
+             scales = 'free_y') +
+  theme_classic() +
+  labs(x = 'Raster Value')
+
+
+dv_df %>%
+  filter(metric == 'depth') %>%
+  select(sin_class, raster_val) %>%
+  mutate(source = 'Sampled') %>%
+  bind_rows(depth_extract %>%
+              as_tibble() %>%
+              select(-ID) %>%
+              rename(raster_val = value) %>%
+              mutate(source = 'All')) %>%
+  group_by(sin_class, source) %>%
+  summarise_at(vars(raster_val),
+               list(min, max),
+               na.rm = T)
