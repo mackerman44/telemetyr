@@ -21,7 +21,6 @@ library(sf)
 library(janitor)
 library(lubridate)
 library(raster)
-#library(telemetyr)
 
 theme_set(theme_bw())
 
