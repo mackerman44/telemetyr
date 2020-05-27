@@ -28,37 +28,56 @@ prep_jags_cjs = function(cap_hist_wide = NULL,
     tag_df = tag_meta
     names(tag_df)[grep(drop_col_nm, names(tag_df))] = "drop_col"
 
-    # drop batch 2 and batch 3 tags that were never detected after release
-    drop_tags = tag_df %>%
-      dplyr::filter(drop_col %in% drop_values) %>%
-      dplyr::select(tag_id) %>%
+    tag_dets = tag_df %>%
+      dplyr::select(tag_id, drop_col) %>%
       dplyr::distinct() %>%
       dplyr::left_join(cap_hist_wide) %>%
-      dplyr::group_by(tag_id, cap_hist) %>%
+      dplyr::group_by(tag_id, cap_hist, drop_col) %>%
       tidyr::nest() %>%
       dplyr::mutate(n_dets = purrr::map_dbl(data,
-                                            .f = rowSums)) %>%
-      dplyr::filter(n_dets == 1) %>%
+                                            .f = rowSums))
+
+    # drop batch 2 and batch 3 tags that were never detected after release
+    drop_tags = tag_dets %>%
+      dplyr::filter(drop_col %in% drop_values,
+                    n_dets == 1) %>%
       dplyr::pull(tag_id)
 
-    if(length(drop_tags) == 0) {
-      y = cap_hist_wide %>%
-        dplyr::select(-tag_id, -cap_hist) %>%
-        as.matrix()
-    } else {
-      y = cap_hist_wide %>%
-        dplyr::filter(! tag_id %in% drop_tags) %>%
-        dplyr::select(-tag_id, -cap_hist) %>%
-        as.matrix()
+    if(length(drop_tags) > 0) {
+      cap_hist_wide <- cap_hist_wide %>%
+        dplyr::filter(! tag_id %in% drop_tags)
+    }
+
+    # drop detection at release site for batch 2 and batch 3 tags
+    drop_release_tags = tag_dets %>%
+      dplyr::filter(drop_col %in% drop_values,
+                    n_dets > 1) %>%
+      dplyr::pull(tag_id)
+
+    if(length(drop_release_tags) > 0) {
+      cap_hist_wide <- cap_hist_wide %>%
+        dplyr::filter(tag_id %in% drop_release_tags) %>%
+        tidyr::pivot_longer(-c(tag_id:cap_hist),
+                            names_to = "site",
+                            values_to = "seen") %>%
+        dplyr::mutate(site = factor(site,
+                                    levels = names(cap_hist_wide)[-c(1:2)])) %>%
+        dplyr::left_join(tag_meta %>%
+                           select(tag_id, release_site)) %>%
+        dplyr::mutate(seen = if_else(as.character(site) == release_site,
+                                     0, seen)) %>%
+        tidyr::pivot_wider(names_from = "site",
+                           values_from = "seen") %>%
+        select(-release_site) %>%
+        bind_rows(cap_hist_wide %>%
+                    dplyr::filter(! tag_id %in% drop_release_tags)) %>%
+        arrange(tag_id)
     }
   }
 
-  if(is.null(drop_col_nm)) {
-    y = cap_hist_wide %>%
-      dplyr::select(-tag_id, -cap_hist) %>%
-      as.matrix()
-  }
-
+  y = cap_hist_wide %>%
+    dplyr::select(-tag_id, -cap_hist) %>%
+    as.matrix()
 
   jags_data = list(
     N = nrow(y),
@@ -69,5 +88,4 @@ prep_jags_cjs = function(cap_hist_wide = NULL,
   )
 
   return(jags_data)
-
 }

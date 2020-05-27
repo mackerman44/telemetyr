@@ -1,15 +1,18 @@
 ---
 title: "Fitting a CJS Model"
-author: Kevin See, Mike Ackerman
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    fig_width: 4
+    fig_height: 4
 vignette: >
-  %\VignetteIndexEntry{CJS}
+  %\VignetteIndexEntry{Fitting a CJS Model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE, results = "hide"}
+library(knitr)
+
 # knitr options
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -25,79 +28,69 @@ knitr::opts_chunk$set(
 # load necessary libraries
 library(telemetyr)
 library(tidyverse)
-library(readxl)
-library(lubridate)
-library(magrittr)
-library(janitor)
-library(rjags)
-library(postpack)
-
 ```
 
 # Introduction
 
-We would like to estimate survival for each reach (between each RT site), using a Cormack Jolly-Seber (CJS) model. 
+We would like to estimate survival between each reach (the boundaries of which are defined by RT sites). To do so, we will use a Cormack Jolly-Seber (CJS) model. CJS models were originally developed to estimate survival between sampling occasions (survival through time). They estimate both the probability of survival from one sampling occasion to the next, as well as the probability of detecting an individual during a sampling occasion, assuming it is alive. The final survival and detection parameters are confounded in CJS models, meaning they cannot be estimated separately (only jointly). 
 
-```{r load-ch-wide}
-# pull out the wide capture history
-cap_hist = ch_wide
-tag_df = tag_df
+Ecologists who work on species with directed migrations (movement in a single direction), such as salmon, have adapted CJS models to estimate survival through space rather than time. Sampling occasions have been replaced with detection sites, fixed in space, and now a CJS model can estimate survival between two detection sites, while accounting for imperfect detection at those sites. The data and model form are identical to CJS models estimating survival through time, it is merely the interpretation of the results that have changed. 
 
-```
+There are a number of software packages available to fit CJS models with. [MARK](http://www.phidot.org/) is a stand-alone software that encompasses many possible ways to analyze data from marked individuals. [`RMark`](https://cran.r-project.org/web/packages/RMark/index.html) is a package to connect R with MARK. Within R, there are packages such as [`marked`](https://CRAN.R-project.org/package=marked), [`Rcapture`](https://CRAN.R-project.org/package=Rcapture) and [`FSA`](https://CRAN.R-project.org/package=FSA) can be used to fit CJS and Jolly-Seber (JS) models. However, all of these packages may not perform as expected when confronted with data like telemetry data, especially the sort where detections at the last few sites may be zero because the animal did not survive to that point, the animal did survive but went undetected ***OR*** survived but the tag stopped transmitting before it reached that point, and so went undetected. 
 
-Note that there may be tagged fish that never appear in the capture history, because they were never detected. In this example, that includes `r sum(!tag_df$tag_id %in% cap_hist$tag_id)` tags that we'll want to account for. We need to construct a capture history for those tags with all zeros. In addition, for this example we will focus only on those fish implanted with a radio tag from batch_1, so we want to exclude the tags with an "on_off" duty cycle. 
+We have found a Bayesian framework to provide the most straightforward method of dealing with issues like these, and will allow the user to build more complicated models on top of the basic one presented here. That is not to say other approaches are wrong, but we will present an example using the Bayesian framework here.
 
-```{r finalize-cap-history}
-cap_hist %<>%
-  full_join(tag_df %>%
-               filter(duty_cycle == 'batch_1') %>%
-               select(tag_id),
-            by = "tag_id") %>%
-  # anti_join(tag_df %>%
-  #              filter(duty_cycle == 'on_off') %>%
-  #              select(tag_id),
-  #           by = "tag_id") %>%
-  mutate(ch_width = nchar(cap_hist)) %>%
-  fill(ch_width) %>% 
-  rowwise() %>%
-  mutate(cap_hist = if_else(is.na(cap_hist),
-                            as.character(paste0(rep(0, ch_width), collapse = '')),
-                            cap_hist)) %>%
-  select(-ch_width) %>%
-  mutate_at(vars(-tag_id, -cap_hist),
-            list(~ if_else(is.na(.), 0, .)))
-```
+# Data
 
-```{r, echo = F, eval = F}
-cap_hist %>%
-  group_by(cap_hist) %>%
+To fit a CJS model, we need capture histories in a wide format, meaning one row for each tag, and a column for each detection site, with a 1 or a 0 depending on whether that tag was detected (or not) at that site. There may be tags that were never detected after release, and if those tags were turned on upon release (i.e. they were batch 1 tags), they should be included in our dataset. Tags that turned on after a period of time (i.e. batch 2 or 3 tags) can be included, if they were detected at least once upon turning on. This is equivalent to adding new marked animals to a CJS model at a time period > 1. 
+
+For this vignette, we have used an example dataset of fish released at the lower Lemhi trap (site code LLRTP), and possibly detected at five downstream sites, `r paste(site_metadata$site_code[-c(1, nrow(site_metadata))], sep = ', ')` and `r site_metadata$site_code[nrow(site_metadata)]`. This example dataset is called `ch_wide` and is included in the `telemetyr` package. The frequency of capture histories in this dataset are shown in the table below. The associated metadata for these tags, including their release site, type of duty cycle, etc. is also included in the `telemetyr` package, and is called `tag_releases`.
+
+```{r cap-hist-freq, echo = F}
+ch_wide %>%
+  group_by(LLRTP, LH, CA, TR, RR, NF, cap_hist) %>%
   summarise(freq = n()) %>%
-  arrange(desc(freq))
+  kable()
 ```
 
 # Cormack Jolly-Seber Model
 
-Now that our capture histories are prepared, we can start constructing the CJS model, and the input data for it. First, we translate the wide capture histories into an $N \times J$ matrix, where $N$ is the number of tags used in the model, and $J$ is the number of detection points, including an initial release point (which must have a detection of 1 by definition). Next, we need to determine at which detection points the fish was known to be alive, because it had been detected there or further downstream. The `telemetyr` package contains a function to do that, called `known_alive()`.
+## Assumptions
 
-```{r jags-data}
-y = cap_hist %>%
-  mutate(Rel = 1) %>%
-  select(tag_id, cap_hist, Rel, everything()) %>%
-  select(-tag_id, -cap_hist) %>%
-  as.matrix()
+The assumptions behind a CJS model include:
 
-jags_data = list(
-  N = nrow(y),
-  J = ncol(y),
-  y = y,
-  z = known_alive(y)
-)
+1. Every marked animal present in the population at sampling period $i$ has the same probability $p_i$ of being captured or resighted.
+1. Every marked animal present in the population at sampling period $i$ has the same probability $\phi_i$ of survival until sampling period $i+1$.
+1. Marks are neither lost nor overlooked and are recorded correctly.
+1. Sampling periods are instantaneous (in reality they are very short periods) and recaptured animals are released immediately.
+1. All emigration from the sampled area is permanent.
+1. The fate of each animal with respect to capture and survival probability is independent of the fate of any other animal.
 
+
+## Shortcut
+
+We have included a wrapper function called `fit_bayes_cjs()` in the `telemetyr` package that accomplishes several steps at once (and calls other functions along the way):
+
+1. Write the JAGS model (`write_bayes_cjs`)
+1. Prepare the data (`prep_jags_cjs`)
+1. Run the Markov chain Monte Carlo, MCMC, algorithm (`run_jags_cjs`)
+1. Summarise posterior samples (`summarise_jags_cjs`)
+
+To skip over the details, and move right to the results, you can run
+
+```{r fit-cjs, eval = F}
+param_summ = fit_bayes_cjs(file_path = "CJS_model.txt",
+                           cap_hist_wide = ch_wide,
+                           tag_meta = tag_releases)
 ```
 
-Next we specify the JAGS model. For this example, we will fit a model with different detection probabilities for each site, and different survival probabilities between each site. We will also calculate the cummulative survival up to each site.
+From here, you can skip right to the [Results] section.
 
-```{r specify-jags-model}
+## Details
+
+To step through fitting this Bayesian CJS model, first we specify the JAGS model. For this example, we will fit a model with different detection probabilities for each site, and different survival probabilities between each site. We will also calculate the cummulative survival up to each site. We write this model as a text file, as shown below. The `telemetyr` package has a function to write this model, called `write_bayes_cjs`, where the user must specify the file path to save this text file.
+
+```{r jags-model, eval = F}
 jags_model = function() {
   # PRIORS
   phi[1] <- 1
@@ -126,135 +119,146 @@ jags_model = function() {
     survship[j] <- survship[j-1] * phi[j]
   }
 }
-
-# write model to a text file
-jags_file = "model.txt"
-write_model(jags_model, jags_file)
-
-# specify which parameters to track
-jags_params = c("phi", "p", "survship")
 ```
 
-We then fit the JAGS model, and obtain an `mcmc.list` of samples from the posterior.
-
-```{r, eval = F, echo = F}
-# using jagsUI package
-library(jagsUI)
-post = jagsUI::jags.basic(jags_data,
-                          parameters.to.save = jags_params,
-                          model.file = jags_file,
-                          n.chains = 4,
-                          n.adapt = 1000,
-                          n.iter = 10000,
-                          n.burnin = 5000,
-                          n.thin = 10)
+```{r write-jags-model, eval = F}
+write_bayes_cjs(file_path = 'CJS_model.txt')
 ```
 
-```{r post-samples}
-# using rjags package
-jags = jags.model(jags_file,
-                  data = jags_data,
-                  n.chains = 4,
-                  n.adapt = 1000)
-# burnin
-update(jags, n.iter = 2500)
-# posterior sampling
-post = coda.samples(jags,
-                    jags_params,
-                    n.iter = 2500,
-                    thin = 5)
+Next, we must prepare our data for this model, which is done using the function `prep_jags_cjs()`, which prepares a named list of data to feed to JAGS. 
 
+```{r prep-jags-data}
+jags_data = prep_jags_cjs(ch_wide,
+                          tag_releases)
 ```
 
-## Results 
+The model requires several pieces of data:
+
+* $N$: the number of tags used in the model
+* $J$: the number of detection points, including the release site
+* $y$: the $N \times J$ matrix of capture histories
+* $z$: an $N \times J$ matrix of times each fish was known to be alive
+* $f$: a vector of length $N$ showing the first occasion each individual is known to be alive
+
+In this example, to determine $N$, we must know how many batch 1 tags were released (we'll use all of those), as well as how many batch 2 or 3 tags were released and eventually detected at least once. $J$ is set at `r jags_data$J` sites. Once we know which tags will be used in the model, we can construct $y$ by filtering `ch_wide` to only include those tags. In this example, that leaves us with `r nrow(jags_data$y)` tags to use.
+
+To construct $z$, the matrix of when each tag was known to be alive, the first and last detection of each fish is extracted, and the sites in between are filled in with 1's, since the fish must have been alive there in order to reach the last site it was detected at. Elements in the matrix after the last detection point for each fish are marked with `NA`'s, since it is unknown whether fish did not survive to those sites or did survive but went undetected there. JAGS will estimate those unknown states as part of the MCMC algorithm. $z$ can be constructed using the function `known_alive()` in the `telemetyr` package. The vector $f$ is the first column in each row of $y$ where a 1 appears, and can be constructed using the `first_alive()` function.
+
+The next step is to run the MCMC algorithm. We use the `rjags` package to connect R to JAGS and extract samples from the posteriors of each parameter, and do this with the function `run_jags_cjs()`.
+
+```{r run-mcmc, eval = F}
+cjs_post = run_jags_cjs(file_path = 'CJS_model.txt',
+                        jags_data = jags_data)
+```
+
+There are several default inputs to `run_jags_cjs()`, including:
+
+* *n_chains*: Number of chains to run. Default is 4
+* *n_adapt*: Number of iterations to run for adapation. Default is 1000
+* *n_burnin*: Number of iterations for the burn in phase. Default is 2500
+* *n_iter*: Number of iterations to monitor. Default is 2500
+* *n_thin*: Thinning interval. Default is 5
+* *params_to_save*: vector of parameters to monitor (i.e. save). Default is `c("phi", "p", "survship")`
+* *rng_seed*: Random number generator seed, to make the results reproducible. Default is 4
+
+Run with these defaults, this provides in `prettyNum(2500 / 5 * 4, big.mark = ',')` samples from the posterior for each detection probability (`p`), survival (`phi`) and cummulative survival (`survship`) parameter. We have found this to be sufficient for most situations, but particular datasets may need higher iterations and/or more thinning. The output of this function is an `mcmc.list` object. 
+
+Finally, we summarise the posterior samples with the function `summarise_jags_cjs`. This uses the package `postpack` to create summaries of each parameter, and there are several inputs the user can adjust depending on what they would like to extract. If you use the wrapper `fit_bayes_cjs()` function, the site names are added to this summary dataframe, but a user could do the same by hand, using code like that listed below.
+
+```{r summarise-posteriors}
+param_summ = summarise_jags_cjs(cjs_post)
+
+param_summ %<>%
+  left_join(tibble(site = colnames(jags_data$y)) %>%
+                mutate(site = factor(site, levels = site),
+                       site_num = as.integer(site))) %>%
+    select(param_grp, site_num,
+           site,
+           param,
+           everything())
+```
+
+# Results 
 
 We can extract summary statistics from the posteriors, and construct plots of detection probablities, survival probabilities and cummulative survival probabilities. 
 
 ```{r create-figures}
-param_summ = post_summ(post,
-          jags_params,
-          Rhat = T,
-          ess = T) %>%
-  t() %>%
-  as_tibble(rownames = "param") %>%
-  mutate(cv = sd / mean)
-
 surv_p = param_summ %>%
-  filter(grepl('survship', param)) %>%
-  mutate(site = factor(colnames(y),
-                       levels = colnames(y))) %>%
+  filter(param_grp == 'survship') %>%
+  filter(site_num < max(site_num)) %>%
   ggplot(aes(x = site,
              y = mean)) +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0) +
   geom_point() +
+  theme_classic() +
   labs(x = 'Site',
        y = 'Cummulative Survival')
 
 phi_p = param_summ %>%
-  filter(grepl('phi', param)) %>%
-  mutate(site = factor(colnames(y),
-                       levels = colnames(y))) %>%
+  filter(param_grp == 'phi') %>%
+  filter(site_num < max(site_num)) %>%
   ggplot(aes(x = site,
              y = mean)) +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0) +
   geom_point() +
+  theme_classic() +
   labs(x = 'Site',
        y = 'Survival From Previous Site')
 
 det_p = param_summ %>%
-  filter(grepl('^p\\[', param)) %>%
-  mutate(site = factor(colnames(y),
-                       levels = colnames(y))) %>%
+  filter(param_grp == 'p') %>%
+  filter(site_num < max(site_num)) %>%
   ggplot(aes(x = site,
              y = mean)) +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0) +
   geom_point() +
+  theme_classic() +
   labs(x = 'Site',
        y = 'Detection Probability')
 
 ```
 
-```{r detect-fig}
+```{r detect-fig, fig.cap = "Estimates of detection probabilities at each site."}
 det_p
 ```
 
-```{r phi-fig}
+```{r phi-fig, fig.cap = "Estimates of survival probabilities between each site."}
 phi_p
 ```
 
-```{r survival-fig}
+```{r survival-fig, fig.cap = 'Estimates of cummulative survival up to each site.'}
 surv_p
 ```
 
-## Diagnostics 
+# Diagnostics 
 
 We can also look at some diagnostics to assess model convergence. These plots use the `postpack` package. 
 
 ```{r diag-phi, fig.width = 8, fig.height = 8}
-diag_plots(post, "phi",
-           layout = "4x2")
+postpack::diag_plots(cjs_post, "phi",
+                     layout = "4x2")
 ```
 
 ```{r diag-surv, fig.width = 8, fig.height = 8}
-diag_plots(post, "survship",
-           layout = "4x2")
+postpack::diag_plots(cjs_post, "survship",
+                     layout = "4x2")
 ```
 
 ```{r diag-p, fig.width = 8, fig.height = 8}
-diag_plots(post, "^p[",
-           layout = "4x2")
+postpack::diag_plots(cjs_post, "^p[",
+                     layout = "4x2")
 ```
 
 
-```{r diagnostics}
+```{r diagnostics, eval = F, echo = F}
 library(mcmcr)
-my_mcmcr = as.mcmcr(post)
+my_mcmcr = as.mcmcr(cjs_post)
 
 # get Rhat statistics for all parameters
 conv_df = rhat(my_mcmcr,
@@ -272,17 +276,20 @@ conv_df = rhat(my_mcmcr,
 sum(conv_df$converged == F)
 
 # conv_df %>%
-#   arrange(esr)
+#   arrange(esr) %>%
+#   head()
 
 ```
 
 ```{r diagnostics-ggmcmc, eval = F, echo = F}
 library(ggmcmc)
-my_ggs = ggs(post,
+my_ggs = ggs(cjs_post,
              family = c('p')) %>%
   filter(grepl('^p\\[', Parameter))
+
+my_ggs = ggs(cjs_post,
+             family = c('phi'))
              # family = c('survship'))
-             # family = c('phi'))
 
 dens_p = ggs_density(my_ggs) +
   stat_function(fun = function(x) dbeta(x, 1, 1),
@@ -300,18 +307,9 @@ ggs_crosscorrelation(my_ggs)
 
 # Assumptions and Caveats
 
-## Assumptions
+Going back to the [assumptions in a CJS model][Assumptions], some of these are worth considering when dealing with multiple batches of tags that turn on/off at different times. In the context of assumption 1, "marked animals" include fish whose tags are currently operating. Telemtry tags that turn off before the fish has died could be considered lost, and if the tags are separated from the fish for some reason that would also be considered a lost mark. How prevalent that situation may be could inform how willing a user may be to make the assumption that all marks are not lost.
 
-The assumptions behind a CJS model include:
-
-1. Every marked animal present in the population at sampling period $i$ has the same probability $p_i$ of being captured or resighted.
-1. Every marked animal present in the population at sampling period $i$ has the same probability $\phi_i$ of survival until sampling period $i+1$.
-1. Marks are neither lost nor overlooked and are recorded correctly.
-1. Sampling periods are instantaneous (in reality they are very short periods) and recaptured animals are released immediately.
-1. All emigration from the sampled area is permanent.
-1. The fate of each animal with respect to capture and survival probability is independent of the fate of any other animal.
-
-Some of these become questionable when dealing with multiple batches of tags that turn on/off at different times. In particular, the 1st and 4th assumption are probably violated. There may be ways to construct the JAGS model to handle that, but it should be noted. 
+There may be ways to incorporate other types of marks (e.g. PIT tags) that could be detected further downstream, but how the detection probablities are estimated with tags that may turn off (and therefore allow fish to pass a telemetry site alive but undetected) should be investigated.
 
 ## Caveats
 
@@ -322,3 +320,66 @@ Some of the caveats to keep in mind with CJS models include:
 #### END CJS VIGNETTE
 
 *Jolly good work! That deserves a gin and tonic.*
+
+```{r alternative-method, echo = F, eval = F}
+library(marked)
+library(ggrepel)
+
+ch_proc = jags_data$y %>%
+  as_tibble() %>%
+  unite("ch", everything(),
+        sep = '') %>%
+  process.data()
+
+ch_ddl = make.design.data(ch_proc)
+
+mod = crm(data = ch_proc,
+          ddl = ch_ddl,
+          model.parameters = list(Phi = list(formula = ~ -1 + time),
+                                  p = list(formula = ~ -1 + time)))
+
+marked_res = mod$results$reals %>%
+  map_df(.id = 'param',
+         .f = as_tibble) %>%
+  mutate(site_num = if_else(param == 'p',
+                            occ,
+                            as.integer(occ + 1))) %>%
+  left_join(tibble(site = colnames(jags_data$y)) %>%
+              mutate(site = factor(site, levels = site),
+                     site_num = as.integer(site)))
+
+# add cummulative survival
+marked_res %<>% 
+  bind_rows(marked_res %>%
+              filter(param == 'Phi') %>%
+              arrange(site_num) %>%
+              mutate(param = 'survship') %>%
+              mutate(estimate = cumprod(estimate)))
+
+# comparison plot
+param_summ %>%
+  mutate(param_grp = recode(param_grp,
+                            'phi' = 'Phi')) %>%
+  select(-param) %>%
+  left_join(marked_res %>%
+              select(param_grp = param,
+                     site,
+                     estimate)) %>%
+  filter(!is.na(estimate)) %>%
+  filter(site_num < max(site_num)) %>%
+  # filter(estimate < 0.99) %>%
+  ggplot(aes(x = estimate,
+             y = mean)) +
+  geom_errorbar(aes(ymin = `2.5%`,
+                    ymax = `97.5%`),
+                width = 0) +
+  geom_point() +
+  geom_abline(linetype = 2) +
+  geom_label_repel(aes(label = site)) +
+  theme_bw() +
+  facet_wrap(~ param_grp) +
+  labs(x = 'marked',
+       y = 'JAGS')
+
+```
+
