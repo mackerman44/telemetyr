@@ -20,6 +20,7 @@ library(tidyverse)
 library(sf)
 library(janitor)
 library(lubridate)
+library(raster)
 #library(telemetyr)
 
 theme_set(theme_bw())
@@ -500,3 +501,72 @@ xs_center_pts %>%
   st_drop_geometry() %>%
   tabyl(Category) %>%
   adorn_pct_formatting()
+
+#-------------------------
+# extract the full depth and velocity results from 2d numerical model
+# by sinuosity class
+#-------------------------
+
+# read in full lemhi depth & velocity rasters, lemhi winter scenario, from 2d model
+d_raster <- raster(paste0(nas_prefix, "data/habitat/HSI/MRA_d_v_tifs/lemhi/d_jan_v2.tif"))
+v_raster <- raster(paste0(nas_prefix, "data/habitat/HSI/MRA_d_v_tifs/lemhi/v_jan_v2.tif"))
+
+# read in the polygons that designate the Low/Med/High sinuosity reaches
+sin_polygons = st_read(paste0(nas_prefix, "data/habitat/lemhi_telemetry/availability/prepped/Sin_polys.shp"))
+
+sin_polygons %>%
+  ggplot() +
+  geom_sf(aes(fill = sin_class,
+              color = sin_class)) +
+  labs(fill = "Sinuosity\nClass",
+       color = "Sinuosity\nClass") +
+  theme_bw()
+
+# create one sf object for each sinuosity class
+sin_names = unique(sin_polygons$sin_class)
+for(sin in sin_names) {
+  assign(as.character(sin), filter(sin_polygons, sin_class == sin))
+}
+
+# extract depth raster values according to sinuosity polygons
+for(sin in sin_names) {
+  sf_tmp = raster::extract(d_raster,
+                           get(as.character(sin)),
+                           fun = NULL,
+                           df = TRUE,
+                           na.rm = TRUE) %>%
+    drop_na() %>%
+    mutate(sin_class = as.character(sin))
+  assign(paste0("d_extract_", sin), sf_tmp)
+  rm(sf_tmp)
+}
+
+depth_extract = bind_rows(lapply(ls(pattern = "^d_extract"), function(x) get(x))) %>%
+  rename(value = d_jan_v2)
+depth_extract$metric = "depth"
+# save(depth_extract,
+#      file = paste0(nas_prefix, "data/habitat/lemhi_telemetry/availability/prepped/depth_extract.rda"))
+
+# extract velocity raster values according to sinuosity polygons
+for(sin in sin_names) {
+  sf_tmp = raster::extract(v_raster,
+                           get(as.character(sin)),
+                           fun = NULL,
+                           df = TRUE,
+                           na.rm = TRUE) %>%
+    drop_na() %>%
+    mutate(sin_class = as.character(sin))
+  assign(paste0("v_extract_", sin), sf_tmp)
+  rm(sf_tmp)
+}
+
+velocity_extract = bind_rows(lapply(ls(pattern = "^v_extract"), function(x) get(x))) %>%
+  rename(value = v_jan_v2)
+velocity_extract$metric = "velocity"
+# save(velocity_extract,
+#      file = paste0(nas_prefix, "data/habitat/lemhi_telemetry/availability/prepped/velocity_extract.rda"))
+
+d_v_avail_sin = bind_rows(depth_extract, velocity_extract)
+save(d_v_avail_sin,
+     file = paste0(nas_prefix, "data/habitat/lemhi_telemetry/availability/prepped/d_v_avail_sin.rda"))
+
