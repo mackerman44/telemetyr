@@ -83,6 +83,8 @@ dv_df %>%
 #-------------------------
 load(paste0(nas_prefix, "/data/habitat/lemhi_telemetry/prepped/depth_extract.rda"))
 
+load(paste0(nas_prefix, "/data/habitat/lemhi_telemetry/prepped/d_v_avail_sin.rda"))
+
 depth_extract %>%
   ggplot(aes(x = value,
              color = sin_class,
