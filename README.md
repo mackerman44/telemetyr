@@ -60,4 +60,13 @@ If you are interested in making contributions to `telemetyr`, consider getting a
 
 Please feel free to post an issue to this repository for requested features, bug fixes, errors in documentation, etc.
 
+### Licenses
+
+**Text and figures :**  [CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/)
+
+**Code :** See the [DESCRIPTION](DESCRIPTION) file
+
+**Data :** [CC-0](http://creativecommons.org/publicdomain/zero/1.0/) attribution requested in reuse
+
+
 ### Cheers!
