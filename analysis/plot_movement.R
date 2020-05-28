@@ -83,9 +83,29 @@ ch_long_all = tibble(season = c('17_18',
                       levels = levels(rec_df$site)))
 
 
+#-------------------------
+# make plots
+#-------------------------
+move_p_list = ch_long_all %>%
+  split(list(.$season)) %>%
+  map(.f = function(ch_long) {
+    receiver_codes = levels(fct_drop(ch_long$loc))
 
+    move_p = plot_obs_movement(ch_long,
+                               receiver_codes) +
+      labs(title = unique(ch_long$season)) +
+      theme(axis.title = element_blank())
 
-plot_df = ch_long_all %>%
+    return(move_p)
+  })
+
+ggpubr::ggarrange(plotlist = move_p_list,
+                  nrow = 1) %>%
+  ggpubr::annotate_figure(bottom = "First Observation Date",
+                          left = 'Receiver')
+
+# another way, with better shared axes
+move_plot_all = ch_long_all %>%
   mutate(loc_num = as.integer(loc)) %>%
   group_by(season, tag_id) %>%
   mutate(n_loc = n_distinct(loc)) %>%
@@ -99,18 +119,18 @@ plot_df = ch_long_all %>%
             list(fct_drop)) %>%
   group_by(season) %>%
   mutate(loc_num = as.integer(loc)) %>%
-  ungroup()
-
-plot_df %>%
+  ungroup() %>%
   ggplot(aes(x = first_obs,
              y = loc_num,
              color = as.factor(tag_id))) +
   geom_line() +
   geom_point() +
   scale_y_continuous(name = "Receiver",
-                     breaks = 1:max(as.integer(plot_df$loc)),
-                     labels = levels(plot_df$loc)) +
+                     breaks = 1:(max(as.integer(ch_long_all$loc)) - 1),
+                     labels = levels(ch_long_all$loc)[-nlevels(ch_long_all$loc)]) +
   facet_wrap(~ season,
              scales = 'free_x') +
   theme(legend.position = 'none') +
   labs(x = 'First Observation Date')
+
+move_plot_all
