@@ -92,18 +92,6 @@ prep_capture_history = function(compress_df = NULL,
                   mutate(grp = 1:n())) %>%
       tidyr::fill(grp, .direction = 'up')
 
-    if("week" %in% names(first_last)) {
-      first_last %<>%
-        group_by(tag_id, site, receiver, grp) %>%
-        summarise(first_obs = min(start),
-                  last_obs = max(end),
-                  n = sum(n),
-                  week = min(week)) %>%
-        ungroup() %>%
-        select(-grp) %>%
-        rename(loc = site) %>%
-        arrange(tag_id, first_obs)
-    } else {
       first_last %<>%
         group_by(tag_id, site, receiver, grp) %>%
         summarise(first_obs = min(start),
@@ -113,7 +101,6 @@ prep_capture_history = function(compress_df = NULL,
         select(-grp) %>%
         rename(loc = site) %>%
         arrange(tag_id, first_obs)
-    }
 
     # add release site
     first_last %<>%
@@ -153,18 +140,6 @@ prep_capture_history = function(compress_df = NULL,
                   mutate(grp = 1:n())) %>%
       tidyr::fill(grp, .direction = 'up')
 
-    if("week" %in% names(first_last)) {
-      first_last %<>%
-        group_by(tag_id, site, grp) %>%
-        summarise(first_obs = min(start),
-                  last_obs = max(end),
-                  n = sum(n),
-                  week = min(week)) %>%
-        ungroup() %>%
-        select(-grp) %>%
-        rename(loc = site) %>%
-        arrange(tag_id, first_obs)
-    } else {
       first_last %<>%
         group_by(tag_id, site, grp) %>%
         summarise(first_obs = min(start),
@@ -174,7 +149,6 @@ prep_capture_history = function(compress_df = NULL,
         select(-grp) %>%
         rename(loc = site) %>%
         arrange(tag_id, first_obs)
-    }
 
     # add release site
     first_last %<>%
