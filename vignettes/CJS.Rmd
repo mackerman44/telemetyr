@@ -90,7 +90,7 @@ From here, you can skip right to the [Results] section.
 
 ## Details
 
-To step through fitting this Bayesian CJS model, first we specify the JAGS model. For this example, we will fit a model with different detection probabilities for each site, and different survival probabilities between each site. We will also calculate the cummulative survival up to each site. We write this model as a text file, as shown below. The `telemetyr` package has a function to write this model, called `write_bayes_cjs`, where the user must specify the file path to save this text file.
+To step through fitting this Bayesian CJS model, first we specify the JAGS model. For this example, we will fit a model with different detection probabilities for each site, and different survival probabilities between each site. We will also calculate the cumulative survival up to each site. We write this model as a text file, as shown below. The `telemetyr` package has a function to write this model, called `write_bayes_cjs`, where the user must specify the file path to save this text file.
 
 ```{r jags-model, eval = F}
 jags_model = function() {
@@ -163,7 +163,7 @@ There are several default inputs to `run_jags_cjs()`, including:
 * *params_to_save*: vector of parameters to monitor (i.e. save). Default is `c("phi", "p", "survship")`
 * *rng_seed*: Random number generator seed, to make the results reproducible. Default is 4
 
-Run with these defaults, this provides in `prettyNum(2500 / 5 * 4, big.mark = ',')` samples from the posterior for each detection probability (`p`), survival (`phi`) and cummulative survival (`survship`) parameter. We have found this to be sufficient for most situations, but particular datasets may need higher iterations and/or more thinning. The output of this function is an `mcmc.list` object. 
+Run with these defaults, this provides in `r prettyNum(2500 / 5 * 4, big.mark = ',')` samples from the posterior for each detection probability (`p`), survival (`phi`) and cumulative survival (`survship`) parameter. We have found this to be sufficient for most situations, but particular datasets may need higher iterations and/or more thinning. The output of this function is an `mcmc.list` object. 
 
 Finally, we summarise the posterior samples with the function `summarise_jags_cjs`. This uses the package `postpack` to create summaries of each parameter, and there are several inputs the user can adjust depending on what they would like to extract. If you use the wrapper `fit_bayes_cjs()` function, the site names are added to this summary dataframe, but a user could do the same by hand, using code like that listed below.
 
@@ -182,7 +182,7 @@ param_summ %<>%
 
 # Results 
 
-We can extract summary statistics from the posteriors, and construct plots of detection probablities, survival probabilities and cummulative survival probabilities. 
+We can extract summary statistics from the posteriors, and construct plots of detection probablities, survival probabilities and cumulative survival probabilities. 
 
 ```{r create-figures}
 surv_p = param_summ %>%
@@ -196,7 +196,7 @@ surv_p = param_summ %>%
   geom_point() +
   theme_classic() +
   labs(x = 'Site',
-       y = 'Cummulative Survival')
+       y = 'cumulative Survival')
 
 phi_p = param_summ %>%
   filter(param_grp == 'phi') %>%
@@ -234,7 +234,7 @@ det_p
 phi_p
 ```
 
-```{r survival-fig, fig.cap = 'Estimates of cummulative survival up to each site.'}
+```{r survival-fig, fig.cap = 'Estimates of cumulative survival up to each site.'}
 surv_p
 ```
 
