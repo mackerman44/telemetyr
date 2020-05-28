@@ -33,10 +33,12 @@ Alternatively, vignettes can be viewed in the Help menu using, for example:
 vignette("Data_Prep", package = "telemetyr")
 ```
 
-`telemetyr` current includes the following vignettes:
+`telemetyr` currently includes the following vignettes:
 
 *__Data_Prep:__ Describes the importing, cleaning, and compression of telemetry observation data including instructions on how to generate capture histories in preparation for data analysis and visualization.
+
 *__Diagnostics:__ A vignette to describe how to perform various study "diagnostics" including evaluations of site/receiver operation times, site noise, tag battery life, and the like.
+
 *__CJS:__ Instructions on how to perform a Bayesian CJS model using wide form capture histories that can be build using the `telemetyr` package or otherwise.
 
 ## `postpack`
