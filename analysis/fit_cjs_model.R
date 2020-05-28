@@ -111,7 +111,10 @@ rt_cjs = tibble(season = c('17_18',
          cjs_post = map(jags_data,
                         .f = function(x) {
                           run_jags_cjs(file_path = model_file,
-                                       jags_data = x)
+                                       jags_data = x,
+                                       n_burnin = 5000,
+                                       n_iter = 5000,
+                                       n_thin = 10)
                         }),
          param_summ = map2(cjs_post,
                               jags_data,
@@ -269,6 +272,61 @@ det_p
 phi_p
 surv_p
 surv_p2
+
+#----------------------------------------------------------
+# some diagnostic plots
+#----------------------------------------------------------
+# with mcmcr package
+library(mcmcr)
+i = 2
+my_mcmcr = rt_cjs %>%
+  pull(cjs_post) %>%
+  extract2(i) %>%
+  as.mcmcr
+
+# get Rhat statistics for all parameters
+conv_df = rhat(my_mcmcr,
+               by = 'term',
+               as_df = T) %>%
+  left_join(esr(my_mcmcr,
+                by = 'term',
+                as_df = T)) %>%
+  # which parameters have converged and which haven't?
+  left_join(converged(my_mcmcr,
+                      by = 'term',
+                      as_df = T))
+
+# how many parameters did not converge?
+sum(conv_df$converged == F)
+
+conv_df %>%
+  arrange(esr) %>%
+  head()
+
+# with ggmcmc package
+library(ggmcmc)
+i = 2
+my_ggs = rt_cjs %>%
+  pull(cjs_post) %>%
+  extract2(i) %>%
+  ggs(family = c('p')) %>%
+  filter(grepl('^p\\[', Parameter))
+  # ggs(family = c('phi'))
+  # ggs(family = c('survship'))
+
+
+dens_p = ggs_density(my_ggs) +
+  stat_function(fun = function(x) dbeta(x, 1, 1),
+                color = 'black') +
+  facet_wrap(~ Parameter)
+trace_p = ggs_traceplot(my_ggs) +
+  facet_wrap(~ Parameter)
+run_mean_p = ggs_running(my_ggs)
+rhat_p = ggs_Rhat(my_ggs)
+geweke_p = ggs_geweke(my_ggs)
+ggs_autocorrelation(my_ggs)
+ggs_crosscorrelation(my_ggs)
+
 
 #----------------------------------------------------------
 # compare with other CJS models
