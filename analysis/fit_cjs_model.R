@@ -278,7 +278,7 @@ surv_p2
 #----------------------------------------------------------
 # with mcmcr package
 library(mcmcr)
-i = 2
+i = 3
 my_mcmcr = rt_cjs %>%
   pull(cjs_post) %>%
   extract2(i) %>%
@@ -301,17 +301,17 @@ sum(conv_df$converged == F)
 
 conv_df %>%
   arrange(esr) %>%
-  head()
+  head(10)
 
 # with ggmcmc package
 library(ggmcmc)
-i = 2
+i = 3
 my_ggs = rt_cjs %>%
   pull(cjs_post) %>%
   extract2(i) %>%
-  ggs(family = c('p')) %>%
-  filter(grepl('^p\\[', Parameter))
-  # ggs(family = c('phi'))
+  # ggs(family = c('p')) %>%
+  # filter(grepl('^p\\[', Parameter))
+  ggs(family = c('phi'))
   # ggs(family = c('survship'))
 
 
