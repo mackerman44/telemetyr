@@ -27,7 +27,9 @@ knitr::opts_chunk$set(
 ```{r setup}
 # load necessary libraries
 library(telemetyr)
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
 ```
 
 # Introduction
