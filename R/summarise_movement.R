@@ -39,61 +39,45 @@ summarise_movement = function(cap_hist_long = NULL,
   # summarize sequential observations by tag_id
   #-------------------------
   tmp = cap_hist_long %>%
-    select(-n) %>%
-    filter(tag_id %in% tag_list) %>%
-    arrange(tag_id) %>%
+    select_if(names(.) %in% c("tag_id", "loc", "week", as.character(which_obs))) %>%
     mutate(loc_order = as.integer(loc)) %>%
+    rename(obs_time = all_of(which_obs)) %>%
     group_by(tag_id) %>%
     mutate(next_loc = lead(loc),
            next_loc_order = lead(loc_order),
-           next_loc_first_obs = lead(first_obs),
-           next_loc_last_obs = lead(last_obs)) %>%
+           next_loc_obs_time = lead(obs_time)) %>%
     filter(next_loc_order - loc_order == 1) %>%
+    mutate(time_hrs = as.numeric(
+      difftime(next_loc_obs_time,
+               obs_time,
+               units = "hours"))) %>%
+    mutate(time_days = time_hrs / 24) %>%
     mutate(rt_reach = paste0(loc, "2", next_loc),
            rt_reach = factor(rt_reach,
                              levels = paste0(levels(cap_hist_long$loc)[1:length(levels(cap_hist_long$loc)) -1],
                                              "2",
-                                             levels(cap_hist_long$loc)[-1])))
+                                             levels(cap_hist_long$loc)[-1]))) %>%
+    filter(time_hrs > 0) %>%
+    select(tag_id, rt_reach, week, time_hrs, time_days)
 
-  # set columns and string to remove
-  col_rmv = case_when(
-    which_obs == "first_obs" ~ "last_obs",
-    which_obs == "last_obs" ~ "first_obs",
-  )
-  rmv = gsub(pattern = "obs",
-             replacement = "",
-             x = which_obs)
-
-  # select columns in tmp based on which_obs
-  tmp %<>%
-    select(-ends_with(col_rmv)) %>%
-    rename_at(.vars = vars(contains(rmv)),
-              .funs = funs(sub(rmv, "", .))) %>%
-    select(tag_id,
-           rt_reach,
-           loc,
-           loc_order,
-           obs,
-           next_loc,
-           next_loc_order,
-           next_loc_obs) %>%
-    # calculate travel times
-    mutate(hours = as.numeric(difftime(next_loc_obs, obs, units = "hours"))) %>%
-    mutate(days = hours / 24) %>%
-    filter(hours > 0)
-
-  # TO-DO: Consider functionality to include week here so that travel time could be summarised temporally
+  # set columns and string to remove - no longer needed
+  # col_rmv = case_when(
+  #   which_obs == "first_obs" ~ "last_obs",
+  #   which_obs == "last_obs" ~ "first_obs",
+  # )
+  # rmv = gsub(pattern = "obs",
+  #            replacement = "",
+  #            x = which_obs)
 
   #-------------------------
-  # plot times in reaches
+  # plot days/hours between sites
   #-------------------------
-  tmp_p = tmp %>%
-    ggplot(aes(x = hours)) +
-    geom_histogram(fill = "dodgerblue4",
-                   color = "dodgerblue4") +
-    # geom_dotplot(fill = "dodgerblue4") +
-    # geom_density(fill = "dodgerblue4",
-    #              alpha = 0.5) +
+  # facetted histogram
+  move_space_p = tmp %>%
+    ggplot(aes(x = time_days)) +
+    geom_histogram(fill = "steelblue",
+                   color = "steelblue",
+                   binwidth = 0.25) +
     geom_vline(xintercept = 0,
                linetype = 2) +
     facet_wrap(~ rt_reach,
@@ -101,28 +85,53 @@ summarise_movement = function(cap_hist_long = NULL,
     theme_bw() +
     labs(x = "Days",
          y = "Count")
+  move_space_p
 
-  #-------------------------
-  # boxplot of reach migration times
-  #-------------------------
-  # to forced ylim
+  # boxplot
   my_coord_cartesian = NULL
   if(!is.null(hr_max)) {
     my_coord_cartesian = c(0, hr_max)
   }
 
-  tmp_p2 = tmp %>%
+  move_space_p2 = tmp %>%
     ggplot(aes(x = rt_reach)) +
-    geom_boxplot(aes(y = hours,
+    geom_boxplot(aes(y = time_hrs,
                      fill = rt_reach)) +
     coord_cartesian(ylim = my_coord_cartesian) +
     theme_bw() +
     theme(legend.position = "none") +
     labs(x = "Reach",
          y = "Hours")
-  tmp_p2
+  move_space_p2
 
-  # TO-DO: Modify so that fill or color can easily be specified by user
+  #-------------------------
+  # plot days/hours by study week
+  #-------------------------
+  move_time_p = tmp %>%
+    ggplot(aes(x = time_days)) +
+    geom_histogram(fill = "red",
+                   color = "red",
+                   binwidth = 0.25) +
+    geom_vline(xintercept = 0,
+               linetype = 2) +
+    facet_wrap(~ week,
+               scales = "free_y") +
+    theme_bw() +
+    labs(x = "Days",
+         y = "Count")
+  move_time_p
+
+  move_time_p2 = tmp %>%
+    ggplot(aes(x = week)) +
+    geom_boxplot(aes(group = week,
+                     y = time_hrs),
+                 fill = "red") +
+    coord_cartesian(ylim = my_coord_cartesian) +
+    theme_bw() +
+    labs(x = "Week",
+         y = "Hours")
+  move_time_p2
+
 
   #-------------------------
   # a quick summary of reach movement times
@@ -134,13 +143,13 @@ summarise_movement = function(cap_hist_long = NULL,
     set_names(nm = cut_names)
 
   tmp_summ = tmp %>%
-    group_by(loc, next_loc, rt_reach) %>%
+    group_by(rt_reach) %>%
     summarise(n_tags = n(),
-              mn_hrs = mean(hours),
-              sd_hrs = sd(hours)) %>%
+              mn_hrs = mean(time_hrs),
+              sd_hrs = sd(time_hrs)) %>%
     left_join(tmp %>%
-                group_by(loc, next_loc, rt_reach) %>%
-                summarise_at(vars(hours),
+                group_by(rt_reach) %>%
+                summarise_at(vars(time_hrs),
                              funs(!!!cut_funs))) %>%
     ungroup()
 
@@ -161,27 +170,11 @@ summarise_movement = function(cap_hist_long = NULL,
   #-------------------------
   tmp_list = list(movement_df = tmp,
                   movement_summ = tmp_summ,
-                  reach_hours_p = tmp_p,
-                  reach_hours_box_p = tmp_p2,
-                  median_hours_p = tmp_summ_p)
+                  spatial_p = move_space_p,
+                  spatial_box_p = move_space_p2,
+                  temporal_p = move_time_p,
+                  temporal_box_p = move_time_p2)
   return(tmp_list)
-
-  # TO-DO: Add distances for each reach to calculate movement rates (km/day)
-  # Example from pilotStudy.R:
-  # travel_speed = travel_summ %>%
-  #   left_join(tibble(next_site = c('LH','MB','TR','RR','BG','NF','DW','LR','SR','CC','VC','SB','TB'),
-  #                    km = c(6.6, 9, 7.2, 5.5, 6.7, 4.6, 9.2, 14.6, 34.2, 18.2, 124.8, 39.4, 36.6))) %>%
-  #   mutate_at(vars(matches('Days$')),
-  #             funs(km / .)) %>%
-  #   select(site, next_site,
-  #          km,
-  #          n_tags,
-  #          min_speed = max_days,
-  #          median_speed = median_days,
-  #          mean_speed = mean_days,
-  #          max_speed = min_days) %>%
-  #   left_join(travel_summ)
-  # travel_speed
 
 } # end summarise_movement()
 
