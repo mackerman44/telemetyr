@@ -11,7 +11,10 @@ prep_capture_history(
   rec_site = NULL,
   delete_upstream = T,
   location = c("site", "receiver"),
-  output_format = c("all", "wide", "long")
+  output_format = c("all", "wide", "long"),
+  assign_week = T,
+  week_base = "0901",
+  append_week = c("first", "last")
 )
 }
 \arguments{
@@ -28,6 +31,13 @@ prep_capture_history(
 \item{location}{should detections be grouped by site or receiver?}
 
 \item{output_format}{return either wide or long format, or both plus tag metadata}
+
+\item{assign_week}{Should this function assign a week number to the output? Default is \code{TRUE}}
+
+\item{week_base}{If assigning week numbers, the date when the numbering should start in "MMDD" format}
+
+\item{append_week}{If assigning weeks, should the week be assigned based on the \code{first}
+or \code{last} time a tag was detected on that receiver? Default value is \code{first}.}
 }
 \value{
 a list containing a capture history in wide format, one in long format, and metadata for each tag

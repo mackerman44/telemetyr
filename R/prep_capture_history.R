@@ -4,6 +4,8 @@
 #'
 #' @author Kevin See and Mike Ackerman
 #'
+#' @inheritParams compress_txt_data
+#'
 #' @param compress_df compressed observational data. Either the output of \code{read_csv_data()} or \code{read_txt_data()} and \code{compress_raw_data()}.
 #' @param tag_data dataframe with metadata for each tag, including columns named \code{tag_id}, \code{tag_purpose} (with some tags having "\code{fish}" in this column), \code{release_site} (which is one of the sites in the \code{rec_site} input) and \code{release_time}.
 #' @param n_obs_valid minumum number of observations made at a location to be considered valid.
@@ -24,7 +26,10 @@ prep_capture_history = function(compress_df = NULL,
                                 rec_site = NULL,
                                 delete_upstream = T,
                                 location = c('site', 'receiver'),
-                                output_format = c('all', 'wide', 'long')) {
+                                output_format = c('all', 'wide', 'long'),
+                                assign_week = T,
+                                week_base = "0901",
+                                append_week = c('first', 'last')) {
 
   stopifnot(!is.null(compress_df),
             !is.null(tag_data),
@@ -32,6 +37,7 @@ prep_capture_history = function(compress_df = NULL,
 
   location = match.arg(location)
   output_format = match.arg(output_format)
+  append_week = match.arg(append_week)
 
   # pull out tags that were put in fish
   fish_tags = tag_data %>%
@@ -86,18 +92,6 @@ prep_capture_history = function(compress_df = NULL,
                   mutate(grp = 1:n())) %>%
       tidyr::fill(grp, .direction = 'up')
 
-    if("week" %in% names(first_last)) {
-      first_last %<>%
-        group_by(tag_id, site, receiver, grp) %>%
-        summarise(first_obs = min(start),
-                  last_obs = max(end),
-                  n = sum(n),
-                  week = min(week)) %>%
-        ungroup() %>%
-        select(-grp) %>%
-        rename(loc = site) %>%
-        arrange(tag_id, first_obs)
-    } else {
       first_last %<>%
         group_by(tag_id, site, receiver, grp) %>%
         summarise(first_obs = min(start),
@@ -107,7 +101,6 @@ prep_capture_history = function(compress_df = NULL,
         select(-grp) %>%
         rename(loc = site) %>%
         arrange(tag_id, first_obs)
-    }
 
     # add release site
     first_last %<>%
@@ -147,18 +140,6 @@ prep_capture_history = function(compress_df = NULL,
                   mutate(grp = 1:n())) %>%
       tidyr::fill(grp, .direction = 'up')
 
-    if("week" %in% names(first_last)) {
-      first_last %<>%
-        group_by(tag_id, site, grp) %>%
-        summarise(first_obs = min(start),
-                  last_obs = max(end),
-                  n = sum(n),
-                  week = min(week)) %>%
-        ungroup() %>%
-        select(-grp) %>%
-        rename(loc = site) %>%
-        arrange(tag_id, first_obs)
-    } else {
       first_last %<>%
         group_by(tag_id, site, grp) %>%
         summarise(first_obs = min(start),
@@ -168,7 +149,6 @@ prep_capture_history = function(compress_df = NULL,
         select(-grp) %>%
         rename(loc = site) %>%
         arrange(tag_id, first_obs)
-    }
 
     # add release site
     first_last %<>%
@@ -208,6 +188,22 @@ prep_capture_history = function(compress_df = NULL,
   # long format
   cap_hist_long = first_last %>%
     select(-loc_num, -next_loc)
+
+  if(assign_week) {
+    start_date = lubridate::ymd(paste(lubridate::year(min(cap_hist_long$first_obs, na.rm = T)), week_base))
+    if(append_week == 'first') {
+      cap_hist_long %<>%
+        mutate(week = difftime(first_obs, start_date, units = 'weeks'),
+               week = as.numeric(week),
+               week = floor(week) + 1)
+    }
+    if(append_week == 'last') {
+      cap_hist_long %<>%
+        mutate(week = difftime(last_obs, start_date, units = 'weeks'),
+               week = as.numeric(week),
+               week = floor(week) + 1)
+    }
+  }
 
   # what to return?
   if(output_format == 'wide') {
