@@ -13,6 +13,8 @@
 #-------------------------
 library(telemetyr)
 library(tidyverse)
+library(readxl)
+library(magrittr)
 
 theme_set(theme_bw())
 
@@ -34,8 +36,8 @@ rec_meta = read_excel(paste0(nas_prefix, '/data/telemetry/lemhi/site_metadata/rt
 rec_df = rec_meta %>%
   filter(site_type %in% c('rt_fixed', 'rst')) %>%
   arrange(desc(rt_rkm)) %>%
-  select(site = site_code,
-         receivers, rt_rkm) %>%
+  dplyr::select(site = site_code,
+                receivers, rt_rkm) %>%
   group_by(site, rt_rkm) %>%
   nest() %>%
   ungroup() %>%
@@ -45,7 +47,7 @@ rec_df = rec_meta %>%
                             extract2(1) %>%
                             str_trim()
                         })) %>%
-  select(-data) %>%
+  dplyr::select(-data) %>%
   unnest(cols = receiver) %>%
   mutate(receiver = if_else(grepl('NA', receiver),
                             NA_character_,
@@ -75,7 +77,7 @@ ch_long_all = tibble(season = c('17_18',
                              }),
          cap_hist_long = map(cap_hist_list,
                              .f = "ch_long")) %>%
-  select(season, cap_hist_long) %>%
+  dplyr::select(season, cap_hist_long) %>%
   unnest(cols = cap_hist_long) %>%
   mutate(loc = factor(loc,
                       levels = levels(rec_df$site)))
@@ -92,7 +94,7 @@ plot_df = ch_long_all %>%
          nxt_loc = lead(loc_num)) %>%
   filter(nxt_loc > loc_num | is.na(nxt_loc)) %>%
   ungroup() %>%
-  select(-(prev_loc:nxt_loc)) %>%
+  dplyr::select(-(prev_loc:nxt_loc)) %>%
   mutate_at(vars(loc),
             list(fct_drop)) %>%
   group_by(season) %>%
