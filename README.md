@@ -33,9 +33,15 @@ Alternatively, vignettes can be viewed in the Help menu using, for example:
 vignette("Data_Prep", package = "telemetyr")
 ```
 
+`telemetyr` current includes the following vignettes:
+
+*__Data_Prep:__ Describes the importing, cleaning, and compression of telemetry observation data including instructions on how to generate capture histories in preparation for data analysis and visualization.
+*__Diagnostics:__ A vignette to describe how to perform various study "diagnostics" including evaluations of site/receiver operation times, site noise, tag battery life, and the like.
+*__CJS:__ Instructions on how to perform a Bayesian CJS model using wide form capture histories that can be build using the `telemetyr` package or otherwise.
+
 ## `postpack`
 
-A quick shout out to the `postpack` R package available [here](https://github.com/bstaton1/postpack). The `telemetyr` package invokes `postpack` for working with the \code{mcmc.list} object resulting from the CJS model performed using JAGS. `postpack` should be installed with the `telemetyr` package, but can also be installed using:
+A quick shout out to the `postpack` R package available [here](https://github.com/bstaton1/postpack). The `telemetyr` package invokes `postpack` for working with the `mcmc.list` object resulting from the CJS model performed using JAGS. `postpack` should be installed with the `telemetyr` package, but can also be installed using:
 ```
 devtools::install_github("bstaton1/postpack")
 ```
