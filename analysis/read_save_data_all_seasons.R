@@ -169,6 +169,8 @@ save(cap_hist_list,
 #-------------------------
 # path to the folder on Biomark NAS; be sure to be connected to the Biomark VPN
 ssn_1819_path = paste0(nas_prefix, "/data/telemetry/lemhi/fixed_site_downloads/2018_2019")
+# for saving purposes
+yr_label = "18_19"
 
 # # read in and save the csv format data
 # ssn_1819_csv_df = read_csv_data(path = ssn_1819_path) %>%
@@ -187,8 +189,6 @@ compress_df = compress_raw_data(raw_df,
 
 #------------------------------------
 # prep some fish capture history data
-yr_label = "18_19"
-
 # look for detections of batch 2 and 3 tags within 24 hrs of activation, and delete those (these tags run for 24 hrs, then shut off)
 ch_compress = compress_df %>%
   anti_join(tag_df_list[[yr_label]] %>%
@@ -196,7 +196,7 @@ ch_compress = compress_df %>%
                      duty_cycle != 'batch_1') %>%
               select(tag_id, release_time) %>%
               inner_join(compress_df) %>%
-              filter(end <= release_time + lubridate::hours(1)))
+              filter(end <= release_time + lubridate::days(2)))
 
 # list with wide, long capture histories and tag info
 # for this year, drop releases at Pahsimeroi trap
@@ -226,6 +226,8 @@ save(cap_hist_list,
 #-------------------------
 # path to the folder on Biomark NAS; be sure to be connected to the Biomark VPN
 ssn_1920_path = paste0(nas_prefix, "/data/telemetry/lemhi/fixed_site_downloads/2019_2020")
+# for saving purposes
+yr_label = "19_20"
 
 # # read in and save the csv format data
 # ssn_1920_csv_df = read_csv_data(path = ssn_1920_path) %>%
@@ -235,6 +237,14 @@ ssn_1920_path = paste0(nas_prefix, "/data/telemetry/lemhi/fixed_site_downloads/2
 
 # read in the "raw" .txt format data
 raw_df = read_txt_data(path = ssn_1920_path)
+
+# fix a few receiver codes
+raw_df %<>%
+  mutate(receiver = if_else(grepl('^EC1', file_name) & receiver == 'BC1',   # issue with one file in the EC1 folder but having receiver set to BC1
+                            'EC1',
+                            receiver)) %>%
+  mutate(receiver = recode(receiver,
+                           'BC2' = 'EC1'))      # recode BC2 to EC1
 
 # clean, round and compress data
 compress_df = compress_raw_data(raw_df,
@@ -246,16 +256,15 @@ compress_df = compress_raw_data(raw_df,
 
 #------------------------------------
 # prep some fish capture history data
-yr_label = "19_20"
-
 # look for detections of batch 2 and 3 tags within 24 hrs of activation, and delete those (these tags run for 24 hrs, then shut off)
+# filtered out observations within 48 hrs, just to be sure
 ch_compress = compress_df %>%
   anti_join(tag_df_list[[yr_label]] %>%
               filter(tag_purpose == 'fish',
                      duty_cycle != 'batch_1') %>%
               select(tag_id, release_time) %>%
               inner_join(compress_df) %>%
-              filter(end <= release_time + lubridate::hours(1)))
+              filter(end <= release_time + lubridate::days(2)))
 
 
 # list with wide, long capture histories and tag info
