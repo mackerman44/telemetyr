@@ -8,12 +8,23 @@ author:
   - Mike Ackerman:
       email: mike.ackerman@merck.com
       institute: [biomark]
+  - Nick Porter:
+      email: nicholas.porter@merck.com
+      institute: [biomark]
 institute:
   - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
+  bookdown::word_document2:
+    fig_height: 6
+    fig_width: 7
+    toc: false
+    always_allow_html: true
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
   bookdown::html_document2:
-    fig_height: 7
+    fig_height: 6
     fig_width: 7
     toc: yes
     toc_depth: 3
@@ -37,7 +48,9 @@ knitr::opts_chunk$set(
   warning = F,
   message = F,
   echo = F,
-  comment = "#>"
+  comment = "#>",
+  fig.path = "figures/",
+  dpi = 300
 )
 ```
 
@@ -54,7 +67,13 @@ library(postpack)
 # for formatting in this vignette
 library(kableExtra)
 
-theme_set(theme_bw())
+# theme_set(theme_bw())
+theme_set(theme_classic())
+
+# options for table formating with "kable()"
+options(knitr.kable.NA = '-')
+options(knitr.table.format = "pandoc")
+
 ```
 
 ```{r run-model, eval = F}
@@ -329,6 +348,7 @@ det_p = param_summ_all %>%
                 width = 0,
                 position = position_dodge(width = dodge_width)) +
   geom_point(position = position_dodge(width = dodge_width)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = 'Site',
        y = 'Detection Probability')
 
@@ -344,6 +364,7 @@ phi_p = param_summ_all %>%
                 width = 0,
                 position = position_dodge(width = dodge_width)) +
   geom_point(position = position_dodge(width = dodge_width)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = 'Site',
        y = 'Survival From Previous Site')
 
@@ -359,6 +380,7 @@ surv_p = param_summ_all %>%
                 width = 0,
                 position = position_dodge(width = dodge_width)) +
   geom_point(position = position_dodge(width = dodge_width)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = 'Site',
        y = 'Cummulative Survival')
 
@@ -379,6 +401,7 @@ surv_p2 = param_summ_all %>%
                 width = 0,
                 position = position_dodge(width = dodge_width)) +
   geom_point(position = position_dodge(width = dodge_width)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = 'Site',
        y = 'Cummulative Survival')
 
