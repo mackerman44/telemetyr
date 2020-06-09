@@ -1,3 +1,5 @@
+Note: This is a deprecated "copy" of [BiomarkABS/telemetyr](https://github.com/BiomarkABS/telemetyr). At the moment, this version is not being maintained and may eventually be removed. Please install `telemetyr` from [there](https://github.com/BiomarkABS/telemetyr). 
+
 # telemetyr
 
 `telemetyr` is an R package to ease the burden of processing and interpreting oodles of telemetry observation data. More specifically, `telemetyr` aims to provide tools to simplify reading, cleaning, reduction, analysis, and visualization of telemetry observational data. The package is initially being developed as part of a radio telemetry project to characterize the distribution, movement, and survival of juvenile Chinook salmon emigrants in the Lemhi and Salmon rivers, Idaho, USA, during winter months. Currently, the package is written specific to radio telemetry data downloaded from NOAA receivers and using the Tracker software; however, the long-term goal is that functions and tools within `telemetyr` be developed further to accommodate any type of telemetry data (e.g. acoustic, radio, etc.) including from any type of receiver make or model. 
