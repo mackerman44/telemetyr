@@ -216,7 +216,7 @@ We are interested primarily in estimating survival of fish from release (e.g. at
 
 ## Data
 
-The data is radio tag (RT) detections, which were downloaded from various fixed sites over the last three years. We compressed these detections and summarised capture histories, eliminating any detections that indicated upstream movement. 
+The data is radio tag (RT) detections, which were downloaded from various fixed sites over the last three years. We compressed these detections and summarized capture histories, eliminating any detections that indicated upstream movement. 
 
 In 2017-18 and 2018-19, we focused on tags that were released from the lower Lemhi rotary screw trap (code LLRTP). In 2019-20, we also included tags released from the upper Lemhi rotary screw trap (code LEMTRP). We did remove any tags released at the lower Lemhi trap that were detected upstream in the Lemhi River. There were `r rt_cjs$cap_hist_wide[[3]] %>% filter(LLRTP == 1 & (BC == 1 | TC == 1 | EC == 1 | SS == 1 | EU == 1 | LF == 1)) %>% nrow` tags with a detection history like this.
 
@@ -226,7 +226,7 @@ We used a Cormack Jolly-Seber model to estimate survival between reaches and det
 
 # Results
 
-We can extract summary statistics from the posteriors, and construct plots of detection probablities, survival probabilities and cummulative survival probabilities. 
+We can extract summary statistics from the posteriors, and construct plots of detection probabilities, survival probabilities and cumulative survival probabilities. 
 
 ```{r load-results}
 #----------------------------------------------------------
@@ -325,7 +325,7 @@ param_summ_all %>%
          cv,
          lwrCI = `2.5%`,
          uprCI = `97.5%`) %>%
-  kable(caption = 'Estimates of cummulative survival up to detection points.',
+  kable(caption = 'Estimates of cumulative transition up to detection points.',
         digits = 3) %>%
   kable_styling()
 ```
@@ -366,7 +366,7 @@ phi_p = param_summ_all %>%
   geom_point(position = position_dodge(width = dodge_width)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = 'Site',
-       y = 'Survival From Previous Site')
+       y = 'Transition Probability From Previous Site')
 
 surv_p = param_summ_all %>%
   filter(grepl('surv', param)) %>%
@@ -382,7 +382,7 @@ surv_p = param_summ_all %>%
   geom_point(position = position_dodge(width = dodge_width)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = 'Site',
-       y = 'Cummulative Survival')
+       y = 'Cumulative Transition Probability')
 
 # re-do survival plot focusing on downstream of LLRTP each year
 surv_p2 = param_summ_all %>%
@@ -403,11 +403,11 @@ surv_p2 = param_summ_all %>%
   geom_point(position = position_dodge(width = dodge_width)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = 'Site',
-       y = 'Cummulative Survival')
+       y = 'Cumulative Transition Probability')
 
 ```
 
-```{r phi-fig, echo = F, fig.cap = "Estimates, with 95% confidence intervals, of survival between detection points"}
+```{r phi-fig, echo = F, fig.cap = "Estimates, with 95% confidence intervals, of transition probabilities between detection points"}
 phi_p
 ```
 
@@ -415,11 +415,11 @@ phi_p
 det_p
 ```
 
-```{r surv-fig, echo = F, fig.cap = "Estimates, with 95% confidence intervals, of cummulative survival across reaches."}
+```{r surv-fig, echo = F, fig.cap = "Estimates, with 95% confidence intervals, of cumulative transition probability across reaches."}
 surv_p
 ```
 
-```{r surv2-fig, echo = F, fig.cap = "Estimates, with 95% confidence intervals, of cummulative survival across reaches, resetting survival in 2019-20 to start at Lower Lemhi screw trap."}
+```{r surv2-fig, echo = F, fig.cap = "Estimates, with 95% confidence intervals, of cumulative transition probability across reaches, resetting the transitions in 2019-20 to start at Lower Lemhi screw trap."}
 surv_p2
 ```
 
@@ -428,4 +428,4 @@ surv_p2
 
 Some of the caveats to keep in mind with CJS models include:
 
-* Estimates of $\phi$ are really estimates of *apparent* survival, or transistion probability (i.e. the chance that a fish survives **AND** moves past the next detection point). $1 - \phi_i$ represents the chances that an animal either died in reach $i - 1$, or left the population (became unavailable for detection). The latter is analogous to a fish that hunkers down in a reach to ride out the winter. It may be surviving very well within that reach, or it may have died there, there is no way to tell from only the radio tag observations. 
+* Estimates of $\phi$ are really estimates of *apparent* survival, or transition probability (i.e. the chance that a fish survives **AND** moves past the next detection point). $1 - \phi_i$ represents the chances that an animal either died in reach $i - 1$, or left the population (became unavailable for detection). The latter is analogous to a fish that hunkers down in a reach to ride out the winter. It may be surviving very well within that reach, or it may have died there, there is no way to tell from only the radio tag observations. 
