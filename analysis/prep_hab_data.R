@@ -20,7 +20,7 @@ library(tidyverse)
 library(sf)
 library(janitor)
 library(lubridate)
-library(raster)
+# library(raster)
 
 theme_set(theme_bw())
 
@@ -48,7 +48,7 @@ xs_center_pts = st_read(paste(nas_prefix,
 my_crs = st_crs(xs_center_pts)
 
 # quick summary by sinuosity Category
-xs_center_pts %>%
+sin_tab = xs_center_pts %>%
   st_drop_geometry() %>%
   as_tibble() %>%
   group_by(Category) %>%
@@ -564,4 +564,185 @@ xs_center_pts %>%
   tabyl(Category) %>%
   adorn_pct_formatting()
 
+#------------------------------------------------------------
+# plots breaking down use and availability by sinuosity class
+#-------------------------------------------------------------
+xs_all %>%
+  filter(!is.na(channel_unit_type)) %>%
+  group_by(source,
+           Category,
+           channel_unit_type) %>%
+  summarise(n_pts = n()) %>%
+  group_by(source, Category) %>%
+  mutate(perc = n_pts / sum(n_pts)) %>%
+  ggplot(aes(x = channel_unit_type,
+             y = perc,
+             fill = source)) +
+  geom_col(position = 'dodge') +
+  scale_fill_brewer(palette = 'Set1') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1)) +
+  facet_wrap(~ Category) +
+  labs(x = 'Channel Unit Type',
+       y = 'Proportion',
+       fill = 'Data Source')
 
+xs_all %>%
+  filter(!is.na(dominant_cover_type_1_5m_radius)) %>%
+  group_by(source,
+           Category,
+           dominant_cover_type_1_5m_radius) %>%
+  summarise(n_pts = n()) %>%
+  group_by(source, Category) %>%
+  mutate(perc = n_pts / sum(n_pts)) %>%
+  ggplot(aes(x = dominant_cover_type_1_5m_radius,
+             y = perc,
+             fill = source)) +
+  geom_col(position = 'dodge') +
+  scale_fill_brewer(palette = 'Set1') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1)) +
+  facet_wrap(~ Category) +
+  labs(x = 'Dominant Cover Type',
+       y = 'Proportion',
+       fill = 'Data Source')
+
+xs_all %>%
+  filter(!is.na(dominant_substrate_1mx1m)) %>%
+  group_by(source,
+           Category,
+           dominant_substrate_1mx1m) %>%
+  summarise(n_pts = n()) %>%
+  group_by(source, Category) %>%
+  mutate(perc = n_pts / sum(n_pts)) %>%
+  ggplot(aes(x = dominant_substrate_1mx1m,
+             y = perc,
+             fill = source)) +
+  geom_col(position = 'dodge') +
+  scale_fill_brewer(palette = 'Set1') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1)) +
+  facet_wrap(~ Category) +
+  labs(x = 'Dominant Substrate',
+       y = 'Proportion',
+       fill = 'Data Source')
+
+#------------------------------------------------------------
+# plots breaking down use and availability overall, accounting for stratified design
+#-------------------------------------------------------------
+xs_all %>%
+  filter(source == 'Avail.') %>%
+  filter(!is.na(channel_unit_type)) %>%
+  group_by(source,
+           Category,
+           channel_unit_type) %>%
+  summarise(n_pts = n()) %>%
+  left_join(sin_tab %>%
+              select(Category, lgth_m = n_pts, perc_catg = perc)) %>%
+  mutate(wgt_pts = n_pts * perc_catg) %>%
+  group_by(source, channel_unit_type) %>%
+  summarise_at(vars(wgt_pts),
+               list(sum)) %>%
+  ungroup() %>%
+  mutate(perc = wgt_pts / sum(wgt_pts)) %>%
+  bind_rows(xs_all %>%
+              filter(source == 'Use') %>%
+              filter(!is.na(channel_unit_type)) %>%
+              group_by(source,
+                       channel_unit_type) %>%
+              summarise(n_pts = n()) %>%
+              group_by(source) %>%
+              mutate(perc = n_pts / sum(n_pts))) %>%
+  ggplot(aes(x = channel_unit_type,
+             y = perc,
+             fill = source)) +
+  geom_col(position = 'dodge') +
+  scale_fill_brewer(palette = 'Set1',
+                    labels = c('Avail.' = 'Availability (n = 2,416)',
+                               'Use' = 'Selected (n = 66)'),
+                    name = NULL) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1)) +
+  theme(legend.position = 'top') +
+  labs(x = 'Channel Unit Type',
+       y = 'Proportion')
+
+
+xs_all %>%
+  filter(source == 'Avail.') %>%
+  filter(!is.na(dominant_cover_type_1_5m_radius)) %>%
+  group_by(source,
+           Category,
+           dominant_cover_type_1_5m_radius) %>%
+  summarise(n_pts = n()) %>%
+  left_join(sin_tab %>%
+              select(Category, lgth_m = n_pts, perc_catg = perc)) %>%
+  mutate(wgt_pts = n_pts * perc_catg) %>%
+  group_by(source, dominant_cover_type_1_5m_radius) %>%
+  summarise_at(vars(wgt_pts),
+               list(sum)) %>%
+  ungroup() %>%
+  mutate(perc = wgt_pts / sum(wgt_pts)) %>%
+  bind_rows(xs_all %>%
+              filter(source == 'Use') %>%
+              filter(!is.na(dominant_cover_type_1_5m_radius)) %>%
+              group_by(source,
+                       dominant_cover_type_1_5m_radius) %>%
+              summarise(n_pts = n()) %>%
+              group_by(source) %>%
+              mutate(perc = n_pts / sum(n_pts))) %>%
+  ggplot(aes(x = dominant_cover_type_1_5m_radius,
+             y = perc,
+             fill = source)) +
+  geom_col(position = 'dodge') +
+  scale_fill_brewer(palette = 'Set1',
+                    labels = c('Avail.' = 'Availability (n = 2,416)',
+                               'Use' = 'Selected (n = 66)'),
+                    name = NULL) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1)) +
+  labs(x = 'Dominant Cover Type',
+       y = 'Proportion')
+
+xs_all %>%
+  filter(source == 'Avail.') %>%
+  filter(!is.na(dominant_substrate_1mx1m)) %>%
+  group_by(source,
+           Category,
+           dominant_substrate_1mx1m) %>%
+  summarise(n_pts = n()) %>%
+  left_join(sin_tab %>%
+              select(Category, lgth_m = n_pts, perc_catg = perc)) %>%
+  mutate(wgt_pts = n_pts * perc_catg) %>%
+  group_by(source, dominant_substrate_1mx1m) %>%
+  summarise_at(vars(wgt_pts),
+               list(sum)) %>%
+  ungroup() %>%
+  mutate(perc = wgt_pts / sum(wgt_pts)) %>%
+  bind_rows(xs_all %>%
+              filter(source == 'Use') %>%
+              filter(habitat_selected == "Selected") %>%
+              filter(!is.na(dominant_substrate_1mx1m)) %>%
+              group_by(source,
+                       dominant_substrate_1mx1m) %>%
+              summarise(n_pts = n()) %>%
+              group_by(source) %>%
+              mutate(perc = n_pts / sum(n_pts))) %>%
+  ggplot(aes(x = dominant_substrate_1mx1m,
+             y = perc,
+             fill = source)) +
+  geom_col(position = 'dodge') +
+  scale_fill_brewer(palette = 'Set1',
+                    labels = c('Avail.' = 'Availability (n = 2,416)',
+                               'Use' = 'Selected (n = 66)'),
+                    name = NULL) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1)) +
+  labs(x = 'Dominant Substrate',
+       y = 'Proportion')
