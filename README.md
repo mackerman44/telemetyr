@@ -8,6 +8,12 @@ The authors hope to continue to develop `telemetyr` in the long-term and so any 
 
 ## Getting Started
 
+`telemetyr` requires the JAGS software (**J**ust **A**nother **G**ibbs **S**ampler). This can be downloaded here:
+  
+[https://sourceforge.net/projects/mcmc-jags/files/](https://sourceforge.net/projects/mcmc-jags/files/)
+  
+Please download version >= 4.0.0. You'll need to install JAGS before installing `telemetyr`.
+
 To install the current working version of this package to your computer, you can use Hadley Wickham's `devtools` package. To install and load `devtools` (or any package for that matter) use:
 ```
 install.packages("devtools")
