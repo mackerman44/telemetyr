@@ -156,172 +156,99 @@ uniq_tags %>%
 library(magrittr)
 library(postpack)
 
-# read in RT site metadata
-rec_meta = read_excel('data/prepped/site_metadata/rt_site_metadata.xlsx')
+# this function writes a JAGS model, preps all the data for that JAGS CJS model, runs it, and summarises the posteriors of various parameters
+param_summ = fit_bayes_cjs(fit_bayes_cjs(file_path = "CJS_model.txt",
+                                         cap_hist_wide = cap_hist_list$ch_wide,
+                                         tag_meta = cap_hist_list$tag_df))
 
-# which RT receivers were used each year?
-rec_df = rec_meta %>%
-  filter(site_type == 'rt_fixed') %>%
-  filter(as.integer(str_sub(rt_rkm, end = 3)) <= 274) %>%
-  mutate_at(vars(site_code),
-            list(~ factor(., levels = unique(.)))) %>%
-  gather(season, use, starts_with("use")) %>%
-  mutate(season = str_remove(season, "use")) %>%
-  filter(use) %>%
-  select(-use) %>%
-  select(season, everything())
+#------------------------
+# If you want to walk through all the steps contained in the "fit_bayes_cjs" model, here's how you would do that.
+# See the CJS vignette for more details
 
+# write JAGS model
+jags_file_nm = "CJS_model.txt"
+write_bayes_cjs(file_path = jags_file_nm)
 
-# pull out the needed objects from cap_hist_list
-cap_hist = cap_hist_list$tag_df %>%
-  left_join(cap_hist_list$ch_wide) %>%
-  mutate(some_det = if_else(is.na(cap_hist), F, T)) %>%
-  # use either batch 1 tags, or tags detected at least once
-  filter(duty_cycle == 'batch_1' | some_det) %>%
-  select(-some_det) %>%
-  select(-cap_hist) %>%
-  # filter out releases from PAHTRP and HYDTRP
-  filter(release_site %in% c("LEMTRP", "LLRTP")) %>%
-  # filter out on-off duty cycles
-  filter(duty_cycle != "on_off") %>%
-  mutate(LLRTP = if_else(release_site == 'LLRTP',
-                         1, 0),
-         LEMTRP = if_else(release_site == 'LEMTRP',
-                          1, 0)) %>%
-  # put sites in correct order for CJS model
-  pivot_longer(-(season:tag_id),
-               names_to = "site",
-               values_to = "seen") %>%
-  mutate(site = factor(site,
-                       levels = c("LEMTRP", levels(rec_df$site_code), "LLRTP")),
-         site = fct_relevel(site, "LLRTP", after = 8)) %>%
-  filter(!is.na(site)) %>%
-  spread(site, seen,
-         fill = 0)
+# prep the data for the JAGS CJS model
+jags_data = prep_jags_cjs(cap_hist_list$ch_wide,
+                          cap_hist_list$tag_df)
 
-tag_df = cap_hist_list$tag_df
+# run JAGS, get posterior samples
+cjs_post = run_jags_cjs(file_path = jags_file_nm,
+                        jags_data = jags_data)
 
+# summarise the posteriors
+param_summ = summarise_jags_cjs(cjs_post)
 
-y = cap_hist %>%
-  select(-(season:tag_id)) %>%
-  select(-LEMTRP) %>%
-  as.matrix()
+# if you want Rhat, or effective sample sizes, use
+param_summ = summarise_jags_cjs(cjs_post,
+                                Rhat = T,
+                                ess = T)
+#------------------------
 
-jags_data = list(
-  N = nrow(y),         # number of fish
-  J = ncol(y),         # number of sites
-  y = y,               # capture histories
-  z = known_alive(y),  # known alive matrix
-  f = first_alive(y)   # first time known alive (for batch 2 and 3 tags)
-)
+# parameter estimates
+param_summ
 
-# SPECIFY THE JAGS MODEL
-# specify model in JAGS
-jags_model = function() {
-  # PRIORS
-  phi[1] <- 1
-  p[1] <- 1
-  for(j in 2:J) {
-    phi[j] ~ dbeta(1,1) # survival probability between arrays
-    p[j] ~ dbeta(1,1)   # detection probability at each array
-  }
-
-  # LIKELIHOOD - Here, p and phi are global
-  for (i in 1:N) {
-    # first known occasion must be z == 1
-    # z[i, f[i]] <- 1
-    # j = 1 is the release occasion - known alive; i.e., the mark event
-    for (j in (f[i] + 1):J) {
-      # survival process: must have been alive in j-1 to have non-zero pr(alive at j)
-      z[i,j] ~ dbern(phi[j] * z[i,j-1]) # fish i in period j is a bernoulli trial
-
-      # detection process: must have been alive in j to observe in j
-      y[i,j] ~ dbern(p[j] * z[i,j]) # another bernoulli trial
-    }
-  }
-
-  # DERIVED QUANTITIES
-  # survivorship is probability of surviving from release to a detection occasion
-  survship[1] <- 1 # the mark event; everybody survived to this point
-  for (j in 2:J) { # the rest of the events
-    survship[j] <- survship[j-1] * phi[j]
-  }
-}
-
-# write model to a text file
-jags_file = "model.txt"
-write_model(jags_model, jags_file)
-
-# specify which parameters to track
-jags_params = c("phi", "p", "survship")
-
-# FIT JAGS MODEL AND GET mcmc.list OF SAMPLES FROM POSTERIOR
-library(rjags)
-jags = jags.model(jags_file,
-                  data = jags_data,
-                  n.chains = 4,
-                  n.adapt = 1000)
-# burnin
-update(jags, n.iter = 2500)
-# posterior sampling
-post = coda.samples(jags,
-                    jags_params,
-                    n.iter = 2500,
-                    thin = 5)
-
-# CJS RESULTS
-param_summ = post_summ(post,
-                       jags_params,
-                       Rhat = T,
-                       ess = T) %>%
-  t() %>%
-  as_tibble(rownames = "param") %>%
-  mutate(cv = sd / mean)
-
-surv_p = param_summ %>%
-  filter(grepl('survship', param)) %>%
-  mutate(site = factor(colnames(y),
-                       levels = colnames(y))) %>%
+# some plots showing the results
+# detection probability
+det_p = param_summ %>%
+  filter(param_grp == 'p') %>%
+  filter(site_num < max(site_num)) %>%
   ggplot(aes(x = site,
              y = mean)) +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0) +
   geom_point() +
+  theme_classic() +
   labs(x = 'Site',
-       y = 'Cummulative Survival')
+       y = 'Detection Probability')
 
+det_p
+
+# apparent survival
 phi_p = param_summ %>%
-  filter(grepl('phi', param)) %>%
-  mutate(site = factor(colnames(y),
-                       levels = colnames(y))) %>%
+  filter(param_grp == 'phi') %>%
+  filter(site_num < max(site_num)) %>%
   ggplot(aes(x = site,
              y = mean)) +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0) +
   geom_point() +
+  theme_classic() +
   labs(x = 'Site',
        y = 'Survival From Previous Site')
 
-det_p = param_summ %>%
-  filter(grepl('^p\\[', param)) %>%
-  mutate(site = factor(colnames(y),
-                       levels = colnames(y))) %>%
+phi_p
+
+# cummulative survival
+surv_p = param_summ %>%
+  filter(param_grp == 'survship') %>%
+  filter(site_num < max(site_num)) %>%
   ggplot(aes(x = site,
              y = mean)) +
   geom_errorbar(aes(ymin = `2.5%`,
                     ymax = `97.5%`),
                 width = 0) +
   geom_point() +
+  theme_classic() +
   labs(x = 'Site',
-       y = 'Detection Probability')
-surv_p
-phi_p
-det_p
+       y = 'cumulative Survival')
 
+surv_p
+
+#-----------------------------
 # MODEL DIAGNOSTICS
+#-----------------------------
+# if you ran the run_jags_cjs() function, you can use these plots to diagnose convergence
 # looking for "grassy" plots here to assess convergence of chains. These look pretty good!
-diag_plots(post, "phi", layout = "5x3", ext_device = T)      # p(surv) between sites
-diag_plots(post, "survship", layout = "5x3", ext_device = T) # p(surv) to a location
-diag_plots(post, "^p[", layout = "5x3", ext_device = T)      # p(detetion)
+diag_plots(cjs_post, "phi",
+           layout = "5x3",
+           ext_device = T)      # p(surv) between sites
+diag_plots(cjs_post, "survship",
+           layout = "5x3",
+           ext_device = T) # p(surv) to a location
+diag_plots(cjs_post, "^p[",
+           layout = "5x3",
+           ext_device = T)      # p(detetion)
