@@ -31,7 +31,8 @@ prep_jags_cjs = function(cap_hist_wide = NULL,
     tag_dets = tag_df %>%
       dplyr::select(tag_id, drop_col) %>%
       dplyr::distinct() %>%
-      dplyr::left_join(cap_hist_wide) %>%
+      dplyr::left_join(cap_hist_wide %>%
+                         select(-one_of(unique(tag_df$release_site)))) %>%
       dplyr::group_by(tag_id, cap_hist, drop_col) %>%
       tidyr::nest() %>%
       dplyr::mutate(n_dets = purrr::map_dbl(data,
@@ -40,7 +41,7 @@ prep_jags_cjs = function(cap_hist_wide = NULL,
     # drop batch 2 and batch 3 tags that were never detected after release
     drop_tags = tag_dets %>%
       dplyr::filter(drop_col %in% drop_values,
-                    n_dets <= 1) %>%
+                    n_dets == 0) %>%
       dplyr::pull(tag_id)
 
     if(length(drop_tags) > 0) {
@@ -51,7 +52,7 @@ prep_jags_cjs = function(cap_hist_wide = NULL,
     # drop detection at release site for batch 2 and batch 3 tags
     drop_release_tags = tag_dets %>%
       dplyr::filter(drop_col %in% drop_values,
-                    n_dets > 1) %>%
+                    n_dets > 0) %>%
       dplyr::pull(tag_id)
 
     if(length(drop_release_tags) > 0) {
