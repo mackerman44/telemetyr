@@ -318,6 +318,9 @@ conv_df = rhat(my_mcmcr,
 sum(conv_df$converged == F)
 
 conv_df %>%
+  filter(converged == F)
+
+conv_df %>%
   arrange(esr) %>%
   head(10)
 
