@@ -77,6 +77,7 @@ rec_df = rec_meta %>%
 # drop a few upstream sites for these analyses
 rec_df %<>%
   filter(!site %in% c('PAHTRP', 'DG', 'KP', 'DC', 'HYDTRP')) %>%
+  # filter(!site %in% c("LLRTP")) %>%
   mutate_at(vars(site, receiver),
             list(fct_drop)) %>%
   mutate(site_num = as.integer(site))
@@ -103,6 +104,23 @@ rt_cjs = tibble(season = c('17_18',
                              .f = "ch_wide"),
          tag_meta = map(cap_hist_list,
                         .f = "tag_df"),
+         # for 2019-2020, force all tags released at LLRTP to be batch_3 so they enter model at first detection, and drop LLRTP as a site
+         tag_meta = map(tag_meta,
+                        .f = function(x) {
+                          x %>%
+                            mutate(duty_cycle = if_else(season == "19_20" & release_site == "LLRTP",
+                                                        "batch_3",
+                                                        duty_cycle))
+                        }),
+         cap_hist_wide = map2(season,
+                              cap_hist_wide,
+                              .f = function(x, y) {
+                                if(x == '19_20') {
+                                  y %<>%
+                                    select(-LLRTP)
+                                }
+                                return(y)
+                              }),
          jags_data = map2(cap_hist_wide,
                           tag_meta,
                           .f = function(x, y) {
@@ -117,19 +135,19 @@ rt_cjs = tibble(season = c('17_18',
                                        n_thin = 10)
                         }),
          param_summ = map2(cjs_post,
-                              jags_data,
-                             .f = function(x, j_data) {
-                               summarise_jags_cjs(x,
-                                                  Rhat = T,
-                                                  ess = T) %>%
-                                 left_join(tibble(site = colnames(j_data$y)) %>%
-                                             mutate(site = factor(site, levels = site),
-                                                    site_num = as.integer(site))) %>%
-                                 select(param_grp, site_num,
-                                        site,
-                                        param,
-                                        everything())
-                             }))
+                           jags_data,
+                           .f = function(x, j_data) {
+                             summarise_jags_cjs(x,
+                                                Rhat = T,
+                                                ess = T) %>%
+                               left_join(tibble(site = colnames(j_data$y)) %>%
+                                           mutate(site = factor(site, levels = site),
+                                                  site_num = as.integer(site))) %>%
+                               select(param_grp, site_num,
+                                      site,
+                                      param,
+                                      everything())
+                           }))
 
 param_summ_all = rt_cjs %>%
   select(season, param_summ) %>%
@@ -213,9 +231,9 @@ surv_llrtp_post = rt_cjs %>%
   mutate(param_grp = str_extract(param, "[:alpha:]+"),
          site_num = str_extract(param, "[:digit:]+"),
          site_num = as.integer(site_num)) %>%
-  filter(site_num >= 8) %>%
+  filter(site_num >= 7) %>%
   mutate_at(vars(value),
-            list(~ if_else(site_num == 8,
+            list(~ if_else(site_num == 7,
                            1, .))) %>%
   group_by(CHAIN, ITER) %>%
   mutate(survship = cumprod(value)) %>%
@@ -233,7 +251,7 @@ surv_summ = rt_cjs %>%
   as.matrix(chain = T,
             iter = T) %>%
   as_tibble() %>%
-  select(-(`survship[8]`:`survship[18]`)) %>%
+  select(-(`survship[7]`:`survship[17]`)) %>%
   left_join(surv_llrtp_post) %>%
   split(list(.$CHAIN)) %>%
   map(.f = as.mcmc) %>%
