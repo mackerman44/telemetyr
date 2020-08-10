@@ -15,14 +15,6 @@ institute:
   - biomark: Biomark, Inc. 705 South 8th St., Boise, Idaho, 83702, USA
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
-  bookdown::word_document2:
-    fig_height: 6
-    fig_width: 7
-    toc: false
-    always_allow_html: true
-    pandoc_args:
-    - --lua-filter=templates/scholarly-metadata.lua
-    - --lua-filter=templates/author-info-blocks.lua
   bookdown::html_document2:
     fig_height: 6
     fig_width: 7
@@ -32,6 +24,14 @@ output:
       collapsed: yes
       smooth_scroll: yes
     theme: flatly
+    pandoc_args:
+    - --lua-filter=templates/scholarly-metadata.lua
+    - --lua-filter=templates/author-info-blocks.lua
+  bookdown::word_document2:
+    fig_height: 6
+    fig_width: 7
+    toc: false
+    always_allow_html: true
     pandoc_args:
     - --lua-filter=templates/scholarly-metadata.lua
     - --lua-filter=templates/author-info-blocks.lua
@@ -159,6 +159,23 @@ rt_cjs = tibble(season = c('17_18',
                              .f = "ch_wide"),
          tag_meta = map(cap_hist_list,
                         .f = "tag_df"),
+         # for 2019-2020, force all tags released at LLRTP to be batch_3 so they enter model at first detection, and drop LLRTP as a site
+         tag_meta = map(tag_meta,
+                        .f = function(x) {
+                          x %>%
+                            mutate(duty_cycle = if_else(season == "19_20" & release_site == "LLRTP",
+                                                        "batch_3",
+                                                        duty_cycle))
+                        }),
+         cap_hist_wide = map2(season,
+                              cap_hist_wide,
+                              .f = function(x, y) {
+                                if(x == '19_20') {
+                                  y %<>%
+                                    select(-LLRTP)
+                                }
+                                return(y)
+                              }),
          jags_data = map2(cap_hist_wide,
                           tag_meta,
                           .f = function(x, y) {
@@ -207,6 +224,21 @@ save(rec_df, rt_cjs, param_summ_all,
 load('../CJS_models/RT_only_CJS_all.rda')
 ```
 
+```{r}
+n_upstrm_tags = rt_cjs$cap_hist_list[[3]]$tag_df %>%
+  filter(release_site == "LLRTP") %>%
+  mutate(tag_id = str_remove(radio_tag_id, "C$"),
+         tag_id = as.numeric(tag_id)) %>%
+  select(tag_id) %>%
+  left_join(rt_cjs$cap_hist_list[[3]]$ch_long) %>%
+  mutate(upstrm_site = if_else(loc %in% c("BC", "TC", 'EC', "SS", 'EU', 'LF'),
+                               T, F)) %>%
+  group_by(tag_id) %>%
+  summarise(upstrm_dets = sum(upstrm_site)) %>%
+  filter(upstrm_dets > 0) %>%
+  nrow()
+```
+
 
 # Introduction
 
@@ -218,7 +250,7 @@ We are interested primarily in estimating survival of fish from release (e.g. at
 
 The data is radio tag (RT) detections, which were downloaded from various fixed sites over the last three years. We compressed these detections and summarized capture histories, eliminating any detections that indicated upstream movement. 
 
-In 2017-18 and 2018-19, we focused on tags that were released from the lower Lemhi rotary screw trap (code LLRTP). In 2019-20, we also included tags released from the upper Lemhi rotary screw trap (code LEMTRP). We did remove any tags released at the lower Lemhi trap that were detected upstream in the Lemhi River. There were `r rt_cjs$cap_hist_wide[[3]] %>% filter(LLRTP == 1 & (BC == 1 | TC == 1 | EC == 1 | SS == 1 | EU == 1 | LF == 1)) %>% nrow` tags with a detection history like this.
+In 2017-18 and 2018-19, we focused on tags that were released from the lower Lemhi rotary screw trap (code LLRTP). In 2019-20, we also included tags released from the upper Lemhi rotary screw trap (code LEMTRP). We did remove any tags released at the lower Lemhi trap that were detected upstream in the Lemhi River. There were `r n_upstrm_tags` tags with a detection history like this.
 
 ## Model
 
@@ -266,7 +298,7 @@ surv_summ = rt_cjs %>%
   as.matrix(chain = T,
             iter = T) %>%
   as_tibble() %>%
-  select(-(`survship[8]`:`survship[18]`)) %>%
+  select(-(`survship[8]`:`survship[17]`)) %>%
   left_join(surv_llrtp_post) %>%
   split(list(.$CHAIN)) %>%
   map(.f = as.mcmc) %>%

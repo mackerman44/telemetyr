@@ -231,9 +231,9 @@ surv_llrtp_post = rt_cjs %>%
   mutate(param_grp = str_extract(param, "[:alpha:]+"),
          site_num = str_extract(param, "[:digit:]+"),
          site_num = as.integer(site_num)) %>%
-  filter(site_num >= 7) %>%
+  filter(site_num >= 8) %>%
   mutate_at(vars(value),
-            list(~ if_else(site_num == 7,
+            list(~ if_else(site_num == 8,
                            1, .))) %>%
   group_by(CHAIN, ITER) %>%
   mutate(survship = cumprod(value)) %>%
@@ -251,7 +251,7 @@ surv_summ = rt_cjs %>%
   as.matrix(chain = T,
             iter = T) %>%
   as_tibble() %>%
-  select(-(`survship[7]`:`survship[17]`)) %>%
+  select(-(`survship[8]`:`survship[17]`)) %>%
   left_join(surv_llrtp_post) %>%
   split(list(.$CHAIN)) %>%
   map(.f = as.mcmc) %>%
