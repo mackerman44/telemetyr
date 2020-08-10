@@ -40,7 +40,7 @@ prep_jags_cjs = function(cap_hist_wide = NULL,
     # drop batch 2 and batch 3 tags that were never detected after release
     drop_tags = tag_dets %>%
       dplyr::filter(drop_col %in% drop_values,
-                    n_dets == 1) %>%
+                    n_dets <= 1) %>%
       dplyr::pull(tag_id)
 
     if(length(drop_tags) > 0) {
