@@ -111,17 +111,19 @@ prep_capture_history = function(compress_df = NULL,
                   mutate(last_obs = first_obs,
                          n = 1)) %>%
       mutate(loc = factor(loc,
-                          levels = levels(rec_site$receiver))) %>%
+                          levels = levels(rec_site$site))) %>%
       arrange(tag_id, first_obs)
 
     # remove detections that indicate upstream movement?
     if(delete_upstream) {
       first_last %<>%
         group_by(tag_id) %>%
-        mutate(loc_num = as.integer(site),
-               next_loc = lead(loc_num)) %>%
-        ungroup() %>%
-        filter(next_loc >= loc_num | is.na(next_loc))
+        nest() %>%
+        mutate(new_data = map(data,
+                              .f = remove_upstrm_dets)) %>%
+        unnest(cols = new_data) %>%
+        select(-data) %>%
+        ungroup()
     }
 
   }
@@ -166,10 +168,12 @@ prep_capture_history = function(compress_df = NULL,
     if(delete_upstream) {
       first_last %<>%
         group_by(tag_id) %>%
-        mutate(loc_num = as.integer(loc),
-               next_loc = lead(loc_num)) %>%
-        ungroup() %>%
-        filter(next_loc >= loc_num | is.na(next_loc))
+        nest() %>%
+        mutate(new_data = map(data,
+                              .f = remove_upstrm_dets)) %>%
+        unnest(cols = new_data) %>%
+        select(-data) %>%
+        ungroup()
     }
   }
 
@@ -186,8 +190,7 @@ prep_capture_history = function(compress_df = NULL,
           remove = F)
 
   # long format
-  cap_hist_long = first_last %>%
-    select(-loc_num, -next_loc)
+  cap_hist_long = first_last
 
   if(assign_week) {
     start_date = lubridate::ymd(paste(lubridate::year(min(cap_hist_long$first_obs, na.rm = T)), week_base))

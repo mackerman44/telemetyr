@@ -24,7 +24,7 @@ Depends: R (>= 3.5.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Imports: 
     dplyr (>= 0.8.3),
     forcats (>= 0.4.0),
@@ -45,4 +45,3 @@ Suggests:
     postpack (>= 0.1.16)
 VignetteBuilder: knitr
 Remotes: git::https://github.com/bstaton1/postpack.git
-
