@@ -134,7 +134,7 @@ ch_compress = compress_df %>%
 
 
 # list with wide, long capture histories and tag info
-cap_hist_list = prep_capture_history(compress_df,
+cap_hist_list = prep_capture_history(ch_compress,
                                      tag_data = tag_df_list[[yr_label]],
                                      n_obs_valid = 3,
                                      rec_site = rec_site_list[[yr_label]],
