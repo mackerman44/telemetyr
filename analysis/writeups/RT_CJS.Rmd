@@ -225,18 +225,30 @@ load('../CJS_models/RT_only_CJS_all.rda')
 ```
 
 ```{r}
-n_upstrm_tags = rt_cjs$cap_hist_list[[3]]$tag_df %>%
+# n_upstrm_tags = rt_cjs$cap_hist_list[[3]]$tag_df %>%
+#   filter(release_site == "LLRTP") %>%
+#   mutate(tag_id = str_remove(radio_tag_id, "C$"),
+#          tag_id = as.numeric(tag_id)) %>%
+#   select(tag_id) %>%
+#   left_join(rt_cjs$cap_hist_list[[3]]$ch_long) %>%
+#   mutate(upstrm_site = if_else(loc %in% c("BC", "TC", 'EC', "SS", 'EU', 'LF'),
+#                                T, F)) %>%
+#   group_by(tag_id) %>%
+#   summarise(upstrm_dets = sum(upstrm_site)) %>%
+#   filter(upstrm_dets > 0) %>%
+#   nrow()
+
+n_dropped_tags = rt_cjs$cap_hist_list[[3]]$tag_df %>%
   filter(release_site == "LLRTP") %>%
   mutate(tag_id = str_remove(radio_tag_id, "C$"),
          tag_id = as.numeric(tag_id)) %>%
-  select(tag_id) %>%
+  select(tag_id, duty_cycle) %>%
   left_join(rt_cjs$cap_hist_list[[3]]$ch_long) %>%
-  mutate(upstrm_site = if_else(loc %in% c("BC", "TC", 'EC', "SS", 'EU', 'LF'),
-                               T, F)) %>%
-  group_by(tag_id) %>%
-  summarise(upstrm_dets = sum(upstrm_site)) %>%
-  filter(upstrm_dets > 0) %>%
+  group_by(tag_id, duty_cycle) %>%
+  summarise(n_loc = n_distinct(loc)) %>%
+  filter(n_loc == 1) %>%
   nrow()
+
 ```
 
 
@@ -250,7 +262,7 @@ We are interested primarily in estimating survival of fish from release (e.g. at
 
 The data is radio tag (RT) detections, which were downloaded from various fixed sites over the last three years. We compressed these detections and summarized capture histories, eliminating any detections that indicated upstream movement. 
 
-In 2017-18 and 2018-19, we focused on tags that were released from the lower Lemhi rotary screw trap (code LLRTP). In 2019-20, we also included tags released from the upper Lemhi rotary screw trap (code LEMTRP). We did remove any tags released at the lower Lemhi trap that were detected upstream in the Lemhi River. There were `r n_upstrm_tags` tags with a detection history like this.
+In 2017-18 and 2018-19, we focused on tags that were released from the lower Lemhi rotary screw trap (code LLRTP). In 2019-20, we also included tags released from the upper Lemhi rotary screw trap (code LEMTRP). To do this, we allowed tags released at the lower trap (LLRTP) to enter the CJS model upon their first radio detection, similar to how we treated batch 2 and batch 3 tags. This did result in `r n_dropped_tags` tags that were released at the lower trap but were never subsequently detected anywhere being dropped completely from the model. 
 
 ## Model
 
