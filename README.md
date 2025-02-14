@@ -22,7 +22,7 @@ library(devtools)
 
 Once `devtools` is successfully installed, use the following to install `telemetyr`:
 ```
-devtools::install_github("BiomarkABS/telemetyr", build_vignettes = TRUE)
+devtools::install_github("mackerman44/telemetyr", build_vignettes = TRUE)
 ```
 
 Be sure to include the `build_vignettes = TRUE` argument, as this will ensure that vignettes included with the package will be built and made available.
