@@ -23,12 +23,14 @@ summarise_timer_data = function(compress_df = NULL,
                                 season_end = NULL,
                                 include_noise = c(TRUE, FALSE)) {
 
+  include_noise = match.arg(as.character(include_noise)) == "TRUE"
+
   cat("Parsing out timer tag data.\n")
 
   # if(include_noise == TRUE)  code_endings = "550$|575$|995$"
   # if(include_noise == FALSE) code_endings = "550$|575$"
 
-  code_endings = ifelse(include_noise, "550$|575$|995$", "550$|575$")
+  code_endings = if (include_noise) "550$|575$|995$" else "550$|575$"
 
   timer_df = compress_df %>%
     parse_code_ending(code_ending = code_endings)
@@ -94,7 +96,7 @@ summarise_timer_data = function(compress_df = NULL,
     ggplot2::ggplot(aes(x = hr,
                         y = forcats::fct_rev(receiver),
                         color = operational)) +
-    geom_line(size = 2) +
+    geom_line(linewidth = 2) +
     geom_point(data = tmp %>%
                  filter(!operational),
                size = 1.5) +
