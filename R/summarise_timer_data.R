@@ -21,16 +21,14 @@ summarise_timer_data = function(compress_df = NULL,
                                 receiver_codes = NULL,
                                 season_start = NULL,
                                 season_end = NULL,
-                                include_noise = c(TRUE, FALSE)) {
+                                include_noise = FALSE) {
 
   cat("Parsing out timer tag data.\n")
 
   # if(include_noise == TRUE)  code_endings = "550$|575$|995$"
   # if(include_noise == FALSE) code_endings = "550$|575$"
 
-  if (!is.logical(include_noise) || length(include_noise) != 1) {
-    stop("`include_noise` must be a single logical value (TRUE or FALSE).")
-  }
+  code_endings <- ifelse(include_noise, "550$|575$|995$", "550$|575$")
 
   # Assign code_endings based on include_noise
   code_endings <- if (include_noise) "550$|575$|995$" else "550$|575$"
