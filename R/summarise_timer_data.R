@@ -25,8 +25,10 @@ summarise_timer_data = function(compress_df = NULL,
 
   cat("Parsing out timer tag data.\n")
 
-  if(include_noise == TRUE)  code_endings = "550$|575$|995$"
-  if(include_noise == FALSE) code_endings = "550$|575$"
+  # if(include_noise == TRUE)  code_endings = "550$|575$|995$"
+  # if(include_noise == FALSE) code_endings = "550$|575$"
+
+  code_endings = ifelse(include_noise, "550$|575$|995$", "550$|575$")
 
   timer_df = compress_df %>%
     parse_code_ending(code_ending = code_endings)
